@@ -34,7 +34,7 @@ library(FastGxC)
 
 To run a toy example, generate simulated data by running the following code in R:
 ```
-  data_dir_sin = "~/simulations/"
+  data_dir_sim = "~/simulations/"
   sim_scenario = "single_context_het"
   simulate_data(data_dir = data_dir_sim, sim_scenario = sim_scenario)
 ```
@@ -43,8 +43,11 @@ To run a toy example, generate simulated data by running the following code in R
 
 Running the above code will generate and save the following files in the data_dir:
 (1) {sim_scenario}_SNPs.txt: SNP genotype data for 10,000 SNPs and 300 individuals (individual IDs as columns and SNP IDs as rows)
+
 (2) {sim_scenario}_snpsloc.txt: location information of the 10,000 simulated SNPs (MatrixEQTL input format)
+
 (3) {sim_scenario}_geneloc.txt: location information of the 100 simulated genes (MatrixEQTL input format)
+
 (4) {sun_scenario}_simulated_expression.txt: gene expression data for the 300 simulated individuals across 100 genes and 50 contexts 
 
 # Running FastGxC
@@ -72,12 +75,12 @@ out_dir = "~/example_output_single_context_het/"
 input_dir = "~/simulations/"
 context_names = paste0("context", seq(1,50))
 
+SNP_file_name = paste0(input_dir, "single_context_het_SNPs.txt")
+snps_location_file_name = paste0(input_dir, "single_context_het_snpsloc.txt")
+gene_location_file_name = paste0(input_dir, "single_context_het_geneloc.txt")
 ## map context specific eQTLs:
 for(context in context_names){
-    SNP_file_name = paste0(input_dir, "single_context_het_SNPs.txt")
-    snps_location_file_name = paste0(input_dir, "single_context_het_snpsloc.txt")
     expression_file_name = paste0(out_dir, context, "_specific_expression.txt")
-    gene_location_file_name = paste0(input_dir, "single_context_het_geneloc.txt")
     context = context
     shared_specific = "specific"
     out_dir = out_dir
