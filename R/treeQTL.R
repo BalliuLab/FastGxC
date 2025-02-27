@@ -6,6 +6,7 @@
 #' @param snps_location_file_name - full filepath of the snpsloc file used in the eQTL mapping step
 #' @param gene_location_file_name - full filepath of the geneloc file used in the eQTL mapping step
 #' @param out_dir - full filepath of the output directory that FDR adjusted eQTLs should be written out to.
+#' @param context_names - vector of all context names in the format c("tissue1", "tissue2", ..., etc.)
 #' @param fdr_thresh - value between 0 and 1 that signifies what FDR threshold for multiple testing correction. The same value will be used across all hierarchical levels.
 #' @return outputs one file of specific eGenes across all contexts and one file of shared eGenes. Outputs an eAssociation file for each context and one for shared eQTLs with snp-gene pairs and FDR adjusted p-values. 
 #'
@@ -28,15 +29,21 @@ level3=fdr_thresh
 # Distance for local gene-SNP pairs
 cisDist = 1e6;
 
-snpspos = read.table(file = snps_location_file_name, header = TRUE, stringsAsFactors = FALSE);
-genepos = read.table(file = gene_location_file_name, header = TRUE, stringsAsFactors = FALSE);
+snpspos = fread(file = snps_location_file_name);
+genepos = fread(file = gene_location_file_name);
 
+## get context names
+if (is.vector(context_names)) {
+    print(paste("Input for context names is a valid vector."))
+}else{
+    stop(print(paste0("No valid input for context names.")))
+}
 # Use treeQTL to perform hierarchical FDR and get specific_eGenes, i.e. genes with at least one context-specific eQTL, and shared_eGenes, i.e. genes with at least one context-shared eQTL
   
 specific_eGenes=get_eGenes_multi_tissue_mod(
                                   m_eqtl_out_dir = data_dir, 
                                   treeQTL_dir = out_dir, 
-                                  tissue_names = sort(colnames(genepos)[-c(1:4)]),
+                                  tissue_names = context_names,
                                   level1 = level1, level2 = level2, level3 = level3, 
                                   exp_suffix = "specific")
 write.table(x = specific_eGenes, file = paste0(work_dir,"specific_eGenes.txt"), quote = F, row.names = F, col.names = T, sep = '\t')

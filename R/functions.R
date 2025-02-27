@@ -22,7 +22,7 @@ get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_name
   
   print(paste("Step 0.1: Computing summary statistics for each tissue"))
   m_eqtl_outfiles <- list.files(m_eqtl_out_dir, pattern = pattern, full.names = TRUE)
-  if(length(m_eqtl_outfiles)!=length(tissue_names)) stop(sprintf("Expecting %i MatrixEQTL files but got %i.", length(tissue_names),length(m_eqtl_outfiles)))
+  if(length(m_eqtl_outfiles)!=length(tissue_names)) stop(sprintf("Expecting %i MatrixEQTL files but got %i. Make sure that input directory provided is correct.", length(tissue_names),length(m_eqtl_outfiles)))
   
   #n_SNPs_per_gene_outfiles <- list.files(treeQTL_dir, pattern = "n_SNPs_per_gene", full.names = TRUE)
   #n_SNPs_per_gene_outfiles=n_SNPs_per_gene_outfiles[!grepl(pattern = "AverageTissue", x = n_SNPs_per_gene_outfiles)]
@@ -31,7 +31,7 @@ get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_name
   n_tissue <- length(tissue_names)
   for (i in 1:n_tissue) {
     cur_tissue_name <- tissue_names[i]
-    m_eqtl_out = m_eqtl_outfiles[grepl(paste0(cur_tissue_name, "_"), m_eqtl_outfiles)]
+    m_eqtl_out = m_eqtl_outfiles[grepl(paste0("/", cur_tissue_name, "_"), m_eqtl_outfiles)]
     
     print(paste("Computing summary statistics for tissue ", cur_tissue_name, sep = ""))
     #n_SNPs_per_gene_this_tissue <- data.frame(fread(input = n_SNPs_per_gene_outfiles[i], header = F), stringsAsFactors = F,check.names = F)

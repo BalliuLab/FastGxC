@@ -32,6 +32,10 @@ treeQTL_step(
 \item{fdr_thresh}{\itemize{
 \item value between 0 and 1 that signifies what FDR threshold for multiple testing correction. The same value will be used across all hierarchical levels.
 }}
+
+\item{context_names}{\itemize{
+\item vector of all context names in the format c("tissue1", "tissue2", ..., etc.)
+}}
 }
 \value{
 outputs one file of specific eGenes across all contexts and one file of shared eGenes. Outputs an eAssociation file for each context and one for shared eQTLs with snp-gene pairs and FDR adjusted p-values.
