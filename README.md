@@ -42,13 +42,13 @@ To run a toy example, generate simulated data by running the following code in R
 ** Note: running the code above simulates data with default parameters (300 individuals, 10,000 SNPs, 100 genes, and 50 contexts without missing data), but this function can be run with any combination of parameter values. See all possible parameters for ```simulate_data()``` by running ```?simulate_data``` in R.
 
 Running the above code will generate and save the following files in the data_dir:
-(1) {sim_scenario}_SNPs.txt: SNP genotype data for 10,000 SNPs and 300 individuals (individual IDs as columns and SNP IDs as rows)
+(1) {sim_scenario}_SNPs.txt: SNP genotype data for 10,000 SNPs and 300 individuals (individual IDs as columns and SNP IDs as rows)\
 
-(2) {sim_scenario}_snpsloc.txt: location information of the 10,000 simulated SNPs (MatrixEQTL input format)
+(2) {sim_scenario}_snpsloc.txt: location information of the 10,000 simulated SNPs (MatrixEQTL input format)\
 
-(3) {sim_scenario}_geneloc.txt: location information of the 100 simulated genes (MatrixEQTL input format)
+(3) {sim_scenario}_geneloc.txt: location information of the 100 simulated genes (MatrixEQTL input format)\
 
-(4) {sun_scenario}_simulated_expression.txt: gene expression data for the 300 simulated individuals across 100 genes and 50 contexts 
+(4) {sun_scenario}_simulated_expression.txt: gene expression data for the 300 simulated individuals across 100 genes and 50 contexts \
 
 # Running FastGxC
 
@@ -127,6 +127,7 @@ treeQTL_step(
        data_dir,
        snps_location_file_name,
        gene_location_file_name,
+       context_names,
        out_dir
      )
 ```
