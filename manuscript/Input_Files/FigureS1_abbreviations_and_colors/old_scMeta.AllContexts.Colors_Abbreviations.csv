@@ -1,0 +1,10 @@
+tissue,color_hex,abbreviation
+AverageContext,#000000,SHARED
+B,#999999,B
+CD4,#56B4E9,CD4
+CD8,#0072B2,CD8
+cMono,#F0E442,CMONO
+ncMono,#E69F00,NCMONO
+pDC,#D55E00,PDC
+cDC,#CC79A7,CDC
+NK,#009E73,NK
