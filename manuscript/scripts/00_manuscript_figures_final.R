@@ -33,8 +33,10 @@ library(stats)
 library(data.table)
 library(openxlsx)
 library(scales)
+library(mppa)
+library(WriteXLS)
 
-setwd("/u/project/bballiu/bballiu/FastGxC/FastGxC_r_package/manuscript/scripts/")
+setwd("./FastGxC/manuscript/scripts/")
 setwd("../Figures/")
 source(file = '../scripts/00_functions.R')
 
@@ -959,7 +961,7 @@ if(1){
 }
 
 ################################################################
-################## Figure 3 with eGenes ########################
+################## Figure 3 with eGenes and supp Fig 16 ########
 ################################################################
 
 if(1){
@@ -968,13 +970,13 @@ if(1){
   if(1){
     
     ## create eGene input file
-    if(0){
-      egenes_gtex = read_csv("/u/project/bballiu/bballiu/FastGxC/FastGxC_Manuscript/results/eGenes.v8.EUR.all_tissues.residualized_exp_types.txt") %>%
+    if(1){
+      egenes_gtex = read_csv("../Input_Files/Figure3_Performance/eGenes.v8.EUR.all_tissues.residualized_exp_types.txt") %>%
         mutate(exp_type = case_when(exp_type == "normalized_and_residualized_expression" ~ "CxC",
                                     exp_type == "normalized_and_residualized_expression_heterogeneous" ~ "Specific",
                                     exp_type == "normalized_and_residualized_expression_homogeneous" ~ "Shared",
                                     TRUE ~ exp_type)) %>% mutate(cohort = "GTEx")
-      egenes_sc = read_csv("/u/project/bballiu/bballiu/FastGxC/FastGxC_Manuscript/results/eGenes.scMeta.all_contexts.residualized_exp_types.txt") %>%
+      egenes_sc = read_csv("../Input_Files/Figure3_Performance/eGenes.scMeta.all_contexts.residualized_exp_types.txt") %>%
         mutate(exp_type = case_when(exp_type == "mean_norm_res_exp" ~ "CxC",
                                     exp_type == "mean_norm_res_exp.specific" ~ "Specific",
                                     exp_type == "mean_norm_res_exp.shared" ~ "Shared",
@@ -1034,11 +1036,11 @@ if(1){
   # 3B 
   # make input data Bulk: DONE
   if(1){
-    if(0){
-      eGenes = read_csv("/u/project/bballiu/bballiu/FastGxC/FastGxC_Manuscript/manuscript/Input_Files/Figure3_GTEx_Performance//u/project/bballiu/bballiu/FastGxC/FastGxC_Manuscript/results/eGenes.v8.EUR.all_tissues.residualized_exp_types.txt")
+    if(1){
+      eGenes = read_csv("../Input_Files/Figure3_Performance/eGenes.v8.EUR.all_tissues.residualized_exp_types.txt")
       eGenes_counted = eGenes %>% group_by(exp_type, tissue) %>% summarize(n_egenes = n(), .groups = "drop")
       
-      fastgxe_tissue_nsamples = read_csv("data/GTEx_v8/GTEx_v8_NSamples_by_Tissue_and_Method.csv") %>% 
+      fastgxe_tissue_nsamples = read_csv("../Input_Files/Figure3_Performance/GTEx_v8_NSamples_by_Tissue_and_Method.csv") %>% 
         filter(method != ".v8.EUR.normalized_and_residualized_expression") %>% 
         dplyr::select(tissue, n_samples)
       
@@ -1052,17 +1054,17 @@ if(1){
         left_join(fastgxe_tissue_nsamples, by=c("tissue")) %>% 
         mutate(is_avg = case_when(tissue == "AverageTissue" ~ "Shared", T ~ "Tissue-Specific"))
       
-      fastgxe_eGenes_counted %>% write_csv("manuscript/Input_Files/Figure3_GTEx_Performance/figure3B_GTEx_eGenes_data.csv")
+      fastgxe_eGenes_counted %>% write_csv("../Input_Files/Figure3_Performance/figure3B_GTEx_eGenes_data.csv")
     }
     
     ## make input file single cell with number of cells: DONE
     if(0){
-      sc_eGenes = read_csv("/u/project/bballiu/bballiu/FastGxC/FastGxC_Manuscript/results/eGenes.scMeta.all_contexts.residualized_exp_types.txt", col_types = cols(.default = col_character()))
+      sc_eGenes = read_csv("../Input_Files/Figure3_Performance/eGenes.scMeta.all_contexts.residualized_exp_types.txt", col_types = cols(.default = col_character()))
       sc_eGenes_counted = sc_eGenes %>% 
         group_by(exp_type, tissue) %>% 
         summarize(n_egenes = n(), .groups="drop")
       
-      fastgxe_sc_tissue_ncells = read_csv("data/CLUES_OneK1K/CLUES_OneK1K_NCells_by_Context.csv")
+      fastgxe_sc_tissue_ncells = read_csv("../Input_Files/Figure3_Performance/CLUES_OneK1K_NCells_by_Context.csv")
       
       fastgxe_sceGenes_counted = sc_eGenes_counted %>% 
         mutate(exp_type = case_when(exp_type == "mean_norm_res_exp" ~ "tbt",
@@ -1074,12 +1076,12 @@ if(1){
         merge(fastgxe_sc_tissue_ncells, by.x=c("tissue"), by.y = "final_celltypes") %>% 
         mutate(is_avg = case_when(tissue == "AverageContext" ~ "Shared", T ~ "Tissue-Specific"))
       
-      fastgxe_sceGenes_counted %>% write_csv("manuscript/Input_Files/Figure3_sc_Performance/figure3B_sc_eGenes_data.csv")
+      fastgxe_sceGenes_counted %>% write_csv("../Input_Files/Figure3_Performance/figure3B_sc_eGenes_data.csv")
     }
   }
   
-  fastgxe_eGenes_counted = read_csv("../../manuscript/Input_Files/Figure3_GTEx_Performance/figure3B_GTEx_eGenes_data.csv")
-  fastgxe_sceGenes_counted = read_csv("../../manuscript/Input_Files/Figure3_sc_Performance/figure3B_sc_eGenes_data.csv")
+  fastgxe_eGenes_counted = read_csv("../Input_Files/Figure3_Performance/figure3B_GTEx_eGenes_data.csv")
+  fastgxe_sceGenes_counted = read_csv("../../manuscript/Input_Files/Figure3_Performance/figure3B_sc_eGenes_data.csv")
   fastgxe_eGenes_counted$group = "Tissues"
   fastgxe_sceGenes_counted$group = "PBMC"
   
@@ -1111,18 +1113,18 @@ if(1){
           summarize(n_egenes = n(), .groups="drop") %>% 
           dplyr::select(n_tissues, n_egenes)
         
-        counted2 %>% write_csv("manuscript/input_files/Figure3_GTEx_Performance/figure3C_n_tissues_eGenes_data.csv")
+        counted2 %>% write_csv("manuscript/input_files/Figure3_Performance/figure3C_n_tissues_eGenes_data.csv")
         
         bind_rows(
           counted2 %>% filter(n_tissues<=19) %>% mutate(n_tissues=as.character(n_tissues)),
           tribble(~n_tissues, ~n_egenes, ">=20", counted2 %>% filter(n_tissues>=20) %>% pull(n_egenes) %>% sum())
-        ) %>% write_csv("manuscript/input_files/Figure3_GTEx_Performance/figure3C_n_tissues_eGenes_data.csv")
+        ) %>% write_csv("manuscript/input_files/Figure3_Performance/figure3C_n_tissues_eGenes_data.csv")
         
       }
       
       # make input file single cell: DONE
-      if(0){
-        sc_eGenes = read_csv("/u/project/bballiu/bballiu/FastGxC/FastGxC_Manuscript/results/eGenes.scMeta.all_contexts.residualized_exp_types.txt", col_types = cols(.default = col_character()))
+      if(1){
+        sc_eGenes = read_csv("../Input_Files/Figure3_Performance/eGenes.scMeta.all_contexts.residualized_exp_types.txt", col_types = cols(.default = col_character()))
         
         sc_eGenes_tissues_counted = sc_eGenes %>% filter(exp_type == "mean_norm_res_exp.specific") %>%
           mutate(exp_type = case_when(exp_type == "mean_norm_res_exp" ~ "tbt",
@@ -1141,7 +1143,7 @@ if(1){
           summarize(n_egenes = n(), .groups="drop") %>% 
           dplyr::select(n_tissues, n_egenes)
         
-        counted2 %>% write_csv("manuscript/input_files/Figure3_sc_Performance/figure3C_sc_n_tissues_eGenes_data.csv")
+        counted2 %>% write_csv("../Input_Files/Figure3_Performance/figure3C_sc_n_tissues_eGenes_data.csv")
         
         #bind_rows(
         #  counted2 %>% filter(n_tissues<=4) %>% mutate(n_tissues=as.character(n_tissues)),
@@ -1152,10 +1154,10 @@ if(1){
       
       
       fig3C_hist_bulk_df = bind_rows(
-        read_csv("../../manuscript/Input_Files/Figure3_GTEx_Performance/figure3C_n_tissues_eGenes_data.csv", col_types = cols()) %>% 
+        read_csv("../Input_Files/Figure3_Performance/figure3C_n_tissues_eGenes_data.csv", col_types = cols()) %>% 
           filter(n_tissues %in% seq(1,9)),
         tribble(~n_tissues, ~n_egenes,
-                ">=10", read_csv("../../manuscript/Input_Files/Figure3_GTEx_Performance/figure3C_n_tissues_eGenes_data.csv", col_types = cols()) %>% 
+                ">=10", read_csv("../Input_Files/Figure3_Performance/figure3C_n_tissues_eGenes_data.csv", col_types = cols()) %>% 
                   filter(!n_tissues %in% seq(1,9)) %>% pull(n_egenes) %>% sum())
       ) %>% 
         mutate(n_tissues = fct_relevel(n_tissues,c(as.character(seq(1,9)),">=10"))) %>% 
@@ -1164,7 +1166,7 @@ if(1){
         mutate(group = "Tissues") 
       
       
-      fig3C_hist_sc_df = read_csv("../../manuscript/Input_Files/Figure3_sc_Performance/figure3C_sc_n_tissues_eGenes_data.csv", col_types = cols()) %>%
+      fig3C_hist_sc_df = read_csv("../../manuscript/Input_Files/Figure3_Performance/figure3C_sc_n_tissues_eGenes_data.csv", col_types = cols()) %>%
         mutate(n_tissues = as.character(n_tissues)) %>% mutate(n_tissues = fct_relevel(n_tissues,c(as.character(seq(1,8))))) %>%
         # read_csv("manuscript/input_files/Figure3_GTEx_Performance/figure3C_n_tissues_data.csv", col_types = cols()) %>% 
         # mutate(n_tissues = fct_relevel(n_tissues,c(as.character(seq(1,19)),">=20"))) 
@@ -1196,7 +1198,7 @@ if(1){
       
       # make input file Bulk: 
       if(0){
-        eGenes = read_csv("/u/project/bballiu/bballiu/FastGxC/FastGxC_Manuscript/results/eGenes.v8.EUR.all_tissues.residualized_exp_types.txt")
+        eGenes = read_csv("../Input_Files/Figure3_Performance/eGenes.v8.EUR.all_tissues.residualized_exp_types.txt")
         
         eGenes_single_tis_counted = eGenes %>% 
           filter(exp_type == "normalized_and_residualized_expression_heterogeneous" ) %>% 
@@ -1214,7 +1216,7 @@ if(1){
           dplyr::select(tissue, n_egenes)
         
         eGenes_single_tis_counted %>% 
-          write_csv("manuscript/input_files/Figure3_GTEx_Performance/figure3C_single_tissue_eGenes_data.csv") 
+          write_csv("../Input_Files/Figure3_Performance/figure3C_single_tissue_eGenes_data.csv") 
         
       }
       
@@ -1238,15 +1240,15 @@ if(1){
           dplyr::select(tissue, n_egenes)
         
         eGenes_single_tis_counted %>% 
-          write_csv("manuscript/input_files/Figure3_sc_Performance/figure3C_sc_single_tissue_eGenes_data.csv") 
+          write_csv("../Input_Files/Figure3_Performance/figure3C_sc_single_tissue_eGenes_data.csv") 
         
       }
       
-      fig3C_bulk_df = read_csv("manuscript/input_files/Figure3_GTEx_Performance/figure3C_single_tissue_eGenes_data.csv", col_types=cols()) %>% 
+      fig3C_bulk_df = read_csv("../Input_Files/Figure3_Performance/figure3C_single_tissue_eGenes_data.csv", col_types=cols()) %>% 
         filter(tissue!="AverageTissue") %>% 
         dplyr::select(tissue, n_egenes) %>% mutate(group = "Tissues") 
       
-      fig3C_sc_df = read_csv("manuscript/input_files/Figure3_sc_Performance/figure3C_sc_single_tissue_eGenes_data.csv", col_types=cols()) %>% 
+      fig3C_sc_df = read_csv("../Input_Files/Figure3_Performance/figure3C_sc_single_tissue_eGenes_data.csv", col_types=cols()) %>% 
         filter(tissue!="AverageContext") %>% 
         dplyr::select(tissue, n_egenes) %>% mutate(group = "PBMC") 
       
@@ -1349,13 +1351,146 @@ if(1){
            height = 20, width = 22, units="in")
     
   }
+  
+  #### Figure S15: sample size with number of eGenes
+  #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  if(1){
+    shared_only_gtex = 6749
+    shared_only_sc = 1644
+    fastgxe_sc_tissue_ncells = read_csv("../Input_Files/Figure3_Performance/CLUES_OneK1K_NCells_by_Context.csv")
+    eGenes_samp_size_bulk = all_egenes %>% mutate(cohort = case_when(cohort == "GTEx" ~ "Tissues",
+                                                                     cohort == "SC" ~ "PBMC",
+                                                                     TRUE ~ cohort)) %>% filter(exp_type %in% c("Specific", "CxC")) %>% group_by(cohort, exp_type, tissue) %>% 
+      mutate(exp_type = case_when(exp_type %in% c("Specific", "Shared") ~ "FastGxC",
+                                  TRUE ~ exp_type)) %>%
+      mutate(n = n()) %>% dplyr::select(c("exp_type", "tissue", "cohort", "n")) %>% distinct %>% filter(cohort == "Tissues") %>%
+      merge(fastgxe_tissue_nsamples, by = "tissue") #%>% mutate(n = case_when(exp_type == "FastGxC" ~ n+shared_only_gtex,
+    #                         TRUE ~ n))
+    eGenes_samp_size_bulk = bind_rows(eGenes_samp_size_bulk %>% mutate(facet_lab = 1), fig3C_bulk_df %>% mutate(exp_type = "FastGxC Single Context") %>% 
+                                        rename(cohort = "group") %>% rename(n = n_egenes) %>%
+                                        merge(fastgxe_tissue_nsamples, by = "tissue") %>% mutate(facet_lab = 2))
+    
+    
+    
+    eGenes_samp_size_sc = all_egenes %>% mutate(cohort = case_when(cohort == "GTEx" ~ "Tissues",
+                                                                   cohort == "SC" ~ "PBMC",
+                                                                   TRUE ~ cohort)) %>% filter(exp_type %in% c("Specific", "CxC")) %>% group_by(cohort, exp_type, tissue) %>% 
+      mutate(exp_type = case_when(exp_type %in% c("Specific", "Shared") ~ "FastGxC",
+                                  TRUE ~ exp_type)) %>%
+      mutate(n = n()) %>% dplyr::select(c("exp_type", "tissue", "cohort", "n")) %>% distinct %>% filter(cohort == "PBMC") %>% 
+      merge(fastgxe_sc_tissue_ncells, by.x = "tissue", by.y = "final_celltypes") #%>% mutate(n = case_when(exp_type == "FastGxC" ~ n+shared_only_sc,
+    #                          TRUE ~ n))
+    eGenes_samp_size_sc = bind_rows(eGenes_samp_size_sc %>% mutate(facet_lab = 1), fig3C_sc_df %>% mutate(exp_type = "FastGxC Single Context") %>% 
+                                      rename(cohort = "group") %>% rename(n = n_egenes) %>%
+                                      merge(fastgxe_sc_tissue_ncells, by.x = "tissue", by.y = "final_celltypes") %>% mutate(facet_lab = 2))
+    
+    
+    samp_size_bulk = ggplot(eGenes_samp_size_bulk, aes(x = n_samples, y = n, color = exp_type, alpha = exp_type))+
+      geom_point(size = 5) + scale_color_manual(values = c("CxC" = "#c87e7e","FastGxC" = "#56A3E9", 'FastGxC Single Context' = "#56A3E9")) +
+      scale_alpha_manual(values = c(1,0.3, 1))+
+      geom_smooth(method='lm', se=FALSE, linewidth = 3) + 
+      guides(color = guide_legend("exp_type"),
+             alpha = guide_legend("exp_type"))+
+      theme_bw() +
+      #scale_y_continuous(labels = scientific_10)+
+      #scale_x_continuous(labels = scientific_10)+
+      facet_grid(facet_lab~cohort, scales = "free")+
+      theme(
+        strip.text.x = element_text(size = 30, face = "bold"),
+        strip.text.y = element_blank(),
+        #legend.position=c(0.7,0.95),
+        legend.box = 'horizontal',
+        # legend.position=c(0.75,0.99),
+        legend.position="top",
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        # panel.background = element_blank(),
+        # panel.border = element_blank(),
+        #axis.title.x = element_blank(),
+        #axis.title.y=element_blank(),
+        #axis.text.y=element_blank(),
+        #axis.ticks.y=element_blank(),
+        axis.line = element_line(colour = "black"),
+        axis.title = element_text(face = "bold", size=25,color="black"),
+        axis.text = element_text(size=20,color="black"),
+        plot.title = element_text(hjust = 0.5,size=15),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        legend.title=element_blank(),
+        legend.text=element_text(size=25))+
+      xlab("Number of samples") + ylab("Number of eGenes")+
+      geom_abline(slope=1, intercept = 0)
+    
+    cell_num_sc = ggplot(eGenes_samp_size_sc, aes(x = log10(num_cells), y = n, color = exp_type, alpha = exp_type))+
+      geom_point(size = 5) + scale_color_manual(values = c("CxC" = "#c87e7e","FastGxC" = "#56A3E9", 'FastGxC Single Context' = "#56A3E9")) +
+      scale_alpha_manual(values = c(1,0.3, 1))+
+      geom_smooth(method='lm', se=FALSE, linewidth = 3) + 
+      #scale_x_continuous(breaks = seq(0,960000, by = 160000), labels = (seq(0,960000, by = 160000)))+
+      #scale_y_continuous(labels = scientific_10)+
+      theme_bw() +
+      facet_grid(facet_lab~cohort, scales = "free")+
+      theme(
+        strip.text.x = element_text(size = 30, face = "bold"),
+        strip.text.y = element_blank(),
+        legend.box = 'horizontal',
+        # legend.position=c(0.75,0.99),
+        legend.position="top",
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        # panel.background = element_blank(),
+        # panel.border = element_blank(),
+        #axis.title.x = element_blank(),
+        axis.title.y=element_blank(),
+        #axis.text.y=element_blank(),
+        #axis.ticks.y=element_blank(),
+        axis.line = element_line(colour = "black"),
+        axis.title = element_text(face = "bold", size=25,color="black"),
+        axis.text = element_text(size=20,color="black"),
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        plot.title = element_text(hjust = 0.5,size=15),
+        legend.title=element_blank(),
+        legend.text=element_text(size=25))+
+      xlab("log10 Number of cells") + ylab("Number of eGenes")+
+      geom_abline(slope=1, intercept = 0)
+    
+    
+    legend = get_legend(samp_size_bulk + theme(legend.position = "top"))
+    supp_fig5 = plot_grid(legend, plot_grid(
+      samp_size_bulk + theme(legend.position = "none"), cell_num_sc + theme(legend.position = "none"),
+      rel_widths = c(1.2, 1)
+    ), ncol = 1, rel_heights = c(1,12))
+    
+    ggsave(plot = supp_fig5,
+           filename = 'FigureS15_samp_size.jpg', 
+           width = 12,
+           height = 6)
+    
+    ################ get metrics for paper (correlations)
+    ## fastgxc correlations 
+    tiss_samp_size = eGenes_samp_size_bulk %>% filter(exp_type == "FastGxC") %>% dplyr::select(n_samples)
+    fastgxc_egenes = eGenes_samp_size_bulk %>% filter(exp_type == "FastGxC") %>% dplyr::select(n)
+    fastgxc_singTiss_egenes = eGenes_samp_size_bulk %>% filter(exp_type == "FastGxC Single Context") %>% dplyr::select(n)
+    cxc_egenes = eGenes_samp_size_bulk %>% filter(exp_type == "CxC") %>% dplyr::select(n)
+    fastgxc_bulk_cor = cor(tiss_samp_size$n_samples, fastgxc_egenes$n, method = "spearman")
+    cxc_bulk_cor = cor(tiss_samp_size$n_samples, cxc_egenes$n, method = "spearman")
+    singTiss_bulk_cor = cor(tiss_samp_size$n_samples, fastgxc_singTiss_egenes$n, method = "spearman")
+    
+    num_cells = eGenes_samp_size_sc %>% filter(exp_type == "FastGxC") %>% dplyr::select(num_cells)
+    fastgxc_egenes = eGenes_samp_size_sc %>% filter(exp_type == "FastGxC") %>% dplyr::select(n)
+    fastgxc_singTiss_egenes = eGenes_samp_size_sc %>% filter(exp_type == "FastGxC Single Context") %>% dplyr::select(n)
+    cxc_egenes = eGenes_samp_size_sc %>% filter(exp_type == "CxC") %>% dplyr::select(n)
+    fastgxc_sc_cor = cor(num_cells$num_cells, fastgxc_egenes$n, method = "spearman")
+    cxc_sc_cor = cor(num_cells$num_cells, cxc_egenes$n, method = "spearman")
+    singTiss_sc_cor = cor(num_cells$num_cells, fastgxc_singTiss_egenes$n, method = "spearman")
+    
+    ### test for difference in correlation for paper ####
+  }
 }
 
 #### Figure S14: FastGxC and CxC comparison
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if(1){
   ### single cell
-  egenes_sc = read_csv("/u/project/bballiu/bballiu/FastGxC/FastGxC_Manuscript/results/eGenes.scMeta.all_contexts.residualized_exp_types.txt") %>%
+  egenes_sc = read_csv("../Input_Files/Figure3_Performance/eGenes.scMeta.all_contexts.residualized_exp_types.txt") %>%
     mutate(exp_type = case_when(exp_type == "mean_norm_res_exp" ~ "CxC",
                                 exp_type == "mean_norm_res_exp.specific" ~ "FastGxC",
                                 exp_type == "mean_norm_res_exp.shared" ~ "FastGxC",
@@ -1367,30 +1502,38 @@ if(1){
                                                                                 TRUE ~ NA_character_)) %>% distinct %>% 
     filter(group %in% c("FastGxC only", "CxC only")) %>% group_by(group) %>% mutate(value = n()) %>% dplyr::select(c("group", "value")) %>% distinct %>% mutate(cohort = "eGenes")
   
-  eqtls_sc = read_csv("/u/project/bballiu/bballiu/FastGxC/FastGxC_Manuscript/results/eAssociations.scMeta.all_contexts.residualized_exp_types.txt") %>%
-    mutate(exp_type = case_when(exp_type == "mean_norm_res_exp" ~ "CxC",
-                                exp_type == "mean_norm_res_exp_homogeneous" ~ "FastGxC",
-                                exp_type == "mean_norm_res_exp.heterogeneous" ~ "FastGxC",
-                                TRUE ~ exp_type)) %>% mutate(cohort = "SC")
+  ## eAssociations file too large to be saved on Github - only run once this takes a while
+  if(0){
+    eqtls_sc = read_csv("../../data/eAssociations.scMeta.all_contexts.residualized_exp_types.txt") %>%
+      mutate(exp_type = case_when(exp_type == "mean_norm_res_exp" ~ "CxC",
+                                  exp_type == "mean_norm_res_exp_homogeneous" ~ "FastGxC",
+                                  exp_type == "mean_norm_res_exp.heterogeneous" ~ "FastGxC",
+                                  TRUE ~ exp_type)) %>% mutate(cohort = "SC")
+    
+    eqtls_counted = eqtls_sc %>% group_by(snp, gene) %>% summarize(n_exp_types = n_distinct(exp_type), 
+                                                                   group = case_when(n_distinct(exp_type) == 2 ~ "both",
+                                                                                     n_distinct(exp_type) == 1 & unique(exp_type) == "FastGxC" ~ "FastGxC only",
+                                                                                     n_distinct(exp_type) == 1 & unique(exp_type) == "CxC" ~ "CxC only",
+                                                                                     TRUE ~ NA_character_)) %>% distinct %>% 
+      filter(group %in% c("FastGxC only", "CxC only")) %>% group_by(group) %>% mutate(value = n()) %>% dplyr::select(c("group", "value")) %>% distinct %>% mutate(cohort = "eQTLs")
+    
+    esnps_counted = eqtls_sc %>% group_by(snp) %>% summarize(n_exp_types = n_distinct(exp_type), 
+                                                             group = case_when(n_distinct(exp_type) == 2 ~ "both",
+                                                                               n_distinct(exp_type) == 1 & unique(exp_type) == "FastGxC" ~ "FastGxC only",
+                                                                               n_distinct(exp_type) == 1 & unique(exp_type) == "CxC" ~ "CxC only",
+                                                                               TRUE ~ NA_character_)) %>% distinct %>% 
+      filter(group %in% c("FastGxC only", "CxC only")) %>% group_by(group) %>% mutate(value = n()) %>% dplyr::select(c("group", "value")) %>% distinct %>% mutate(cohort = "eSNPs") %>%
+      mutate(group = factor(group, levels = c("FastGxC only", "CxC only")))
+    fwrite(eqtls_counted, file = "../Input_Files/Figure3_Performance/eqtls_sc_counted.csv", sep = ",")
+    fwrite(esnps_counted, file = "../Input_Files/Figure3_Performance/esnps_sc_counted.csv", sep = ",")
+  }
+  eqtls_counted = fread("../Input_Files/Figure3_Performance/eqtls_sc_counted.csv", sep = ",", data.table = F)
+  esnps_counted = fread("../Input_Files/Figure3_Performance/esnps_sc_counted.csv", sep = ",", data.table = F)
   
-  eqtls_counted = eqtls_sc %>% group_by(snp, gene) %>% summarize(n_exp_types = n_distinct(exp_type), 
-                                                                 group = case_when(n_distinct(exp_type) == 2 ~ "both",
-                                                                                   n_distinct(exp_type) == 1 & unique(exp_type) == "FastGxC" ~ "FastGxC only",
-                                                                                   n_distinct(exp_type) == 1 & unique(exp_type) == "CxC" ~ "CxC only",
-                                                                                   TRUE ~ NA_character_)) %>% distinct %>% 
-    filter(group %in% c("FastGxC only", "CxC only")) %>% group_by(group) %>% mutate(value = n()) %>% dplyr::select(c("group", "value")) %>% distinct %>% mutate(cohort = "eQTLs")
-  
-  esnps_counted = eqtls_sc %>% group_by(snp) %>% summarize(n_exp_types = n_distinct(exp_type), 
-                                                           group = case_when(n_distinct(exp_type) == 2 ~ "both",
-                                                                             n_distinct(exp_type) == 1 & unique(exp_type) == "FastGxC" ~ "FastGxC only",
-                                                                             n_distinct(exp_type) == 1 & unique(exp_type) == "CxC" ~ "CxC only",
-                                                                             TRUE ~ NA_character_)) %>% distinct %>% 
-    filter(group %in% c("FastGxC only", "CxC only")) %>% group_by(group) %>% mutate(value = n()) %>% dplyr::select(c("group", "value")) %>% distinct %>% mutate(cohort = "eSNPs") %>%
-    mutate(group = factor(group, levels = c("FastGxC only", "CxC only")))
   
   #### bulk
   
-  egenes_bulk = read_csv("/u/project/bballiu/bballiu/FastGxC/FastGxC_Manuscript/results/eGenes.v8.EUR.all_tissues.residualized_exp_types.txt") %>%
+  egenes_bulk = read_csv("../Input_Files/Figure3_Performance/eGenes.v8.EUR.all_tissues.residualized_exp_types.txt") %>%
     mutate(exp_type = case_when(exp_type == "normalized_and_residualized_expression" ~ "CxC",
                                 exp_type == "normalized_and_residualized_expression_heterogeneous" ~ "FastGxC",
                                 exp_type == "normalized_and_residualized_expression_homogeneous" ~ "FastGxC",
@@ -1402,26 +1545,33 @@ if(1){
                                                                                        TRUE ~ NA_character_)) %>% distinct %>% 
     filter(group %in% c("FastGxC only", "CxC only")) %>% group_by(group) %>% mutate(value = n()) %>% dplyr::select(c("group", "value")) %>% distinct %>% mutate(cohort = "eGenes")
   
-  eqtls_bulk = read_csv("/u/project/bballiu/bballiu/FastGxC/FastGxC_Manuscript/results/eAssociations.v8.EUR.all_tissues.residualized_exp_types.all_stats.txt") %>%
-    mutate(exp_type = case_when(exp_type == "normalized_and_residualized_expression" ~ "CxC",
-                                exp_type == "normalized_and_residualized_expression_homogeneous" ~ "FastGxC",
-                                exp_type == "normalized_and_residualized_expression_heterogeneous" ~ "FastGxC",
-                                TRUE ~ exp_type)) %>% mutate(cohort = "GTEx")
-  
-  eqtls_counted_bulk = eqtls_bulk %>% group_by(snp, gene_ensembl) %>% summarize(n_exp_types = n_distinct(exp_type), 
-                                                                                group = case_when(n_distinct(exp_type) == 2 ~ "both",
-                                                                                                  n_distinct(exp_type) == 1 & unique(exp_type) == "FastGxC" ~ "FastGxC only",
-                                                                                                  n_distinct(exp_type) == 1 & unique(exp_type) == "CxC" ~ "CxC only",
-                                                                                                  TRUE ~ NA_character_)) %>% distinct %>% 
-    filter(group %in% c("FastGxC only", "CxC only")) %>% group_by(group) %>% mutate(value = n()) %>% dplyr::select(c("group", "value")) %>% distinct %>% mutate(cohort = "eQTLs")
-  
-  esnps_counted_bulk = eqtls_bulk %>% group_by(snp) %>% summarize(n_exp_types = n_distinct(exp_type), 
-                                                                  group = case_when(n_distinct(exp_type) == 2 ~ "both",
-                                                                                    n_distinct(exp_type) == 1 & unique(exp_type) == "FastGxC" ~ "FastGxC only",
-                                                                                    n_distinct(exp_type) == 1 & unique(exp_type) == "CxC" ~ "CxC only",
-                                                                                    TRUE ~ NA_character_)) %>% distinct %>% 
-    filter(group %in% c("FastGxC only", "CxC only")) %>% group_by(group) %>% mutate(value = n()) %>% dplyr::select(c("group", "value")) %>% distinct %>% mutate(cohort = "eSNPs") %>%
-    mutate(group = factor(group, levels = c("FastGxC only", "CxC only")))
+  ## eAssociations file too large to be saved on Github - only run once this takes a while
+  if(0){
+    eqtls_bulk = read_csv("../../data/eAssociations.v8.EUR.all_tissues.residualized_exp_types.all_stats.txt") %>%
+      mutate(exp_type = case_when(exp_type == "normalized_and_residualized_expression" ~ "CxC",
+                                  exp_type == "normalized_and_residualized_expression_homogeneous" ~ "FastGxC",
+                                  exp_type == "normalized_and_residualized_expression_heterogeneous" ~ "FastGxC",
+                                  TRUE ~ exp_type)) %>% mutate(cohort = "GTEx")
+    
+    eqtls_counted_bulk = eqtls_bulk %>% group_by(snp, gene_ensembl) %>% summarize(n_exp_types = n_distinct(exp_type), 
+                                                                                  group = case_when(n_distinct(exp_type) == 2 ~ "both",
+                                                                                                    n_distinct(exp_type) == 1 & unique(exp_type) == "FastGxC" ~ "FastGxC only",
+                                                                                                    n_distinct(exp_type) == 1 & unique(exp_type) == "CxC" ~ "CxC only",
+                                                                                                    TRUE ~ NA_character_)) %>% distinct %>% 
+      filter(group %in% c("FastGxC only", "CxC only")) %>% group_by(group) %>% mutate(value = n()) %>% dplyr::select(c("group", "value")) %>% distinct %>% mutate(cohort = "eQTLs")
+    
+    esnps_counted_bulk = eqtls_bulk %>% group_by(snp) %>% summarize(n_exp_types = n_distinct(exp_type), 
+                                                                    group = case_when(n_distinct(exp_type) == 2 ~ "both",
+                                                                                      n_distinct(exp_type) == 1 & unique(exp_type) == "FastGxC" ~ "FastGxC only",
+                                                                                      n_distinct(exp_type) == 1 & unique(exp_type) == "CxC" ~ "CxC only",
+                                                                                      TRUE ~ NA_character_)) %>% distinct %>% 
+      filter(group %in% c("FastGxC only", "CxC only")) %>% group_by(group) %>% mutate(value = n()) %>% dplyr::select(c("group", "value")) %>% distinct %>% mutate(cohort = "eSNPs") %>%
+      mutate(group = factor(group, levels = c("FastGxC only", "CxC only")))
+    fwrite(eqtls_counted_bulk, file = "../Input_Files/Figure3_Performance/eqtls_bulk_counted.csv", sep = ",")
+    fwrite(esnps_counted_bulk, file = "../Input_Files/Figure3_Performance/esnps_bulk_counted.csv", sep = ",")
+  }
+  eqtls_counted_bulk = fread("../Input_Files/Figure3_Performance/eqtls_sc_counted.csv", sep = ",", data.table = F)
+  esnps_counted_bulk = fread("../Input_Files/Figure3_Performance/esnps_sc_counted.csv", sep = ",", data.table = F)
   
   
   
@@ -1512,138 +1662,6 @@ if(1){
   
 }
 
-#### Figure S15: sample size with number of eGenes
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if(1){
-  shared_only_gtex = 6749
-  shared_only_sc = 1644
-  eGenes_samp_size_bulk = all_egenes %>% mutate(cohort = case_when(cohort == "GTEx" ~ "Tissues",
-                                                                   cohort == "SC" ~ "PBMC",
-                                                                   TRUE ~ cohort)) %>% filter(exp_type %in% c("Specific", "CxC")) %>% group_by(cohort, exp_type, tissue) %>% 
-    mutate(exp_type = case_when(exp_type %in% c("Specific", "Shared") ~ "FastGxC",
-                                TRUE ~ exp_type)) %>%
-    mutate(n = n()) %>% dplyr::select(c("exp_type", "tissue", "cohort", "n")) %>% distinct %>% filter(cohort == "Tissues") %>%
-    merge(fastgxe_tissue_nsamples, by = "tissue") #%>% mutate(n = case_when(exp_type == "FastGxC" ~ n+shared_only_gtex,
-  #                         TRUE ~ n))
-  eGenes_samp_size_bulk = bind_rows(eGenes_samp_size_bulk %>% mutate(facet_lab = 1), fig3C_bulk_df %>% mutate(exp_type = "FastGxC Single Context") %>% 
-                                      rename(cohort = "group") %>% rename(n = n_egenes) %>%
-                                      merge(fastgxe_tissue_nsamples, by = "tissue") %>% mutate(facet_lab = 2))
-  
-  
-  
-  eGenes_samp_size_sc = all_egenes %>% mutate(cohort = case_when(cohort == "GTEx" ~ "Tissues",
-                                                                 cohort == "SC" ~ "PBMC",
-                                                                 TRUE ~ cohort)) %>% filter(exp_type %in% c("Specific", "CxC")) %>% group_by(cohort, exp_type, tissue) %>% 
-    mutate(exp_type = case_when(exp_type %in% c("Specific", "Shared") ~ "FastGxC",
-                                TRUE ~ exp_type)) %>%
-    mutate(n = n()) %>% dplyr::select(c("exp_type", "tissue", "cohort", "n")) %>% distinct %>% filter(cohort == "PBMC") %>% 
-    merge(fastgxe_sc_tissue_ncells, by.x = "tissue", by.y = "final_celltypes") #%>% mutate(n = case_when(exp_type == "FastGxC" ~ n+shared_only_sc,
-  #                          TRUE ~ n))
-  eGenes_samp_size_sc = bind_rows(eGenes_samp_size_sc %>% mutate(facet_lab = 1), fig3C_sc_df %>% mutate(exp_type = "FastGxC Single Context") %>% 
-                                    rename(cohort = "group") %>% rename(n = n_egenes) %>%
-                                    merge(fastgxe_sc_tissue_ncells, by.x = "tissue", by.y = "final_celltypes") %>% mutate(facet_lab = 2))
-  
-  
-  samp_size_bulk = ggplot(eGenes_samp_size_bulk, aes(x = n_samples, y = n, color = exp_type, alpha = exp_type))+
-    geom_point(size = 5) + scale_color_manual(values = c("CxC" = "#c87e7e","FastGxC" = "#56A3E9", 'FastGxC Single Context' = "#56A3E9")) +
-    scale_alpha_manual(values = c(1,0.3, 1))+
-    geom_smooth(method='lm', se=FALSE, linewidth = 3) + 
-    guides(color = guide_legend("exp_type"),
-           alpha = guide_legend("exp_type"))+
-    theme_bw() +
-    #scale_y_continuous(labels = scientific_10)+
-    #scale_x_continuous(labels = scientific_10)+
-    facet_grid(facet_lab~cohort, scales = "free")+
-    theme(
-      strip.text.x = element_text(size = 30, face = "bold"),
-      strip.text.y = element_blank(),
-      #legend.position=c(0.7,0.95),
-      legend.box = 'horizontal',
-      # legend.position=c(0.75,0.99),
-      legend.position="top",
-      panel.grid.major = element_blank(),
-      panel.grid.minor = element_blank(),
-      # panel.background = element_blank(),
-      # panel.border = element_blank(),
-      #axis.title.x = element_blank(),
-      #axis.title.y=element_blank(),
-      #axis.text.y=element_blank(),
-      #axis.ticks.y=element_blank(),
-      axis.line = element_line(colour = "black"),
-      axis.title = element_text(face = "bold", size=25,color="black"),
-      axis.text = element_text(size=20,color="black"),
-      plot.title = element_text(hjust = 0.5,size=15),
-      axis.text.x = element_text(angle = 45, hjust = 1),
-      legend.title=element_blank(),
-      legend.text=element_text(size=25))+
-    xlab("Number of samples") + ylab("Number of eGenes")+
-    geom_abline(slope=1, intercept = 0)
-  
-  cell_num_sc = ggplot(eGenes_samp_size_sc, aes(x = log10(num_cells), y = n, color = exp_type, alpha = exp_type))+
-    geom_point(size = 5) + scale_color_manual(values = c("CxC" = "#c87e7e","FastGxC" = "#56A3E9", 'FastGxC Single Context' = "#56A3E9")) +
-    scale_alpha_manual(values = c(1,0.3, 1))+
-    geom_smooth(method='lm', se=FALSE, linewidth = 3) + 
-    #scale_x_continuous(breaks = seq(0,960000, by = 160000), labels = (seq(0,960000, by = 160000)))+
-    #scale_y_continuous(labels = scientific_10)+
-    theme_bw() +
-    facet_grid(facet_lab~cohort, scales = "free")+
-    theme(
-      strip.text.x = element_text(size = 30, face = "bold"),
-      strip.text.y = element_blank(),
-      legend.box = 'horizontal',
-      # legend.position=c(0.75,0.99),
-      legend.position="top",
-      panel.grid.major = element_blank(),
-      panel.grid.minor = element_blank(),
-      # panel.background = element_blank(),
-      # panel.border = element_blank(),
-      #axis.title.x = element_blank(),
-      axis.title.y=element_blank(),
-      #axis.text.y=element_blank(),
-      #axis.ticks.y=element_blank(),
-      axis.line = element_line(colour = "black"),
-      axis.title = element_text(face = "bold", size=25,color="black"),
-      axis.text = element_text(size=20,color="black"),
-      axis.text.x = element_text(angle = 45, hjust = 1),
-      plot.title = element_text(hjust = 0.5,size=15),
-      legend.title=element_blank(),
-      legend.text=element_text(size=25))+
-    xlab("log10 Number of cells") + ylab("Number of eGenes")+
-    geom_abline(slope=1, intercept = 0)
-  
-  
-  legend = get_legend(samp_size_bulk + theme(legend.position = "top"))
-  supp_fig5 = plot_grid(legend, plot_grid(
-    samp_size_bulk + theme(legend.position = "none"), cell_num_sc + theme(legend.position = "none"),
-    rel_widths = c(1.2, 1)
-  ), ncol = 1, rel_heights = c(1,12))
-  
-  ggsave(plot = supp_fig5,
-         filename = 'FigureS15_samp_size.jpg', 
-         width = 12,
-         height = 6)
-  
-  ################ get metrics for paper (correlations)
-  ## fastgxc correlations 
-  tiss_samp_size = eGenes_samp_size_bulk %>% filter(exp_type == "FastGxC") %>% dplyr::select(n_samples)
-  fastgxc_egenes = eGenes_samp_size_bulk %>% filter(exp_type == "FastGxC") %>% dplyr::select(n)
-  fastgxc_singTiss_egenes = eGenes_samp_size_bulk %>% filter(exp_type == "FastGxC Single Context") %>% dplyr::select(n)
-  cxc_egenes = eGenes_samp_size_bulk %>% filter(exp_type == "CxC") %>% dplyr::select(n)
-  fastgxc_bulk_cor = cor(tiss_samp_size$n_samples, fastgxc_egenes$n, method = "spearman")
-  cxc_bulk_cor = cor(tiss_samp_size$n_samples, cxc_egenes$n, method = "spearman")
-  singTiss_bulk_cor = cor(tiss_samp_size$n_samples, fastgxc_singTiss_egenes$n, method = "spearman")
-  
-  num_cells = eGenes_samp_size_sc %>% filter(exp_type == "FastGxC") %>% dplyr::select(num_cells)
-  fastgxc_egenes = eGenes_samp_size_sc %>% filter(exp_type == "FastGxC") %>% dplyr::select(n)
-  fastgxc_singTiss_egenes = eGenes_samp_size_sc %>% filter(exp_type == "FastGxC Single Context") %>% dplyr::select(n)
-  cxc_egenes = eGenes_samp_size_sc %>% filter(exp_type == "CxC") %>% dplyr::select(n)
-  fastgxc_sc_cor = cor(num_cells$num_cells, fastgxc_egenes$n, method = "spearman")
-  cxc_sc_cor = cor(num_cells$num_cells, cxc_egenes$n, method = "spearman")
-  singTiss_sc_cor = cor(num_cells$num_cells, fastgxc_singTiss_egenes$n, method = "spearman")
-  
-  ### test for difference in correlation for paper ####
-}
-
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 #%%%%%%%%%%%%%%% Figure 4 : Correlation Heatmaps
@@ -1691,10 +1709,10 @@ if(1){
                            annotation_legend = FALSE,      # removes legend for tissue color
                            treeheight_row = 0              # removes dendrogram on one side
       )
-      #ggsave(plot = fig4_heat,
-      #       filename = 'Figure4_Correlation_Heatmap/Figure4_corheatmap_fastgxe.png',
-      #       dpi = 300,
-      #       height = 10, width = 10, units="in")
+      ggsave(plot = fig4_heat,
+             filename = 'Figure4_Correlation_Heatmap/Figure4_corheatmap_fastgxe.png',
+             dpi = 300,
+             height = 10, width = 10, units="in")
       
       #### SINGLE CELL FASTGXC
       # f.matr <- as.matrix(read.table("manuscript/input_files/Figure4_Correlation_Heatmap/fastgxe_hetonly_cor_spearman_sc.txt",header=TRUE,row.names=1,check.names = F))
@@ -1889,7 +1907,7 @@ if(1){
     # fig_6A_left GTEx
     if(1){
       
-      source("../../scripts/geom_stripes.R")
+      source("../scripts/geom_stripes.R")
       
       major_features_bulk = c("promoter","enhancer","promoter_flanking_region","CTCF_binding_site",
                               "TF_binding_site","5_prime_UTR_variant","3_prime_UTR_variant","upstream_gene_variant",
@@ -1901,7 +1919,7 @@ if(1){
                                     "Downstream gene","Missense","Synonymous",
                                     "Intron","NC transcript Exon")
       
-      ag_data = read_csv("../../manuscript/Input_Files/Figure6_Enrichment/Enrichment.Tissue_Agnostic.SNPs_Matched_by_MAF.additional_SNP_sets.VEP_Annotations.FinalFisherResults.csv") %>% 
+      ag_data = read_csv("../Input_Files/Figure6_Enrichment/Enrichment.Tissue_Agnostic.SNPs_Matched_by_MAF.additional_SNP_sets.VEP_Annotations.FinalFisherResults.csv") %>% 
         mutate(set_type = case_when(set %in% c("FastGxE_all","TBT_all") ~ "compare all method results",
                                     set %in% c("FastGxE_only","FastGxE_TBT_intersect","TBT_only") ~ "compare by intersecting methods",
                                     set %in% c("HET_only","HOM_HET_intersect","HOM_only") ~ "compare within FastGxE",
@@ -1931,7 +1949,7 @@ if(1){
     ## Figure 6A single cell
     if(1){
       
-      source("../../scripts/andrew/geom_stripes.R")
+      source("../scripts/geom_stripes.R")
       
       major_features_sc = c("promoter","enhancer","promoter_flanking_region","CTCF_binding_site",
                             "TF_binding_site","5_prime_UTR","3_prime_UTR","upstream_gene",
@@ -1943,7 +1961,7 @@ if(1){
                                   "Downstream gene","Missense","Synonymous",
                                   "Intron","NC transcript Exon")
       
-      ag_data_sc_left = read_csv("../../manuscript/Input_Files/Figure6_Enrichment/Enrichment.Tissue_Agnostic.VEP.fisher_results_fdr_hom_het_only.sc.csv") %>% 
+      ag_data_sc_left = read_csv("../Input_Files/Figure6_Enrichment/Enrichment.Tissue_Agnostic.VEP.fisher_results_fdr_hom_het_only.sc.csv") %>% 
         filter(desc %in% major_features_sc) %>% 
         mutate(desc = case_when(desc == "promoter" ~ "Promoter",
                                 desc == "enhancer" ~ "Enhancer",
@@ -2035,7 +2053,7 @@ if(1){
       #                          "Downstream gene",
       #                          "Intron","NC transcript")
       
-      ag_data = read_csv("../../manuscript/Input_Files/Figure6_Enrichment/Enrichment.Tissue_Agnostic.SNPs_Matched_by_MAF.additional_SNP_sets.VEP_Annotations.FinalFisherResults.csv") %>% 
+      ag_data = read_csv("../Input_Files/Figure6_Enrichment/Enrichment.Tissue_Agnostic.SNPs_Matched_by_MAF.additional_SNP_sets.VEP_Annotations.FinalFisherResults.csv") %>% 
         mutate(set_type = case_when(set %in% c("FastGxE_all","TBT_all") ~ "compare all method results",
                                     set %in% c("FastGxE_only","FastGxE_TBT_intersect","TBT_only") ~ "compare by intersecting methods",
                                     set %in% c("HET_only","HOM_HET_intersect","HOM_only") ~ "compare within FastGxE",
@@ -2066,7 +2084,7 @@ if(1){
                             "downstream_gene","missense","synonymous",
                             "intron","non_coding_transcript_exon")
       
-      ag_data_sc = read_csv("../../manuscript/Input_Files/Figure6_Enrichment/Enrichment.Tissue_Agnostic.VEP.fisher_results_fdr_hom_het_only.sc.csv") %>% 
+      ag_data_sc = read_csv("../Input_Files/Figure6_Enrichment/Enrichment.Tissue_Agnostic.VEP.fisher_results_fdr_hom_het_only.sc.csv") %>% 
         rename(feature = "desc") %>% filter(feature %in% major_features_sc) %>% 
         mutate(feature = case_when(feature == "promoter" ~ "Promoter",
                                    feature == "enhancer" ~ "Enhancer",
@@ -2165,9 +2183,9 @@ if(1){
   # Fig6B: enrichment in ATAC
   if(1){
     
-    atac_intersect_results = read_csv("../../manuscript/Input_Files/Figure6_Enrichment/final_atac_intersect_results.csv")
-    encode_order=read_csv("../../manuscript/Input_Files/Figure6_Enrichment/Heatmap_ENCODE_TissueOrder.csv", col_types = cols()) %>% pull(ENCODE_order)
-    gtex_order=read_csv("../../manuscript/Input_Files/Figure6_Enrichment/Heatmap_GTEx_TissueOrder.csv",  col_types = cols()) %>% pull(GTEx_order)
+    atac_intersect_results = read_csv("../Input_Files/Figure6_Enrichment/final_atac_intersect_results.csv")
+    encode_order=read_csv("../Input_Files/Figure6_Enrichment/Heatmap_ENCODE_TissueOrder.csv", col_types = cols()) %>% pull(ENCODE_order)
+    gtex_order=read_csv("../Input_Files/Figure6_Enrichment/Heatmap_GTEx_TissueOrder.csv",  col_types = cols()) %>% pull(GTEx_order)
     
     atac_dat = atac_intersect_results %>% 
       filter(GTEx_tissue %in% gtex_order, ENCODE_tissue %in% encode_order) %>% 
@@ -2180,7 +2198,7 @@ if(1){
   # Fig6B: enrichment in ATAC single cell
   if(1){
     
-    atac_intersect_results = read_csv("../../manuscript/Input_Files/Figure6_Enrichment/Enrichment.Tissue_Specific.ENCODE_ATAC_Intersect.fisher_results_fdr.sc.csv")
+    atac_intersect_results = read_csv("../Input_Files/Figure6_Enrichment/Enrichment.Tissue_Specific.ENCODE_ATAC_Intersect.fisher_results_fdr.sc.csv")
     atac_order=c("B", "T", "NK", "Mye", "Open")
     sc_order=c("B", "CD4", "CD8", "NK", "cMono", "ncMono", "pDC", "cDC")
     
@@ -2341,7 +2359,7 @@ numerator$n/denominator
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if(1){
   
-  grabbed = read_csv("../../manuscript/Input_Files/Figure5_GTEx_eQTL_Examples/eqtl_examples/combined_grabbed_snp_gene_tissue_eqtl_stats.csv", col_types = cols()) %>% 
+  grabbed = read_csv("../Input_Files/Figure5_GTEx_eQTL_Examples/combined_grabbed_snp_gene_tissue_eqtl_stats.csv", col_types = cols()) %>% 
     mutate(is_shared = if_else(exp_type=="Sh-","shared","not_shared")) %>% 
     mutate(method = case_when(method == "TbT" ~ "CxC",
                               method == "FastGxE" ~ "FastGxC",
@@ -2415,7 +2433,7 @@ if(1){
   )
   
   ## B: LDHC manhattan ----
-  ldhc = read_csv("../../manuscript/Input_Files/Figure5_GTEx_eQTL_Examples/ldhc_manhattan.csv")
+  ldhc = read_csv("../Input_Files/Figure5_GTEx_eQTL_Examples/ldhc_manhattan.csv")
   
   ldhc_final = tissues2plot = c("ADPSBQ", "ADRNLG", "ARTTBL",  "BREAST", "BRNCHA", "CLNSGM", "CLNTRN", "ESPGEJ", "ESPMCS", "ESPMSL", "HRTAA", "HRTLV", "KDNCTX", "LCL", "LIVER", "LUNG", "MSCLSK",  "NERVET", "OVARY", "PNCREAS", "PRSTTE", "PTTARY", "SKINS", "SLVRYG", "SNTTRM", "SPLEEN", "WHLBLD", "TESTIS", "SHARED")
   
@@ -2477,7 +2495,7 @@ if(1){
   ## Data preprocess ----
   if(1){
     #  read enrichment results
-    raw_gwas = read_csv("../../manuscript/Input_Files/Figure7_GWAS/Final_Merged.GWAS_enrichment_results.All_Tissues.SNPs_MAF_matched.with_additional_SNP_sets.FastGxE_TBT.by_mapped_and_parent_gwas_traits.csv", col_types=cols()) %>% 
+    raw_gwas = read_csv("../Input_Files/Figure7_GWAS/Final_Merged.GWAS_enrichment_results.All_Tissues.SNPs_MAF_matched.with_additional_SNP_sets.FastGxE_TBT.by_mapped_and_parent_gwas_traits.csv", col_types=cols()) %>% 
       filter(ct3+ct4>=10) %>% 
       # add HOM to FastGxE and change f_in to "each_tissue"
       mutate(f_in = case_when(met == "HOM" ~ "each_tissue", TRUE ~ f_in)) %>% 
@@ -2543,13 +2561,13 @@ if(1){
     #  grab, clean, and merge my old manual tissue-trait annotations
     relevant_tissues_annot = bind_rows(
       
-      read_csv("../../data/GWAS_Enrichment/082020.known-tissue-trait-associations-table.lu_et_al.csv", col_types = cols()) %>%
+      read_csv("../Input_Files/Figure7_GWAS/082020.known-tissue-trait-associations-table.lu_et_al.csv", col_types = cols()) %>%
         dplyr::select(MAPPED_TRAIT, Annotated_GTEx_Tissues) %>%
         arrange(MAPPED_TRAIT) %>%
         mutate(Annotated_GTEx_Tissues = gsub("[,]",", ",Annotated_GTEx_Tissues)) %>%
         rename(trait = MAPPED_TRAIT, relevant_tissues = Annotated_GTEx_Tissues),
       
-      read_csv("../../data/GWAS_Enrichment/GWAS_cancer_traits_matched.csv", col_types = cols()) %>% 
+      read_csv("../Input_Files/Figure7_GWAS/GWAS_cancer_traits_matched.csv", col_types = cols()) %>% 
         pivot_longer(-cancer_trait, names_to = "tissue_num", values_to = "tissue") %>% 
         filter(!is.na(tissue)) %>% 
         dplyr::select(cancer_trait, tissue) %>% 
@@ -2568,7 +2586,7 @@ if(1){
       arrange(trait)
     
     # Uncomment this if you want to save the list of relevant tissues for each trait in a separate excel
-    # relevant_tissues_annot %>%  WriteXLS::WriteXLS("manuscript/SuppTables/relevant_traits_table.xls")
+    # relevant_tissues_annot %>%  WriteXLS::WriteXLS("../SuppTables/TableS5_gwas_enrichment_results.xlsx")
     
     # annotate relevant tissue-trait pairs 
     relevant_tissue_trait_pairs=unlist(sapply(1:nrow(relevant_tissues_annot), function(i) paste(relevant_tissues_annot$trait[i],unlist(strsplit(relevant_tissues_annot$relevant_tissues[i], split = ', ')), sep = "-")))
@@ -2892,8 +2910,8 @@ if(1){
   #clpp_threshold=.01
   clpp_mod_threshold = 0.5 ### like in paper
   
-  coloc_GTEx=fread('../../results/colocalization/Updated_GTEx_FastGxC_cleaned.txt') %>% mutate(study="Tissues")
-  coloc_PBMC=fread('../../results/colocalization/Updated_SingleCell_FastGxC_cleaned.txt') %>% mutate(study="PBMCs")
+  coloc_GTEx=fread('../Input_Files/Figure7_GWAS/Updated_GTEx_FastGxC_cleaned.txt') %>% mutate(study="Tissues")
+  coloc_PBMC=fread('../Input_Files/Figure7_GWAS/Updated_SingleCell_FastGxC_cleaned.txt') %>% mutate(study="PBMCs")
   all_coloc = rbind(coloc_GTEx,coloc_PBMC)  %>% filter(n_snps > 40)  %>% filter(clpp_mod>=clpp_mod_threshold) 
   all_coloc_no_filt = rbind(coloc_GTEx,coloc_PBMC) 
   
@@ -3244,8 +3262,8 @@ if(1){
 if(1){
   clpp_mod_threshold = 0.5 ### like in paper
   
-  coloc_GTEx=fread('results/colocalization/Updated_GTEx_FastGxC_cleaned.txt') %>% mutate(study="Tissues")
-  coloc_PBMC=fread('results/colocalization/Updated_SingleCell_FastGxC_cleaned.txt') %>% mutate(study="PBMCs")
+  coloc_GTEx=fread('../Input_Files/Figure7_GWAS/Updated_GTEx_FastGxC_cleaned.txt') %>% mutate(study="Tissues")
+  coloc_PBMC=fread('../Input_Files/Figure7_GWAS/Updated_SingleCell_FastGxC_cleaned.txt') %>% mutate(study="PBMCs")
   all_coloc = rbind(coloc_GTEx,coloc_PBMC)  %>% filter(n_snps > 40)  %>% filter(clpp_mod>=clpp_mod_threshold) 
   all_coloc_no_filt = rbind(coloc_GTEx,coloc_PBMC) %>% filter(n_snps > 40)
   
@@ -3303,30 +3321,30 @@ if(1){
 if(1){
   
   # read PCs on each expression component, i.e. full, tissue-shared, and tissue-specific
-  PCs=data.frame(read.table(file = "results/decomp_and_pca/PCs.v8.EUR.normalized_expression_full.txt", header = T, sep = '\t'), row.names = 1)
+  PCs=data.frame(read.table(file = "../Input_Files/SuppFigure13_PCA/PCs.v8.EUR.normalized_expression_full.txt", header = T, sep = '\t'), row.names = 1)
   
-  bPCs=data.frame(read.table(file = "results/decomp_and_pca/PCs.v8.EUR.normalized_expression_homogeneous.txt", header = T, sep = '\t'), row.names = 1)
+  bPCs=data.frame(read.table(file = "../Input_Files/SuppFigure13_PCA/PCs.v8.EUR.normalized_expression_homogeneous.txt", header = T, sep = '\t'), row.names = 1)
   bPCs=bPCs[matrix(data = unlist(strsplit(rownames(PCs), split = " - ")), ncol = 2, byrow = T)[,1],]
   rownames(bPCs)=rownames(PCs)
   
-  wPCs=data.frame(read.table(file ="results/decomp_and_pca/PCs.v8.EUR.normalized_expression_heterogeneous.txt", header = T, sep = '\t'), row.names = 1)
+  wPCs=data.frame(read.table(file ="../Input_Files/SuppFigure13_PCA/PCs.v8.EUR.normalized_expression_heterogeneous.txt", header = T, sep = '\t'), row.names = 1)
   
   # read covariates 
-  covs=read.table(file = "data/GTEx_v8/GTEx_v8_all_covariates.txt", header = T, sep = '\t')
-  cov_attr=read.table(file = "data/GTEx_v8/GTEx_v8_all_covariates_description.txt", header = T, sep = '\t', stringsAsFactors = F)
+  covs=read.table(file = "../Input_Files/SuppFigure13_PCA/GTEx_v8_all_covariates.txt", header = T, sep = '\t')
+  cov_attr=read.table(file = "../Input_Files/SuppFigure13_PCA/GTEx_v8_all_covariates_description.txt", header = T, sep = '\t', stringsAsFactors = F)
   old_names=c(colnames(covs)[colnames(covs) %in% row.names(cov_attr)],"pcr","COHORT","SEX","AGE","ETHNCTY","DTHHRDY","HGHT","WGHT")
   new_names=c(cov_attr[colnames(covs)[colnames(covs) %in% row.names(cov_attr)],1],"PCR", "Cohort", "Sex", "Age", "Ethnicity", "Death cause","Height", "Weight")
   names(new_names)=old_names
   
-  C=read.table(file = "results/decomp_and_pca/corr_PCs_covs.txt", header = T, sep = "\t")[-55,-55]
+  C=read.table(file = "../Input_Files/SuppFigure13_PCA/corr_PCs_covs.txt", header = T, sep = "\t")[-55,-55]
   C=C[rownames(C)!="SMGEBTCH",colnames(C)!="SMGEBTCH"]
   rownames(C)[rownames(C) %in% old_names] = new_names[rownames(C)[rownames(C) %in% old_names] ]
   
-  bC=read.table(file = "results/decomp_and_pca/corr_bPCs_covs.txt", header = T, sep = "\t")[-55,-55]
+  bC=read.table(file = "../Input_Files/SuppFigure13_PCA/corr_bPCs_covs.txt", header = T, sep = "\t")[-55,-55]
   bC=bC[rownames(bC)!="SMGEBTCH",colnames(bC)!="SMGEBTCH"]
   rownames(bC)[rownames(bC) %in% old_names] = new_names[rownames(bC)[rownames(bC) %in% old_names] ]
   
-  wC=read.table(file = "results/decomp_and_pca/corr_wPCs_covs.txt", header = T, sep = "\t")[-55,-55]
+  wC=read.table(file = "../Input_Files/SuppFigure13_PCA/corr_wPCs_covs.txt", header = T, sep = "\t")[-55,-55]
   wC=wC[rownames(wC)!="SMGEBTCH",colnames(wC)!="SMGEBTCH"]
   rownames(wC)[rownames(wC) %in% old_names] = new_names[rownames(wC)[rownames(wC) %in% old_names] ]
   
@@ -3422,21 +3440,21 @@ if(1){
     mutate(cell_type = if_else(cell_type=="AverageContext","Shared",cell_type)) %>% 
     formattable(list("color_hex" = custom_tis_color()))
   
-  export_formattable(f = p,file = "manuscript/SuppTables/TableS3_GTEx_colors.png")
-  export_formattable(f = sc, width = "50%", file = "manuscript/SuppTables/TableS3_sc_colors.png")
+  export_formattable(f = p,file = "../SuppTables/TableS3_GTEx_colors.png")
+  export_formattable(f = sc, width = "50%", file = "../SuppTables/TableS3_sc_colors.png")
 }
 
 ### Supp Table S4
 if(1){
-  outdir = "manuscript/SuppTables/"
-  egenes_gtex = read_csv("manuscript/Input_Files/Figure3_GTEx_Performance/eGenes.v8.EUR.all_tissues.residualized_exp_types.txt") %>%
+  outdir = "../SuppTables/"
+  egenes_gtex = read_csv("../Input_Files/Figure3_Performance/eGenes.v8.EUR.all_tissues.residualized_exp_types.txt") %>%
     mutate(exp_type = case_when(exp_type == "normalized_and_residualized_expression" ~ "CxC eGene",
                                 exp_type == "normalized_and_residualized_expression_heterogeneous" ~ "FastGxC sp-eGene",
                                 exp_type == "normalized_and_residualized_expression_homogeneous" ~ "FastGxC sh-eGene",
                                 TRUE ~ exp_type)) %>%
     rename(eGene_type = exp_type, eGene = gene) 
   
-  egenes_sc = read_csv("manuscript/Input_Files/Figure3_sc_Performance/eGenes.scMeta.all_contexts.residualized_exp_types.txt") %>%
+  egenes_sc = read_csv("../Input_Files/Figure3_Performance/eGenes.scMeta.all_contexts.residualized_exp_types.txt") %>%
     rename(eGene_type = exp_type, celltype = tissue, eGene = gene) %>% 
     mutate(eGene_type = case_when(eGene_type == "mean_norm_res_exp.specific" ~ "FastGxC sp-eGene",
                                   eGene_type == "mean_norm_res_exp.shared" ~ "FastGxC sh-eGene",
@@ -3447,9 +3465,9 @@ if(1){
 
 ### Supp Table S6
 if(1){
-  outdir = "manuscript/SuppTables/"
-  coloc_GTEx=fread('results/colocalization/Updated_GTEx_FastGxC_cleaned.txt') %>% mutate(study="Tissues")
-  coloc_PBMC=fread('results/colocalization/Updated_SingleCell_FastGxC_cleaned.txt') %>% mutate(study="PBMCs")
+  outdir = "../SuppTables/"
+  coloc_GTEx=fread('../Input_Files/Figure7_GWAS/Updated_GTEx_FastGxC_cleaned.txt') %>% mutate(study="Tissues")
+  coloc_PBMC=fread('../Input_Files/Figure7_GWAS/Updated_SingleCell_FastGxC_cleaned.txt') %>% mutate(study="PBMCs")
   
   traits_remove = c("Type_2_Diabetes_Mahajan_2022_EUR",
                     "Triglycerides_Graham_2021_EUR",
@@ -3468,6 +3486,5 @@ if(1){
                                                         TRUE ~ method)) %>%
     rename(gene = feature, celltype = tissue) %>% dplyr::select(!c("neg_log_gwas_pval", "neg_log_qtl_pval"))
   datasets = list("GTEx" = coloc_GTEx, "Single-Cell" = coloc_PBMC)
-  outdir = "/Users/lkrockenberger/Documents/Balliu_Lab/"
   write.xlsx(datasets, file = paste0(outdir, "TableS6_FastGxC_CxC_coloc_GTEx_and_singlecell.xlsx"))
 }

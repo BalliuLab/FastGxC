@@ -1,0 +1,11 @@
+VARDESC	COMMENT2	TYPE
+SMGEBTCH	Batch ID	Batch when DNA/RNA from a sample was analyzed	character
+SMTSISCH	Ischemic time	Interval between actual death, presumed death, or cross clamp application and final tissue stabilization	numeric
+SMRIN	RIN Number	The RNA Integrity Number, a basic measure of the quality of RNA isolated	numeric
+SMTS	Tissue Type	The type of Tissue that was collected	character
+SMTSD	Tissue	The type of Tissue that was collected on a Donor by Donor basis.	character
+SMUBRID	Uberon ID	ID as specified by the Uber Anatomy Ontology (UBERON)	character
+SMNTRART	Intragenic Rate	Output of the RNA-seQC GenePattern module	numeric
+SMMAPRT	Total Mapping Rate	Output of the RNA-seQC GenePattern module	numeric
+SMEXNCRT	Exonic Mapping Rate	Output of the RNA-seQC GenePattern module	numeric
+SMRRNART	rRNA Rate	Output of the RNA-seQC GenePattern module	numeric
