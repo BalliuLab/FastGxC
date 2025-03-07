@@ -53,7 +53,7 @@ if(four_level){
                                   exp_suffix = "specific",
                                   four_level = four_level,
                                   shared_n_tests_per_gene = shared_n_tests_per_gene)
-    write.table(x = specific_eGenes, file = paste0(work_dir,"specific_eGenes.txt"), quote = F, row.names = F, col.names = T, sep = '\t')
+    write.table(x = specific_eGenes, file = paste0(out_dir,"specific_eGenes.txt"), quote = F, row.names = F, col.names = T, sep = '\t')
 }else{
     specific_eGenes=get_eGenes_multi_tissue_mod(
                                   m_eqtl_out_dir = data_dir, 
@@ -62,7 +62,7 @@ if(four_level){
                                   level1 = level1, level2 = level2, level3 = level3, 
                                   exp_suffix = "specific",
                                   four_level = four_level)
-    write.table(x = specific_eGenes, file = paste0(work_dir,"specific_eGenes.txt"), quote = F, row.names = F, col.names = T, sep = '\t')
+    write.table(x = specific_eGenes, file = paste0(out_dir,"specific_eGenes.txt"), quote = F, row.names = F, col.names = T, sep = '\t')
 
     pattern=("shared.all_pairs.txt")
     shared_eGenes = get_eGenes(n_tests_per_gene = n_tests_per_gene, 
@@ -72,12 +72,12 @@ if(four_level){
                                 slice_size = 1e+05,
                                 silent = FALSE)
 
-    write.table(x = shared_eGenes, file = paste0(work_dir,"shared_eGenes.txt"), quote = F, row.names = F, col.names = T, sep = '\t')
+    write.table(x = shared_eGenes, file = paste0(out_dir,"shared_eGenes.txt"), quote = F, row.names = F, col.names = T, sep = '\t')
 
 
     eAssociations = get_eAssociations(eDiscoveries = shared_eGenes, n_tests = n_tests_per_gene, 
                     m_eqtl_out = list.files(data_dir, pattern = pattern,full.names = T),
-                    out_file = paste0(work_dir,"eAssoc_by_gene.context_shared.txt"), 
+                    out_file = paste0(out_dir,"eAssoc_by_gene.context_shared.txt"), 
                     by_snp = F, slice_size = 1e+05,
                     silent = FALSE)
 }
