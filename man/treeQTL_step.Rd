@@ -9,7 +9,8 @@ treeQTL_step(
   snps_location_file_name,
   gene_location_file_name,
   out_dir,
-  fdr_thresh = 0.05
+  fdr_thresh = 0.05,
+  four_level = F
 )
 }
 \arguments{
@@ -31,6 +32,10 @@ treeQTL_step(
 
 \item{fdr_thresh}{\itemize{
 \item value between 0 and 1 that signifies what FDR threshold for multiple testing correction. The same value will be used across all hierarchical levels.
+}}
+
+\item{four_level}{\itemize{
+\item boolean value (T or F) that signifies whether to use the 4-level hierarchy (set this parameter to R and test for a global eQTL across shared and specific components) or a 3-level hierarchy (this parameter is default set to F to test for shared vs specific eQTLs)
 }}
 
 \item{context_names}{\itemize{

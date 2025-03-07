@@ -95,7 +95,7 @@ for(context in context_names){
 }
 
 ## map shared eQTLs:
-  expression_file_name = paste0(out_dir, "context_shared_expression.txt")
+  expression_file_name = paste0(input_dir, "context_shared_expression.txt")
   shared_specific = "shared"
 
   eQTL_mapping_step(SNP_file_name = SNP_file_name,
