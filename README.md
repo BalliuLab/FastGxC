@@ -23,7 +23,7 @@ library(TreeQTL)
 
 Once all dependencies are installed and loaded you can install FastGxC using:
 ```
-  devtools::install_github("lkrocken/FastGxC")
+  devtools::install_github("BalliuLab/FastGxC")
 ```
 Once FastGxC is installed, load all functions using 
 ```
