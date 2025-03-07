@@ -8,6 +8,7 @@ treeQTL_step(
   data_dir,
   snps_location_file_name,
   gene_location_file_name,
+  context_names,
   out_dir,
   fdr_thresh = 0.05,
   four_level = F
@@ -26,6 +27,10 @@ treeQTL_step(
 \item full filepath of the geneloc file used in the eQTL mapping step
 }}
 
+\item{context_names}{\itemize{
+\item vector of all context names in the format c("tissue1", "tissue2", ..., etc.)
+}}
+
 \item{out_dir}{\itemize{
 \item full filepath of the output directory that FDR adjusted eQTLs should be written out to.
 }}
@@ -36,10 +41,6 @@ treeQTL_step(
 
 \item{four_level}{\itemize{
 \item boolean value (T or F) that signifies whether to use the 4-level hierarchy (set this parameter to R and test for a global eQTL across shared and specific components) or a 3-level hierarchy (this parameter is default set to F to test for shared vs specific eQTLs)
-}}
-
-\item{context_names}{\itemize{
-\item vector of all context names in the format c("tissue1", "tissue2", ..., etc.)
 }}
 }
 \value{

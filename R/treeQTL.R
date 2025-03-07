@@ -12,7 +12,7 @@
 #' @return outputs one file of specific eGenes across all contexts and one file of shared eGenes. Outputs an eAssociation file for each context and one for shared eQTLs with snp-gene pairs and FDR adjusted p-values. 
 #'
 #' @export
-treeQTL_step = function(data_dir, snps_location_file_name, gene_location_file_name, out_dir, fdr_thresh = 0.05, four_level = F){
+treeQTL_step = function(data_dir, snps_location_file_name, gene_location_file_name, context_names, out_dir, fdr_thresh = 0.05, four_level = F){
 
 # use a single thread
 print(paste0("data.table getDTthreads(): ",getDTthreads()))

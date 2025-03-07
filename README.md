@@ -122,13 +122,27 @@ data_dir = "~/example_output_single_context_het/" # directory with all matrixeQT
 snps_location_file_name = "~/simulations/single_context_het_snpsloc.txt"
 gene_location_file_name = "~/simulations/single_context_het_geneloc.txt"
 out_dir = "~/example_output_single_context_het/"
+fdr_thresh = 0.05
 
+## Run multiple testing correction without the four level hierarchy - this will only output specfic eGenes and eAssociations
 treeQTL_step(
        data_dir,
        snps_location_file_name,
        gene_location_file_name,
        context_names,
-       out_dir
+       out_dir,
+       fdr_thresh = fdr_thresh
+     )
+
+## Run multiple testing correction with the four level hierarchy - this will output specific and shared eGenes and eAssociations as well as global eGenes
+treeQTL_step(
+       data_dir,
+       snps_location_file_name,
+       gene_location_file_name,
+       context_names,
+       out_dir,
+       fdr_thresh = fdr_thresh,
+       four_level = T
      )
 ```
 
