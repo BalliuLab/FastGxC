@@ -129,10 +129,15 @@ get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_name
                                                                    level3 = level3)
     
     print(paste("Total number of associations for tissue", cur_tissue_name, "=", sum(n_sel_per_gene$n_sel_snp)))
-    out_file_name <- paste0(treeQTL_dir,"/eAssoc_by_gene.", cur_tissue_name,"_", exp_suffix,".txt")
-    print(paste("Writing output file", out_file_name))
-    get_eAssociations(data.frame(family = n_sel_per_gene$family, pval = NA, n_sel = n_sel_per_gene$n_sel_snp), NULL, 
+    if(nrow(n_sel_per_gene) == 0){
+      print("No significant associations for this tissue. Not writing output file.")
+      next
+    }else{
+      out_file_name <- paste0(treeQTL_dir,"/eAssoc_by_gene.", cur_tissue_name,"_", exp_suffix,".txt")
+      print(paste("Writing output file", out_file_name))
+      get_eAssociations(data.frame(family = n_sel_per_gene$family, pval = NA, n_sel = n_sel_per_gene$n_sel_snp), NULL, 
                       m_eqtl_outfiles[i], out_file_name, by_snp = FALSE, silent = TRUE)
+    }
   }
   eGene_xT_sel <- data.frame(gene = sel_eGenes_simes$gene)
   eGene_xT_sel <- cbind(eGene_xT_sel, rej_simes)
