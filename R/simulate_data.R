@@ -16,7 +16,7 @@
 #' @return outputs an expression matrix file, a genotype matrix file, a SNP location file, and a gene location file all in the format needed for FastGxC's decomposition step and then subsequent eQTL mapping step with Matrix eQTL.
 #'
 #' @export
-simulate_data = function(data_dir, N = 300, n_genes=100, n_snps_per_gene=10000, n_contexts=50, maf=0.1, w_corr=0.2, v_e=1, missing = 0, seed = 1, sim_scenario = "single_context_het"){
+simulate_data = function(data_dir, N = 300, n_genes=100, n_snps_per_gene=1000, n_contexts=10, maf=0.2, w_corr=0.2, v_e=1, missing = 0, seed = 1, sim_scenario = "single_context_het"){
 
 if(!dir.exists(data_dir)) dir.create(data_dir)
 
