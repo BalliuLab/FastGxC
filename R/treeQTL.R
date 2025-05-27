@@ -65,7 +65,7 @@ if(four_level){
     write.table(x = specific_eGenes, file = paste0(out_dir,"specific_eGenes.txt"), quote = F, row.names = F, col.names = T, sep = '\t')
 
     pattern=("shared.all_pairs.txt")
-    shared_eGenes = get_eGenes(n_tests_per_gene = n_tests_per_gene, 
+    shared_eGenes = get_eGenes(n_tests_per_gene = shared_n_tests_per_gene, 
                                 m_eqtl_out = list.files(data_dir, pattern = pattern,full.names = T), 
                                 method = "BH",
                                 level1 = level1, level2 = level2,
