@@ -93,8 +93,8 @@ for(i in 1:n_genes){
   
   # Genotypic effect in each context for assumed heritability 
   hsq=rep(NA, n_contexts)  # expression heritability, i.e. proportion of gene expression variance explained by genetics, in each context
-  hsq[which_context[i]]= 0.4
-  hsq[-which_context[i]]= rep(0.2, n_contexts-1)
+  hsq[which_context[i]]= 0.2
+  hsq[-which_context[i]]= rep(0.1, n_contexts-1)
   betas=sqrt((hsq*v_e)/((1-hsq)*var(genos_with_effect[,i]))) 
   
   # expression of gene per context without noise
