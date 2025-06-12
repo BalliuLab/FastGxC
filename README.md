@@ -1,7 +1,7 @@
 # FastGxC
 Computationally efficient and statistically powerful software for detecting context-specific eQTL effects in multi-context genomic studies. 
 
-Preprint available on [BioRxiv](https://www.biorxiv.org/content/10.1101/2021.06.17.448889v1) 
+Preprint available on [BioRxiv](https://www.biorxiv.org/content/10.1101/2021.06.17.448889v2) 
 
 Extended data with FastGxC results on GTEx, OneK1K, and CLUES cohorts can be found [here](https://zenodo.org/record/5015123#.YNJ1WpNKjOR)
 
