@@ -1,9 +1,16 @@
-# FastGxC
-Computationally efficient and statistically powerful software for detecting context-specific eQTL effects in multi-context genomic studies. 
+# FastGxC: A powerful and computationally efficient software for context-specific eQTL mapping in single-cell omics data 
 
-Preprint available on [BioRxiv](https://www.biorxiv.org/content/10.1101/2021.06.17.448889v2) 
+FastGxC was originally developed for single-cell data, where each individual contributes gene expression measurements across multiple cell types. 
 
-Extended data with FastGxC results on GTEx, OneK1K, and CLUES cohorts can be found [here](https://zenodo.org/record/5015123#.YNJ1WpNKjOR)
+However, it can also be applied to bulk RNA-seq data when the same individuals are profiled across multiple tissues or conditions. 
+
+In both settings, FastGxC models **repeated samples** from each individual, removing shared noise and enabling more accurate detection of context-specific genetic effects.
+
+FastGxC is also **robust to missing data** —for example, when certain individuals or genes are missing in some cell types or tissues.
+
+Please read the [BioRxiv](https://www.biorxiv.org/content/10.1101/2021.06.17.448889v2) preprint for more details. 
+
+<!-- Extended data with FastGxC results on GTEx, OneK1K, and CLUES cohorts can be found [here](https://zenodo.org/record/5015123#.YNJ1WpNKjOR) -->
 
 # Package Installation and Dependencies
 FastGxC is an R package that can be loaded and used in any R environment. 
@@ -17,9 +24,8 @@ library(mvtnorm)
 library(reshape2)
 library(magrittr)
 library(TreeQTL)
-** Note: to install TreeQTL, qvalue must be installed first
-
 ```
+** Note ** : to install TreeQTL, qvalue must be installed first. 
 
 Once all dependencies are installed and loaded you can install FastGxC using:
 ```
