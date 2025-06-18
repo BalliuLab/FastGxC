@@ -83,7 +83,7 @@ code in R:
 ```
 
 \*\* Note: running the code above simulates data with default parameters
-(300 individuals, 10,000 SNPs, 100 genes, and 50 contexts without
+(300 individuals, 1,000 SNPs, 100 genes, and 50 contexts without
 missing data), but this function can be run with any combination of
 parameter values. See all possible parameters for `simulate_data()` by
 running `?simulate_data` in R.
