@@ -1,8 +1,4 @@
----
-editor_options: 
-  markdown: 
-    wrap: 72
----
+
 
 # FastGxC: A powerful and computationally efficient software for context-specific eQTL mapping in single-cell omics data
 
