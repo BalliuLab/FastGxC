@@ -194,6 +194,8 @@ for compatibility with downstream steps. TensorQTL is particularly
 useful when working with large datasets due to its computational
 efficiency.
 
+**Note:** TensorQTL requires Python version 3.7 or higher to run properly.
+
 Below is an example of how to perform eQTL mapping using TensorQTL on
 context-specific and shared components:
 
@@ -265,7 +267,8 @@ Map specific-eGenes, i.e., genes with at least one context-specific eQTL
 
 ```         
 ## directory with all matrixeQTL files for all contexts 
-## (note that this function expects files to be named in the same was as the output files from FastGxC's eQTL mapping function)
+## (note that this function expects files to be named in the same was as the 
+output files from FastGxC's eQTL mapping function)
 data_dir = "~/example_output_single_context_het/" 
 snps_location_file_name = "~/simulations/single_context_het_snpsloc.txt"
 gene_location_file_name = "~/simulations/single_context_het_geneloc.txt"
@@ -284,7 +287,8 @@ treeQTL_step(
      )
 
 ## Run multiple testing correction with the four level hierarchy: 
-## this will output specific and shared eGenes and eAssociations as well as global eGenes
+## this will output specific and shared eGenes and eAssociations as well as 
+global eGenes
 treeQTL_step(
        data_dir,
        snps_location_file_name,
