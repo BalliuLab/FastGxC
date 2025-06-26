@@ -1,134 +1,143 @@
 #' eQTL Mapping Step
 #'
-#' Function to map cis eQTLs using either Matrix eQTL or TensorQTL. The cis window is defined as 1Mb.
+#' Function to map cis eQTLs using either Matrix eQTL or TensorQTL.
 #'
-#' @param  SNP_file_name Full file path with genotypes of all individuals.
-#' @param  snps_location_file_name Full file path with SNP IDs, start, and end positions.
-#' @param  expression_file_name Full file path with expression matrix of individuals per gene.
-#' @param  gene_location_file_name Full file path with gene IDs, start, and end positions.
-#' @param  context Name of context for output file naming purposes.
-#' @param  shared_specific Either "shared" if mapping eQTLs with a shared component, or "specific" if mapping eQTLs with a specific component.
-#' @param  out_dir Full path of the output directory where eQTL result files will be written.
-#' @param  method Mapping method to use: either "matrix" (Matrix eQTL) or "tensor" (TensorQTL). Default is "matrix".
+#' @param  SNP_file_name Full path to SNP genotype matrix.
+#' @param  snps_location_file_name Full path to SNP location file.
+#' @param  expression_file_name Full path to expression matrix.
+#' @param  gene_location_file_name Full path to gene location file.
+#' @param  context Context name for labeling output.
+#' @param  shared_specific Either "shared" or "specific".
+#' @param  out_dir Output directory.
+#' @param  output_file_name_cis Path to write cis-eQTL output.
+#' @param  output_file_name_tra Path to write trans-eQTL output.
+#' @param  method Either "MatrixEQTL" or "tensorQTL".
+#' @param  python_dir Path to Python (for TensorQTL).
+#' @param  use_model MatrixEQTL model (default: modelLINEAR).
+#' @param  cis_dist Distance threshold for cis-eQTLs.
+#' @param  pv_threshold_cis P-value threshold for cis.
+#' @param  pv_threshold_tra P-value threshold for trans.
+#' @param  error_covariance Covariance matrix (or numeric()).
 #'
-#' @return Writes one file of mapped cis eQTLs to the output directory.
+#' @return Writes cis-eQTLs and trans-eQTLs (optional) to disk.
 #' @export
-eQTL_mapping_step = function(SNP_file_name, snps_location_file_name, expression_file_name, gene_location_file_name, context, shared_specific, out_dir, method = "matrix"){
-  if(method == "matrix"){
-    # Output file name
-    output_file_name_cis = paste0(out_dir, context, "_", shared_specific, ".all_pairs.txt"); 
-    output_file_name_tra = tempfile();
-    
+eQTL_mapping_step = function(
+    SNP_file_name,
+    snps_location_file_name,
+    expression_file_name,
+    gene_location_file_name,
+    context,
+    shared_specific,
+    out_dir,
+    output_file_name_cis = file.path(out_dir, paste0(context, "_", shared_specific, ".all_pairs.txt")),
+    output_file_name_tra = file.path(out_dir, paste0(context, "_", shared_specific, ".trans_pairs.txt")),
+    method = "MatrixEQTL",
+    python_dir = Sys.which("python"),
+    use_model = modelLINEAR,
+    cis_dist = 1e6,
+    pv_threshold_cis = 1,
+    pv_threshold_tra = 0,
+    error_covariance = numeric()
+) {
+  if (method == "MatrixEQTL") {
     setDTthreads(1)
-    print(paste0("data.table getDTthreads(): ",getDTthreads()))
     
-    string1 = sprintf("Running analysis for %s \n", expression_file_name)
-    cat(string1)
+    expression_mat <- as.matrix(data.frame(fread(expression_file_name, header = TRUE), row.names = 1, check.names = FALSE))
+    genepos <- read.table(gene_location_file_name, header = TRUE)[, c("geneid", "chr", "s1", "s2")]
     
-    #%%%%%%%%%%%%%%%%%%%%%%%%
-    #%%%%%%%%%%%%%%%%%%%%%%%% MatrixEQTL parameters
-    #%%%%%%%%%%%%%%%%%%%%%%%%
+    snps <- SlicedData$new()
+    snps$fileDelimiter <- "\t"
+    snps$fileOmitCharacters <- "NA"
+    snps$fileSkipRows <- 1
+    snps$fileSkipColumns <- 1
+    snps$fileSliceSize <- 2000
+    snps$LoadFile(SNP_file_name)
     
-    # Linear model to use
-    useModel = modelLINEAR; 
+    snpspos <- read.table(snps_location_file_name, header = TRUE)[, c("snpid", "chr", "pos")]
+    snps$ColumnSubsample(which(snps$columnNames %in% colnames(expression_mat)))
+    expression_mat <- expression_mat[, snps$columnNames]
     
-    # Only associations significant at this level will be saved
-    pvOutputThreshold_cis = 1; 
-    pvOutputThreshold_tra = 0;
-    
-    # Error covariance matrix
-    errorCovariance = numeric();
-    
-    # Distance for local gene-SNP pairs
-    cisDist = 1e6;
-    
-    #%%%%%%%%%%%%%%%%%%%%%%%%
-    #%%%%%%%%%%%%%%%%%%%%%%%% Read files
-    #%%%%%%%%%%%%%%%%%%%%%%%%
-    
-    ## Raw gene expression data with gene position
-    expression_mat=as.matrix(data.frame(data.table::fread(input = expression_file_name, header = T),row.names = 1, check.names = F))
-    genepos = read.table(file = gene_location_file_name, header = TRUE, stringsAsFactors = FALSE)[,1:4];
-    
-    ## Genotype data with snp position
-    snps = MatrixEQTL::SlicedData$new();
-    snps$fileDelimiter = "\t";      # the TAB character
-    snps$fileOmitCharacters = "NA"; # denote missing values;
-    snps$fileSkipRows = 1;          # one row of column labels
-    snps$fileSkipColumns = 1;       # one column of row labels
-    snps$fileSliceSize = 2000;      # read file in slices of 2,000 rows
-    snps$LoadFile(SNP_file_name);
-    
-    snpspos = read.table(file = snps_location_file_name, header = TRUE, stringsAsFactors = FALSE)[,1:3];
-    
-    print(dim(snps))
-    print(snps$columnNames)
-    
-    ## Make sure order of individuals is the same in gene expression and genotype matrices  
-    snps$ColumnSubsample(which(snps$columnNames %in% colnames(expression_mat))) # Match SNP and expression individuals
-    expression_mat=expression_mat[,snps$columnNames]
-    gene = SlicedData$new();
+    gene <- SlicedData$new()
     gene$CreateFromMatrix(expression_mat)
     
-    #%%%%%%%%%%%%%%%%%%%%%%%%
-    #%%%%%%%%%%%%%%%%%%%%%%%% Run the analysis
-    #%%%%%%%%%%%%%%%%%%%%%%%%
-    
-    me = Matrix_eQTL_main(
+    Matrix_eQTL_main(
       snps = snps,
       gene = gene,
       cvrt = SlicedData$new(),
-      output_file_name  = output_file_name_tra,
-      pvOutputThreshold  = pvOutputThreshold_tra,
-      useModel = useModel,
-      errorCovariance = errorCovariance,
+      output_file_name = output_file_name_tra,
+      pvOutputThreshold = pv_threshold_tra,
+      useModel = use_model,
+      errorCovariance = error_covariance,
       verbose = TRUE,
       output_file_name.cis = output_file_name_cis,
-      pvOutputThreshold.cis = pvOutputThreshold_cis,
+      pvOutputThreshold.cis = pv_threshold_cis,
       snpspos = snpspos,
       genepos = genepos,
-      cisDist = cisDist,
+      cisDist = cis_dist,
       pvalue.hist = FALSE,
       min.pv.by.genesnp = FALSE,
-      noFDRsaveMemory = FALSE);
+      noFDRsaveMemory = FALSE
+    )
     
-    ## Results:
-    cat('Analysis finished in: ', me$time.in.sec, ' seconds', '\n')
-  }
-  else if (method == "tensor") {
-    use_python(Sys.which("python"), required = TRUE)
+  } else if (method == "tensorQTL") {
+    use_python(python_dir, required = TRUE)
     
+    # Define Python helper
     py_run_string("
-import pandas as pd
+import os
 import torch
-import tensorqtl
-from tensorqtl import pgen, cis, trans, post
+import pandas as pd
+import numpy as np
+from tensorqtl import cis
+
+os.environ['CUDA_VISIBLE_DEVICES'] = ''
 
 def run_tensorqtl(phenotype_df, phenotype_pos_df, genotype_df, variant_df, prefix=''):
-    phenotype_pos_df.rename(columns={'s1': 'start', 's2': 'end'}, inplace=True)
-    variant_df.rename(columns={'chr': 'chrom'}, inplace=True)
+    if 's1' in phenotype_pos_df.columns and 's2' in phenotype_pos_df.columns:
+        phenotype_pos_df.rename(columns={'s1': 'start', 's2': 'end'}, inplace=True)
+    if 'chr' in variant_df.columns:
+        variant_df.rename(columns={'chr': 'chrom'}, inplace=True)
     cis.map_nominal(genotype_df, variant_df, phenotype_df, phenotype_pos_df, prefix=prefix)
-    pairs_df = pd.read_parquet(f'{prefix}.cis_qtl_pairs.chr1.parquet')
-    pairs_df.rename(columns={'phenotype_id': 'gene', 'variant_id': 'SNP'}, inplace=True)
-    return pairs_df
 ")
     
-    phenotype_df = read.table(expression_file_name, header = TRUE, row.names = 1)
-    phenotype_pos_df = read.table(gene_location_file_name, header = TRUE, row.names = 1)
-    genotype_df = read.table(SNP_file_name, header = TRUE, row.names = 1)
-    variant_df = read.table(snps_location_file_name, header = TRUE, row.names = 1)
-    
+    # R -> Python input
+    phenotype_df <- read.table(expression_file_name, header = TRUE, row.names = 1)
+    phenotype_pos_df <- read.table(gene_location_file_name, header = TRUE, row.names = 1)
+    genotype_df <- read.table(SNP_file_name, header = TRUE, row.names = 1)
+    variant_df <- read.table(snps_location_file_name, header = TRUE, row.names = 1)
     py$phenotype_df <- phenotype_df
     py$phenotype_pos_df <- phenotype_pos_df
     py$genotype_df <- genotype_df
     py$variant_df <- variant_df
-    py$prefix <- paste0(out_dir, '/', context, '_tensor')
+    py$prefix <- paste0(out_dir, "/", context, "_tensor")
     
-    py_run_string("result = run_tensorqtl(phenotype_df, phenotype_pos_df, genotype_df, variant_df, prefix)")
-    tensorqtl_result <- py$result
-    write.table(tensorqtl_result, file = paste0(out_dir, '/', context, '_tensorqtl_results.txt'),
-                sep = "\t", row.names = FALSE, quote = FALSE)
+    # Run Python-side TensorQTL
+    py_run_string("run_tensorqtl(phenotype_df, phenotype_pos_df, genotype_df, variant_df, prefix)")
+    
+    # Validate output
+    parquet_path <- paste0(out_dir, "/", context, "_tensor.cis_qtl_pairs.chr1.parquet")
+    if (!file.exists(parquet_path)) stop("TensorQTL failed: .parquet output not found")
+    
+    # Load and convert output
+    pd <- import("pandas", convert = FALSE)
+    pq <- pd$read_parquet(parquet_path)
+    py$pq <- pq
+    
+    # Rename columns (skip stderr_beta and t.stat)
+    py_run_string("
+pq.rename(columns={
+  'phenotype_id': 'gene',
+  'variant_id': 'SNP',
+  'slope': 'beta',
+  'pval_nominal': 'p.value'
+}, inplace=True)
+")
+    
+    pq_df <- py_eval("pq.loc[:, ['SNP', 'gene', 'beta', 'p.value']]", convert = TRUE)
+    pq_df$FDR <- p.adjust(pq_df$p.value, method = "BH")
+    pq_df <- pq_df[order(pq_df$p.value), ]
+    write.table(pq_df, file = output_file_name_cis, sep = '\t', row.names = FALSE, quote = FALSE)
   } else {
-    stop("Invalid method. Use 'matrix' or 'tensor'")
+    stop("Invalid method. Use 'MatrixEQTL' or 'tensorQTL'")
   }
 }
