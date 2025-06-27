@@ -46,14 +46,23 @@ library(FastGxC)
 Optional: Set up Python dependencies for TensorQTL (used with method = "tensor")\
 Requires: reticulate + compatible Python environment
 
-```         
+```
+library(reticulate)
+# Replace '/your/python/path/here' with the full path to your Python 3 executable (e.g., from `which python3` in terminal)
+use_python("/your/python/path/here", required = TRUE)
+
 reticulate::py_install(c(
   "tensorqtl",
   "pandas",
   "numpy",
   "pyarrow",
-  "torch"
+  "torch",
+  "rpy2"
 ))
+
+if (!requireNamespace("qvalue", quietly = TRUE)) {
+  BiocManager::install("qvalue")
+}
 ```
 
 # Simulate toy data
@@ -166,14 +175,11 @@ To use this functionality, specify method = "tensorQTL" when calling eQTL_mappin
 Below is an example of how to perform eQTL mapping using TensorQTL on context-specific and shared components:
 
 ```         
-# Replace '/your/python/path/here' with the full path to your Python 3 executable (e.g., from `which python3` in terminal)
-use_python("/your/python/path/here", required = TRUE)
-
 # Store the path in a variable for downstream use (e.g., inside function calls)
 python_dir <- "/your/python/path/here"
 
-input_dir <- "~/Library/Mobile Documents/com~apple~CloudDocs/Balliu_Lab/simulations_0.8/"
-out_dir <- path.expand("~/Library/Mobile Documents/com~apple~CloudDocs/Balliu_Lab/tensor/")
+out_dir = "~/example_output_single_context_het/"
+input_dir = "~/simulations/"
 expr_files <- list.files(out_dir, pattern = "_specific_expression.txt$")
 nC <- length(expr_files)
 context_names <- paste0("context", seq(1, nC))
