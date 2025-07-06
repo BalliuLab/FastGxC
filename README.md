@@ -17,7 +17,6 @@ Please read the [BioRxiv](https://www.biorxiv.org/content/10.1101/2021.06.17.448
 FastGxC is an R package that can be loaded and used in any R environment. In order for FastGxC to run properly, the following packages are required and should be installed in R prior to using any FastGxC functions.
 
 ```         
-library(reticulate)
 library(qvalue)
 library(devtools)
 library(dplyr)
@@ -31,10 +30,16 @@ library(TreeQTL)
 
 \*\* Note \*\* : to install TreeQTL, qvalue must be installed first.
 
+```         
+if (!requireNamespace("qvalue", quietly = TRUE)) {
+  BiocManager::install("qvalue")
+}
+```
+
 Once all dependencies are installed and loaded you can install FastGxC using:
 
 ```         
-  devtools::install_github("BalliuLab/FastGxC")
+devtools::install_github("BalliuLab/FastGxC")
 ```
 
 Once FastGxC is installed, load all functions using
@@ -46,23 +51,24 @@ library(FastGxC)
 Optional: Set up Python dependencies for TensorQTL (used with method = "tensor")\
 Requires: reticulate + compatible Python environment
 
+To check your Python setup, run in your terminal:
+
+```         
+which python3
 ```
+
+Install required Python packages (Terminal only)
+
+```         
+/your/python/path/here -m pip install numpy pandas pyarrow rpy2 torch tensorqtl
+```
+
+Next, start RStudio and set Python path
+
+```         
 library(reticulate)
-# Replace '/your/python/path/here' with the full path to your Python 3 executable (e.g., from `which python3` in terminal)
 use_python("/your/python/path/here", required = TRUE)
-
-reticulate::py_install(c(
-  "tensorqtl",
-  "pandas",
-  "numpy",
-  "pyarrow",
-  "torch",
-  "rpy2"
-))
-
-if (!requireNamespace("qvalue", quietly = TRUE)) {
-  BiocManager::install("qvalue")
-}
+py <- import_builtins()
 ```
 
 # Simulate toy data
@@ -70,20 +76,70 @@ if (!requireNamespace("qvalue", quietly = TRUE)) {
 To run a toy example, generate simulated data by running the following code in R:
 
 ```         
-  data_dir_sim = "~/simulations/"
-  sim_scenario = "single_context_het"
-  simulate_data(data_dir = data_dir_sim, sim_scenario = sim_scenario)
+  data_dir_sim= "~/simulated_example/"    
+  simulate_data(data_dir = data_dir_sim, # Path to directory where output files will be saved   
+              N = 300, # Number of individuals
+              n_contexts = 10, # Number of contexts
+              n_genes = 100, # Number of Genes
+              n_snps_per_gene = 1000, # Number of SNPs per gene
+              maf = 0.2, # Minor allele frequency for SNPs
+              w_corr = 0.2, # Intra-individual residual correlation between contexts
+              v_e = 1, # Error variance per context
+              missing = 0.05, # Fraction of missing values in the simulated expression matrix
+              hsq = rep(0,n_contexts), # Vector with proportion of expression heritability explained by eQTL in each context
+              mus = rep(0, n_contexts)) # Vector with average expression in each context 
 ```
 
-\*\* Note: running the code above simulates data with default parameters (300 individuals, 1,000 SNPs, 100 genes, and 10 contexts without missing data), but this function can be run with any combination of parameter values. See all possible parameters for `simulate_data()` by running `?simulate_data` in R.
+\*\* Note: running the code above simulates data with default parameters (300 individuals, 1,000 SNPs, 100 genes, 10 contexts, etc.), but this function can be run with any combination of parameter values. See all possible parameters for `simulate_data()` by running `?simulate_data` in R.
 
-Running the above code will generate and save the following files in the data_dir: (1) {sim_scenario}\_SNPs.txt: SNP genotype data for 1,000 SNPs and 300 individuals (individual IDs as columns and SNP IDs as rows)\
+**Output Files**\
 
-(2) {sim_scenario}\_snpsloc.txt: location information of the 1,000 simulated SNPs (MatrixEQTL input format)\
+The simulation will generate the following files in data_dir:\
 
-(3) {sim_scenario}\_geneloc.txt: location information of the 100 simulated genes (MatrixEQTL input format)\
+**SNPs.txt**
 
-(4) {sun_scenario}\_simulated_expression.txt: gene expression data for the 300 simulated individuals across 100 genes and 10 contexts\
+```         
+snpid   ind1  ind2  ind3  ind4  ind5 ...
+snp1     0     2     1     1     0   ...
+snp2     1     2     0     1     1   ...
+snp3     0     1     0     1     1   ...
+snp4     1     2     0     1     1   ...
+snp5     0     0     0     1     1   ...
+```
+
+**snpsloc.txt**
+
+```         
+snpid   chr   pos   context1  context2  ...  context10
+snp1    chr1   1        1         1           1
+snp2    chr1   1        1         1           1
+snp3    chr1   1        1         1           1
+snp4    chr1   1        1         1           1
+snp5    chr1   1        1         1           1
+```
+
+**simulated_expression.txt**
+
+```         
+design             gene1     gene2     gene3    ...   gene100
+ind1 - context1   0.4369    -1.7087    -1.8113  ...   1.1721
+ind1 - context10  0.6437    -0.4357    -0.8296  ...  -0.3944
+ind1 - context2   0.1092    -0.1294    -0.3222  ...  -0.4939
+ind1 - context3   0.1234    -0.1947    -0.1111  ...  -0.9999
+ind1 - context4   0.8347    -0.9876    -0.1490  ...  -0.3833
+```
+
+**geneloc.txt**
+
+```         
+geneid  chr   s1          s2          context1  context2  context3  context4  context5  context6
+gene1   chr1  0           1001            1         1         1         1         1         1
+gene2   chr1  100000001   100001001       1         1         1         1         1         1
+gene3   chr1  200000001   200001001       1         1         1         1         1         1
+gene4   chr1  300000001   300001001       1         1         1         1         1         1
+gene5   chr1  400000001   400001001       1         1         1         1         1         1
+gene6   chr1  500000001   500001001       1         1         1         1         1         1
+```
 
 # Running FastGxC
 
@@ -94,9 +150,22 @@ FastGxC works in two steps. In the first step, expression is decomposed into sha
 The following code example demonstrates how to use this function with the data we just simulated above.
 
 ```         
-exp_mat_filename = "~/simulations/single_context_het_simulated_expression.txt"
-data_dir_decomp = "~/example_output_single_context_het/"
+data_dir_decomp = "~/simulated_example/"
+exp_mat_filename = paste0(data_dir_decomp, "simulated_expression.txt")
 decomposition_step(exp_mat_filename, data_dir_decomp)
+```
+
+**Output Files**\
+
+context_shared_expression.txt / contextX_specific_expression.txt
+
+```         
+        ind1        ind2        ind3        ind4        ind5
+gene1  0.1834      0.0456     -0.0912      0.2314     -0.0873
+gene2 -0.1345      0.0543      0.1123     -0.0784      0.0912
+gene3  0.0034     -0.0312      0.0402      0.0105     -0.0067
+gene4 -0.1423     -0.1092     -0.0876     -0.1904     -0.1523
+gene5  0.2145      0.1432      0.1784      0.1984      0.2013
 ```
 
 *Step 2 - eQTL mapping:* FastGxC estimates genetic effects on the context-shared component and each of the C context-specific components separately using simple linear models. Note: Here we use the R package [MatrixEQTL](http://www.bios.unc.edu/research/genomic_software/Matrix_eQTL/) but any other software that can perform quick linear regression can be used (e.g. [FastQTL](http://fastqtl.sourceforge.net/) or [tensorqtl](https://github.com/broadinstitute/tensorqtl)). FastGxC implements eQTL mapping using its `eQTL_mapping_step()` function.
@@ -106,22 +175,29 @@ This function take as input data needed to run MatrixEQTL and outputs eQTL summa
 Below is a code example to map context-specific eQTLs and shared eQTLs using the decomposed simulated data from above.
 
 ```         
-out_dir = "~/example_output_single_context_het/"
-input_dir = "~/simulations/"
-expr_files <- list.files(out_dir, pattern = "_specific_expression.txt$")
+input_dir = "~/simulated_example/"
+out_dir = input_dir
+expr_files <- list.files(input_dir, pattern = "_specific_expression.txt$")
 nC <- length(expr_files)
 context_names <- paste0("context", seq(1, nC))
 
-SNP_file_name <- file.path(input_dir, "single_context_het_SNPs.txt")
-snps_location_file_name <- file.path(input_dir, "single_context_het_snpsloc.txt")
-gene_location_file_name <- file.path(input_dir, "single_context_het_geneloc.txt")
+all_contexts <- c(context_names, "shared")
+all_shared_specific <- c(rep("specific", nC), "shared")
 
-for (context in context_names) {
-  expression_file_name <- file.path(out_dir, paste0(context, "_specific_expression.txt"))
-  shared_specific <- "specific"
+SNP_file_name <- file.path(input_dir, "SNPs.txt")
+snps_location_file_name <- file.path(input_dir, "snpsloc.txt")
+gene_location_file_name <- file.path(input_dir, "geneloc.txt")
+
+for (i in seq_along(all_contexts)) {
+  context <- all_contexts[i]
+  shared_specific <- all_shared_specific[i]
   
-  if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
-  
+  if (shared_specific == "shared") {
+    expression_file_name <- file.path(input_dir, "context_shared_expression.txt")
+  } else {
+    expression_file_name <- file.path(input_dir, paste0(context, "_specific_expression.txt"))
+  }
+
   eQTL_mapping_step(
     SNP_file_name = SNP_file_name,
     snps_location_file_name = snps_location_file_name,
@@ -130,40 +206,16 @@ for (context in context_names) {
     context = context,
     shared_specific = shared_specific,
     out_dir = out_dir,
-    output_file_name_cis = paste0(out_dir, "/", context, "_", shared_specific, ".all_pairs.txt"),
-    output_file_name_tra = paste0(out_dir, "/", context, "_", shared_specific, ".trans_pairs.txt"),
+    output_file_name_cis = file.path(out_dir, paste0(context, "_", shared_specific, ".cis_pairs.txt")),
+    output_file_name_tra = file.path(out_dir, paste0(context, "_", shared_specific, ".trans_pairs.txt")),
     method = "MatrixEQTL",
-    python_dir,
-    use_model = use_model,
-    cis_dist = cis_dist,
-    pv_threshold_cis = pv_threshold_cis,
-    pv_threshold_tra = pv_threshold_tra,
-    error_covariance = error_covariance
+    use_model = modelLINEAR,
+    cis_dist = 1e6,
+    pv_threshold_cis = 1,
+    pv_threshold_tra = 0,
+    error_covariance = numeric()
   )
 }
-
-expression_file_name <- file.path(out_dir, "context_shared_expression.txt")
-shared_specific <- "shared"
-context <- "shared"
-
-eQTL_mapping_step(
-  SNP_file_name = SNP_file_name,
-  snps_location_file_name = snps_location_file_name,
-  expression_file_name = expression_file_name,
-  gene_location_file_name = gene_location_file_name,
-  context = context,
-  shared_specific = shared_specific,
-  out_dir = out_dir,
-  output_file_name_cis = paste0(out_dir, "/", context, "_", shared_specific, ".all_pairs.txt"),
-  output_file_name_tra = paste0(out_dir, "/", context, "_", shared_specific, ".trans_pairs.txt"),
-  method = method,
-  python_dir = python_dir,
-  use_model = use_model,
-  cis_dist = cis_dist,
-  pv_threshold_cis = pv_threshold_cis,
-  pv_threshold_tra = pv_threshold_tra,
-  error_covariance = error_covariance
-)
 ```
 
 *Step 2 - eQTL mapping with TensorQTL (optional alternative):* FastGxC also supports cis-eQTL mapping using TensorQTL, a GPU-accelerated implementation for fast eQTL analysis. This is enabled through the R package reticulate, which allows Python functions to be called from within R.
@@ -172,73 +224,22 @@ To use this functionality, specify method = "tensorQTL" when calling eQTL_mappin
 
 **Note:** TensorQTL requires Python version 3.7 or higher to run properly.
 
-Below is an example of how to perform eQTL mapping using TensorQTL on context-specific and shared components:
+To run TensorQTL, simply pass method = "TensorQTL." The inputs remain unchanged.
+
+**Output Files**\
+
+contextX_specific.cis_pairs.txt
 
 ```         
-# Store the path in a variable for downstream use (e.g., inside function calls)
-python_dir <- "/your/python/path/here"
-
-out_dir = "~/example_output_single_context_het/"
-input_dir = "~/simulations/"
-expr_files <- list.files(out_dir, pattern = "_specific_expression.txt$")
-nC <- length(expr_files)
-context_names <- paste0("context", seq(1, nC))
-
-SNP_file_name <- file.path(input_dir, "single_context_het_SNPs.txt")
-snps_location_file_name <- file.path(input_dir, "single_context_het_snpsloc.txt")
-gene_location_file_name <- file.path(input_dir, "single_context_het_geneloc.txt")
-
-for (context in context_names) {
-  expression_file_name <- file.path(out_dir, paste0(context, "_specific_expression.txt"))
-  shared_specific <- "specific"
-  
-  if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
-  
-  eQTL_mapping_step(
-    SNP_file_name = SNP_file_name,
-    snps_location_file_name = snps_location_file_name,
-    expression_file_name = expression_file_name,
-    gene_location_file_name = gene_location_file_name,
-    context = context,
-    shared_specific = shared_specific,
-    out_dir = out_dir,
-    output_file_name_cis = paste0(out_dir, "/", context, "_", shared_specific, ".all_pairs.txt"),
-    output_file_name_tra = paste0(out_dir, "/", context, "_", shared_specific, ".trans_pairs.txt"),
-    method = "tensorQTL",
-    python_dir = python_dir,
-    use_model = use_model,
-    cis_dist = cis_dist,
-    pv_threshold_cis = pv_threshold_cis,
-    pv_threshold_tra = pv_threshold_tra,
-    error_covariance = error_covariance
-  )
-}
-
-expression_file_name <- file.path(out_dir, "context_shared_expression.txt")
-shared_specific <- "shared"
-context <- "shared"
-
-eQTL_mapping_step(
-  SNP_file_name = SNP_file_name,
-  snps_location_file_name = snps_location_file_name,
-  expression_file_name = expression_file_name,
-  gene_location_file_name = gene_location_file_name,
-  context = context,
-  shared_specific = shared_specific,
-  out_dir = out_dir,
-  output_file_name_cis = paste0(out_dir, "/", context, "_", shared_specific, ".all_pairs.txt"),
-  output_file_name_tra = paste0(out_dir, "/", context, "_", shared_specific, ".trans_pairs.txt"),
-  method = method,
-  python_dir = python_dir,
-  use_model = use_model,
-  cis_dist = cis_dist,
-  pv_threshold_cis = pv_threshold_cis,
-  pv_threshold_tra = pv_threshold_tra,
-  error_covariance = error_covariance
-)
+SNP         gene    beta                    p.value                 FDR
+snp64928    gene65  0.418661087751389   8.4807042218939e-07     0.084807042218939
+snp42566    gene43  -0.355810463428497  7.53491371859939e-06    0.306773379105091
+snp22672    gene23  -0.394770801067352  9.20320137315272e-06    0.306773379105091
+snp73350    gene74  0.344478219747543   1.59910672991937e-05    0.399776682479843
+snp86064    gene87  -0.371489137411118  3.10237595856035e-05    0.550542627746407
 ```
 
-Note: TensorQTL writes intermediate results as .parquet files by default, but FastGxC saves the final output in .txt format for consistency with MatrixEQTL outputs.
+**Note:** TensorQTL writes intermediate results as .parquet files by default, but FastGxC saves the final output in .txt format for consistency with MatrixEQTL outputs.
 
 # Multiple testing adjustment
 
