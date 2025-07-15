@@ -81,7 +81,7 @@ simulate_data = function(data_dir, N = 300, n_genes = 100, n_snps_per_gene = 100
   exp_mat_missing = as.data.frame(exp_mat_missing)
   exp_mat_missing = cbind(identifiers, exp_mat_missing)
   colnames(exp_mat_missing) = colnames(exp_mat)
-  write.table(x = exp_mat_missing[, -c(2:3)], file = paste0(data_dir, "simulated_expression.txt"), quote = F,
+  write.table(x = exp_mat_missing[, -c(2:3)], file = paste0(data_dir, "expression.txt"), quote = F,
               sep = "\t", row.names = F, col.names = T)
   print("Finished simulating and saving expression file")
 }

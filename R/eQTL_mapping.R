@@ -7,7 +7,6 @@
 #' @param  expression_file_name Full path to expression matrix.
 #' @param  gene_location_file_name Full path to gene location file.
 #' @param  context Context name for labeling output.
-#' @param  shared_specific Either "shared" or "specific".
 #' @param  out_dir Output directory.
 #' @param  output_file_name_cis Path to write cis-eQTL output.
 #' @param  output_file_name_tra Path to write trans-eQTL output.
@@ -26,10 +25,9 @@ eQTL_mapping_step = function(
     expression_file_name,
     gene_location_file_name,
     context,
-    shared_specific,
     out_dir,
-    output_file_name_cis = file.path(out_dir, paste0(context, "_", shared_specific, ".cis_pairs.txt")),
-    output_file_name_tra = file.path(out_dir, paste0(context, "_", shared_specific, ".trans_pairs.txt")),
+    output_file_name_cis = output_file_name_cis,
+    output_file_name_tra = output_file_name_tra,
     method = "MatrixEQTL",
     use_model = modelLINEAR,
     cis_dist = 1e6,
@@ -129,7 +127,7 @@ builtins.run_tensorqtl = run_tensorqtl
       message(e$message)
     })
     
-    parquet_path <- file.path(out_dir, paste0(context, "_tensor.cis_qtl_pairs.chr1.parquet"))
+    parquet_path <- output_file_name_cis
     if (!file.exists(parquet_path)) stop("TensorQTL failed: .parquet output not found")
 
     pd <- import("pandas", convert = FALSE)
