@@ -2,7 +2,7 @@
 % Please edit documentation in R/simulate_data.R
 \name{simulate_data}
 \alias{simulate_data}
-\title{Simulations}
+\title{Simulate Gene Expression and Genotype Data}
 \usage{
 simulate_data(
   data_dir,
@@ -14,58 +14,42 @@ simulate_data(
   w_corr = 0.2,
   v_e = 1,
   missing = 0,
-  seed = 1,
-  sim_scenario = "single_context_het"
+  hsq = rep(0, n_contexts),
+  mus = rep(0, n_contexts)
 )
 }
 \arguments{
-\item{data_dir}{\itemize{
-\item full filepath of the directory where simulated data will be written to
-}}
+\item{data_dir}{String. Full file path to the directory where simulated data will be saved.}
 
-\item{N}{\itemize{
-\item number of individuals simulated (must be a whole number)
-}}
+\item{N}{Integer. Number of individuals to simulate.}
 
-\item{n_genes}{\itemize{
-\item number of genes simulated (must be a whole number)
-}}
+\item{n_genes}{Integer. Number of genes to simulate.}
 
-\item{n_snps_per_gene}{\itemize{
-\item number of cis-SNPs per gene (must be a whole number)
-}}
+\item{n_snps_per_gene}{Integer. Number of cis-SNPs per gene.}
 
-\item{n_contexts}{\itemize{
-\item number of contexts to simulate (e.g. tissues or cell types) (must be a whole number)
-}}
+\item{n_contexts}{Integer. Number of contexts to simulate (e.g., tissues or cell types).}
 
-\item{maf}{\itemize{
-\item minor allele frequency for genotypes
-}}
+\item{maf}{Numeric. Minor allele frequency for simulated SNPs (value between 0 and 1).}
 
-\item{w_corr}{\itemize{
-\item error covariance between contexts
-}}
+\item{w_corr}{Numeric. Off-diagonal values for the error covariance matrix (correlation between contexts).}
 
-\item{v_e}{\itemize{
-\item error variance in each context (maybe take this out and set it to 1)
-}}
+\item{v_e}{Numeric. Error variance for expression in each context.}
 
-\item{missing}{\itemize{
-\item decimal value signifying percentage of missingness in simulated expression data (e.g. parameter value of 0.3 would indicate 30\% missing values in outputted expression matrix)
-}}
+\item{missing}{Numeric. Proportion of missing values in the simulated expression data (e.g., 0.3 = 30\% missing).}
 
-\item{seed}{\itemize{
-\item can set seed for reproducibility
-}}
+\item{hsq}{Numeric vector of length \code{n_contexts}. Heritability values in each context (defaults to 0 = null model).}
 
-\item{sim_scenario}{\itemize{
-\item must be either "null" or "single_context_het" to signify simulations under the null case (no genetic effects in any context) or the case of single context heterogeneity (one context drives the genetic effect heterogeneity)
-}}
+\item{mus}{Numeric vector of length \code{n_contexts}. Mean expression in each context.}
 }
 \value{
-outputs an expression matrix file, a genotype matrix file, a SNP location file, and a gene location file all in the format needed for FastGxC's decomposition step and then subsequent eQTL mapping step with Matrix eQTL.
+Writes the following files to \code{data_dir}:
+\itemize{
+\item \code{SNPs.txt} – genotype matrix (individuals × SNPs)
+\item \code{snpsloc.txt} – SNP location file for cis-window definitions
+\item \code{geneloc.txt} – gene location file for cis-window definitions
+\item \code{simulated_expression.txt} – simulated gene expression matrix with optional missingness
+}
 }
 \description{
-Function to generate simulated SNP and expression data
+Generates simulated SNP genotypes, gene expression data across multiple contexts (e.g., tissues or cell types)
 }

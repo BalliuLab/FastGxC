@@ -76,17 +76,18 @@ py <- import_builtins()
 To run a toy example, generate simulated data by running the following code in R:
 
 ```         
+n_contexts = 10
   data_dir_sim= "~/simulated_example/"    
   simulate_data(data_dir = data_dir_sim, # Path to directory where output files will be saved   
               N = 300, # Number of individuals
-              n_contexts = 10, # Number of contexts
+              n_contexts = n_contexts, # Number of contexts
               n_genes = 100, # Number of Genes
               n_snps_per_gene = 1000, # Number of SNPs per gene
               maf = 0.2, # Minor allele frequency for SNPs
               w_corr = 0.2, # Intra-individual residual correlation between contexts
               v_e = 1, # Error variance per context
               missing = 0.05, # Fraction of missing values in the simulated expression matrix
-              hsq = rep(0,n_contexts), # Vector with proportion of expression heritability explained by eQTL in each context
+              hsq = rep(0, n_contexts), # Vector with proportion of expression heritability explained by eQTL in each context
               mus = rep(0, n_contexts)) # Vector with average expression in each context 
 ```
 
