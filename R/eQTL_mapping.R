@@ -7,6 +7,7 @@
 #' @param  expression_file_name Full path to expression matrix.
 #' @param  gene_location_file_name Full path to gene location file.
 #' @param  context Context name for labeling output.
+#' @param  shared_specific Context specific or context shared
 #' @param  out_dir Output directory.
 #' @param  output_file_name_cis Path to write cis-eQTL output.
 #' @param  output_file_name_tra Path to write trans-eQTL output.
@@ -25,9 +26,10 @@ eQTL_mapping_step = function(
     expression_file_name,
     gene_location_file_name,
     context,
+    shared_specific,
     out_dir,
-    output_file_name_cis = output_file_name_cis,
-    output_file_name_tra = output_file_name_tra,
+    output_file_name_cis = file.path(out_dir, paste0(context, "_", shared_specific, ".cis_pairs.txt")),
+    output_file_name_tra = file.path(out_dir, paste0(context, "_", shared_specific, ".trans_pairs.txt")),
     method = "MatrixEQTL",
     use_model = modelLINEAR,
     cis_dist = 1e6,
@@ -76,12 +78,14 @@ eQTL_mapping_step = function(
     )
     
   } else if (method == "tensorQTL") {
+    # ✅ Expand all paths for Python compatibility
     SNP_file_name <- path.expand(SNP_file_name)
     snps_location_file_name <- path.expand(snps_location_file_name)
     gene_location_file_name <- path.expand(gene_location_file_name)
     expression_file_name <- path.expand(expression_file_name)
     out_dir <- path.expand(out_dir)
     
+    # ✅ Define and register the Python TensorQTL helper function
     py_run_string("
 import os
 import torch
@@ -102,7 +106,8 @@ def run_tensorqtl(phenotype_df, phenotype_pos_df, genotype_df, variant_df, prefi
 
 builtins.run_tensorqtl = run_tensorqtl
 ")
-
+    
+    # ✅ Load data from R → Python
     phenotype_df <- read.table(expression_file_name, header = TRUE, row.names = 1)
     phenotype_pos_df <- read.table(gene_location_file_name, header = TRUE, row.names = 1)
     genotype_df <- read.table(SNP_file_name, header = TRUE, row.names = 1)
@@ -113,7 +118,8 @@ builtins.run_tensorqtl = run_tensorqtl
     py$genotype_df <- genotype_df
     py$variant_df <- variant_df
     py$prefix <- file.path(out_dir, paste0(context, "_tensor"))
-
+    
+    # ✅ Run TensorQTL safely
     tryCatch({
       py$run_tensorqtl(
         py$phenotype_df,
@@ -127,20 +133,24 @@ builtins.run_tensorqtl = run_tensorqtl
       message(e$message)
     })
     
-    parquet_path <- output_file_name_cis
+    # ✅ Validate output file
+    parquet_path <- file.path(out_dir, paste0(context, "_tensor.cis_qtl_pairs.chr1.parquet"))
     if (!file.exists(parquet_path)) stop("TensorQTL failed: .parquet output not found")
-
+    
+    # ✅ Load and convert output
     pd <- import("pandas", convert = FALSE)
     pq <- pd$read_parquet(parquet_path)
     py$pq <- pq
-
+    
+    # ✅ Rename columns
     pq$rename(columns = dict(
       phenotype_id = "gene",
       variant_id = "SNP",
       slope = "beta",
       pval_nominal = "p.value"
     ), inplace = TRUE)
-
+    
+    # ✅ Extract results and save
     pq_df <- py_eval("pq.loc[:, ['SNP', 'gene', 'beta', 'p.value']]", convert = TRUE)
     pq_df$FDR <- p.adjust(pq_df$p.value, method = "BH")
     pq_df <- pq_df[order(pq_df$p.value), ]
