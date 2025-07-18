@@ -12,7 +12,7 @@ to_TreeBH_input(data_dir, shared_file, context_names, out_dir)
 }}
 
 \item{shared_file}{\itemize{
-\item full filepath to the shared all_pairs file from the output of the mapping function
+\item full filepath to the shared cis_pairs file from the output of the mapping function
 }}
 
 \item{context_names}{\itemize{

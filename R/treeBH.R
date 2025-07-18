@@ -1,7 +1,7 @@
 #' Converting eQTL Mapping Output to TreeBH Input
 #' 
 #' @param data_dir - full filepath of the directory where eQTL output files are stored. This function assumes that files are named as outputted by FastGxC's eQTL mapping function
-#' @param shared_file - full filepath to the shared all_pairs file from the output of the mapping function
+#' @param shared_file - full filepath to the shared cis_pairs file from the output of the mapping function
 #' @param context_names - vector of all context names in the format c("tissue1", "tissue2", ..., etc.)
 #' @param out_dir - full filepath of the output directory where the input of TreeBH can be stored
 #' @return A data.frame with columns:
@@ -21,7 +21,7 @@ to_TreeBH_input <- function(data_dir, shared_file, context_names, out_dir) {
   # Inline file-reading and p-value/column validation per context
   for (i in seq_len(num_contexts)) {
     context <- context_names[i]
-    pattern <- paste0(context, "_specific.all_pairs.txt$")
+    pattern <- paste0(context, "_specific.cis_pairs.txt$")
     files   <- list.files(path = data_dir, pattern = pattern, full.names = TRUE)
     if (length(files) == 0) stop("No file matching pattern ", pattern)
     df      <- readr::read_tsv(files[[1]], col_types = readr::cols())
@@ -83,6 +83,8 @@ to_TreeBH_input <- function(data_dir, shared_file, context_names, out_dir) {
     stringsAsFactors   = FALSE,
     check.names        = FALSE
   )
+  
+  if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
 
   # Write file
   write.table(

@@ -93,9 +93,9 @@ n_contexts = 10
 
 \*\* Note: running the code above simulates data with default parameters (300 individuals, 1,000 SNPs, 100 genes, 10 contexts, etc.), but this function can be run with any combination of parameter values. See all possible parameters for `simulate_data()` by running `?simulate_data` in R.
 
-**Output Files**\
+**Output Files**
 
-The simulation will generate the following files in data_dir:\
+The simulation will generate the following files in `data_dir`:
 
 **SNPs.txt**
 
@@ -119,7 +119,7 @@ snp4    chr1   1        1         1           1
 snp5    chr1   1        1         1           1
 ```
 
-**simulated_expression.txt**
+**expression.txt**
 
 ```         
 design             gene1     gene2     gene3    ...   gene100
@@ -152,11 +152,11 @@ The following code example demonstrates how to use this function with the data w
 
 ```         
 data_dir_decomp = "~/simulated_example/"
-exp_mat_filename = paste0(data_dir_decomp, "simulated_expression.txt")
+exp_mat_filename = paste0(data_dir_decomp, "expression.txt")
 decomposition_step(exp_mat_filename, data_dir_decomp)
 ```
 
-**Output Files**\
+**Output Files**
 
 context_shared_expression.txt / contextX_specific_expression.txt
 
@@ -244,6 +244,7 @@ snp86064    gene87  -0.371489137411118  3.10237595856035e-05    0.55054262774640
 
 # Multiple testing adjustment
 
+## With `TreeQTL`
 To adjust for multiple testing across all contexts, genes, and genetic variants tested, FastGxC uses the hierarchical FDR procedures implemented in the R package [TreeQTL](http://bioinformatics.org/treeqtl/) via the `treeQTL_step()` function.
 
 This function requires that you run MatrixEQTL to do eQTL mapping (see step 2 above). If you used another eQTL mapping softwares, please make sure the output is in the format required by TreeQTL. You can also replace TreeQTL with other methods, e.g. [mashR](https://github.com/stephenslab/mashr), which can also lead to a considerable increase in power.
@@ -285,4 +286,34 @@ treeQTL_step(
        fdr_thresh = fdr_thresh,
        four_level = T
      )
+```
+
+## With `TreeBH`
+[TreeBH](https://github.com/cbpeterson/TreeBH) is the updated version of TreeQTL and supports the implementation of custom and more complex hierarchies. FastGxC provides the functions `to_TreeBH_input()` and `treeBH_step()` to leverage TreeBH's capibilities. 
+
+The following code example demonstrates how to use these functions with the data outputted from the eQTL mapping step. In the example, the output of TreeBH will be saved to the path `~/simulated_example/treeBH_input.txt`.  
+
+
+```R
+context_names <- paste0("context", 1:10)
+shared_file <- "~/simulated_example/shared_shared.cis_pairs.txt"
+data_dir <- "~/simulated_example/"
+out_dir <- "~/simulated_example"
+
+FastGxC::to_TreeBH_input(
+  data_dir = data_dir,
+  shared_file = shared_file, 
+  context_names = context_names,
+  out_dir = out_dir
+)
+
+out_dir <- "~/simulated_example/"
+df <- read.table(out_dir)
+fdr_thres <- 0.05
+
+FastGxC::treeBH_step(
+  matrix = df,
+  fdr_thres = 0.05,
+  out_dir
+)
 ```
