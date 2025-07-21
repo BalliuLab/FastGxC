@@ -1,4 +1,4 @@
-# FastGxC: A powerful and computationally efficient software for context-specific eQTL mapping in single-cell omics data
+# FastGxC: A powerful and computationally efficient software for context-specific eQTL mapping in single-cell genomics data
 
 FastGxC was originally developed for single-cell data, where each individual contributes gene expression measurements across multiple cell types.
 
@@ -28,7 +28,7 @@ library(magrittr)
 library(TreeQTL)
 ```
 
-\*\* Note \*\* : to install TreeQTL, qvalue must be installed first.
+**Note** : To install TreeQTL, qvalue must be installed first.
 
 ```         
 if (!requireNamespace("qvalue", quietly = TRUE)) {
@@ -36,10 +36,25 @@ if (!requireNamespace("qvalue", quietly = TRUE)) {
 }
 ```
 
+To install TreeBH, download the following package: [TreeBH_1.0.tar.gz](https://github.com/user-attachments/files/21328935/TreeBH_1.0.tar.gz)
+
+Then, run the following command:
+
+```         
+install.packages("~/Downloads/TreeBH_1.0.tar.gz", repos = NULL, type = "source")
+library(TreeBH)
+```
+
 Once all dependencies are installed and loaded you can install FastGxC using:
 
 ```         
 devtools::install_github("BalliuLab/FastGxC")
+```
+
+If devtools is not installed:
+
+```         
+install.packages("devtools")
 ```
 
 Once FastGxC is installed, load all functions using
@@ -87,14 +102,13 @@ n_contexts = 10
               w_corr = 0.2, # Intra-individual residual correlation between contexts
               v_e = 1, # Error variance per context
               missing = 0.05, # Fraction of missing values in the simulated expression matrix
-              hsq = rep(0, n_contexts), # Vector with proportion of expression heritability explained by eQTL in each context
+              hsq = rep(0, n_contexts), # Vector with proportion of expression heritability                   explained by eQTL in each context
               mus = rep(0, n_contexts)) # Vector with average expression in each context 
 ```
 
-\*\* Note: running the code above simulates data with default parameters (300 individuals, 1,000 SNPs, 100 genes, 10 contexts, etc.), but this function can be run with any combination of parameter values. See all possible parameters for `simulate_data()` by running `?simulate_data` in R.
+**Note**: running the code above simulates data with default parameters (300 individuals, 1,000 SNPs, 100 genes, 10 contexts, etc.), but this function can be run with any combination of parameter values. See all possible parameters for `simulate_data()` by running `?simulate_data` in R.
 
-**Output Files**
-
+**Output Files**\
 The simulation will generate the following files in `data_dir`:
 
 **SNPs.txt**
@@ -225,11 +239,11 @@ To use this functionality, specify method = "tensorQTL" when calling eQTL_mappin
 
 **Note:** TensorQTL requires Python version 3.7 or higher to run properly.
 
-To run TensorQTL, simply pass method = "TensorQTL." The inputs remain unchanged.
+To run TensorQTL, simply pass method = TensorQTL. The inputs remain unchanged.
 
-**Output Files**\
+**Output Files**
 
-contextX_specific.cis_pairs.txt
+contextX_specific.cis_pairs.txt / shared_shared.cis_pairs.txt
 
 ```         
 SNP         gene    beta                    p.value                 FDR
@@ -245,6 +259,7 @@ snp86064    gene87  -0.371489137411118  3.10237595856035e-05    0.55054262774640
 # Multiple testing adjustment
 
 ## With `TreeQTL`
+
 To adjust for multiple testing across all contexts, genes, and genetic variants tested, FastGxC uses the hierarchical FDR procedures implemented in the R package [TreeQTL](http://bioinformatics.org/treeqtl/) via the `treeQTL_step()` function.
 
 This function requires that you run MatrixEQTL to do eQTL mapping (see step 2 above). If you used another eQTL mapping softwares, please make sure the output is in the format required by TreeQTL. You can also replace TreeQTL with other methods, e.g. [mashR](https://github.com/stephenslab/mashr), which can also lead to a considerable increase in power.
@@ -257,10 +272,10 @@ Map specific-eGenes, i.e., genes with at least one context-specific eQTL
 ## directory with all matrixeQTL files for all contexts 
 ## (note that this function expects files to be named in the same was as the 
 output files from FastGxC's eQTL mapping function)
-data_dir = "~/example_output_single_context_het/" 
-snps_location_file_name = "~/simulations/single_context_het_snpsloc.txt"
-gene_location_file_name = "~/simulations/single_context_het_geneloc.txt"
-out_dir = "~/example_output_single_context_het/"
+data_dir = "~/simulated_example/"
+snps_location_file_name = "~/simulated_example/snpsloc.txt"
+gene_location_file_name = "~/simulated_example/geneloc.txt"
+out_dir = "~/simulated_example/"
 fdr_thresh = 0.05
 
 ## Run multiple testing correction without the four level hierarchy:
@@ -289,12 +304,12 @@ treeQTL_step(
 ```
 
 ## With `TreeBH`
-[TreeBH](https://github.com/cbpeterson/TreeBH) is the updated version of TreeQTL and supports the implementation of custom and more complex hierarchies. FastGxC provides the functions `to_TreeBH_input()` and `treeBH_step()` to leverage TreeBH's capibilities. 
 
-The following code example demonstrates how to use these functions with the data outputted from the eQTL mapping step. In the example, the output of TreeBH will be saved to the path `~/simulated_example/treeBH_input.txt`.  
+[TreeBH](https://github.com/cbpeterson/TreeBH) is the updated version of TreeQTL and supports the implementation of custom and more complex hierarchies. FastGxC provides the functions `to_TreeBH_input()` and `treeBH_step()` to leverage TreeBH's capibilities.
 
+The following code example demonstrates how to use these functions with the data outputted from the eQTL mapping step. In the example, the output of TreeBH will be saved to the path `~/simulated_example/treeBH_input.txt`.
 
-```R
+``` r
 context_names <- paste0("context", 1:10)
 shared_file <- "~/simulated_example/shared_shared.cis_pairs.txt"
 data_dir <- "~/simulated_example/"
