@@ -44,8 +44,11 @@ if (is.vector(context_names)) {
 shared_n_tests_per_gene = get_n_tests_per_gene(snp_map = snpspos[,1:3], gene_map = genepos[,1:4], 
                                             nearby = TRUE, dist = cisDist)
 shared_n_tests_per_gene = data.frame(shared_n_tests_per_gene)
-shared_n_tests_per_gene = data.frame(gene = rownames(shared_n_tests_per_gene), shared_n_tests_per_gene)
-names(shared_n_tests_per_gene) = c("family", "n_tests")
+
+if(ncol(shared_n_tests_per_gene) < 2){
+  shared_n_tests_per_gene = data.frame(gene = rownames(shared_n_tests_per_gene), shared_n_tests_per_gene)
+  names(shared_n_tests_per_gene) = c("family", "n_tests")
+}
 
 
 if(four_level){
