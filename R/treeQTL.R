@@ -129,15 +129,17 @@ treeQTL_step = function(data_dir, snps_location_file_name, gene_location_file_na
     
     if (nrow(specific_eGenes) == 0) {
       message("No specific eGenes discovered. Skipping downstream steps.")
-      return(NULL)
     }
     
     write.table(x = specific_eGenes, file = paste0(out_dir, "specific_eGenes.txt"), quote = FALSE, row.names = FALSE, col.names = TRUE, sep = '\t')
     
     pattern = ("shared.all_pairs.txt")
+    shared_file <- list.files(path = data_dir, pattern = "shared_shared.cis_pairs.txt", full.names = TRUE)
+    if (length(shared_file) != 1) stop("Expected one shared file but found: ", length(shared_file))
+    
     shared_eGenes = get_eGenes(
       n_tests_per_gene = shared_n_tests_per_gene, 
-      m_eqtl_out = list.files(data_dir, pattern = pattern, full.names = TRUE), 
+      m_eqtl_out = shared_file, 
       method = "BH",
       level1 = level1, level2 = level2,
       slice_size = 1e+05,
@@ -152,8 +154,9 @@ treeQTL_step = function(data_dir, snps_location_file_name, gene_location_file_na
     write.table(x = shared_eGenes, file = paste0(out_dir, "shared_eGenes.txt"), quote = FALSE, row.names = FALSE, col.names = TRUE, sep = '\t')
     
     eAssociations = get_eAssociations(
-      eDiscoveries = shared_eGenes, n_tests = shared_n_tests_per_gene, 
-      m_eqtl_out = list.files(data_dir, pattern = pattern, full.names = TRUE),
+      eDiscoveries = shared_eGenes,
+      n_tests = shared_n_tests_per_gene,
+      m_eqtl_out = shared_file,
       out_file = paste0(out_dir, "eAssoc_by_gene.context_shared.txt"), 
       by_snp = FALSE, slice_size = 1e+05,
       silent = FALSE
