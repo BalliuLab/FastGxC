@@ -13,81 +13,81 @@
 #'
 #' @export
 treeQTL_step = function(data_dir, snps_location_file_name, gene_location_file_name, context_names, out_dir, fdr_thresh = 0.05, four_level = F){
-
-# use a single thread
-print(paste0("data.table getDTthreads(): ",getDTthreads()))
-setDTthreads(1)
-print(paste0("after setting as 1 thread; data.table getDTthreads(): ",getDTthreads()))
-
-# Display all warnings as they occur
-options(warn=1)
-
-# FDR thresholds
-level1=fdr_thresh
-level2=fdr_thresh
-level3=fdr_thresh
-
-# Distance for local gene-SNP pairs
-cisDist = 1e6;
-
-snpspos = fread(file = snps_location_file_name);
-genepos = fread(file = gene_location_file_name);
-
-## get context names
-if (is.vector(context_names)) {
-    print(paste("Input for context names is a valid vector."))
-}else{
-    stop(print(paste0("No valid input for context names.")))
-}
-# Use treeQTL to perform hierarchical FDR and get specific_eGenes, i.e. genes with at least one context-specific eQTL, and shared_eGenes, i.e. genes with at least one context-shared eQTL
   
-shared_n_tests_per_gene = get_n_tests_per_gene(snp_map = snpspos[,1:3], gene_map = genepos[,1:4], 
-                                            nearby = TRUE, dist = cisDist)
-shared_n_tests_per_gene = data.frame(shared_n_tests_per_gene)
-
-if(ncol(shared_n_tests_per_gene) < 2){
-  shared_n_tests_per_gene = data.frame(gene = rownames(shared_n_tests_per_gene), shared_n_tests_per_gene)
-  names(shared_n_tests_per_gene) = c("family", "n_tests")
-}
-
-
-if(four_level){
+  # use a single thread
+  print(paste0("data.table getDTthreads(): ",getDTthreads()))
+  setDTthreads(1)
+  print(paste0("after setting as 1 thread; data.table getDTthreads(): ",getDTthreads()))
+  
+  # Display all warnings as they occur
+  options(warn=1)
+  
+  # FDR thresholds
+  level1=fdr_thresh
+  level2=fdr_thresh
+  level3=fdr_thresh
+  
+  # Distance for local gene-SNP pairs
+  cisDist = 1e6;
+  
+  snpspos = fread(file = snps_location_file_name);
+  genepos = fread(file = gene_location_file_name);
+  
+  ## get context names
+  if (is.vector(context_names)) {
+    print(paste("Input for context names is a valid vector."))
+  }else{
+    stop(print(paste0("No valid input for context names.")))
+  }
+  # Use treeQTL to perform hierarchical FDR and get specific_eGenes, i.e. genes with at least one context-specific eQTL, and shared_eGenes, i.e. genes with at least one context-shared eQTL
+  
+  shared_n_tests_per_gene = get_n_tests_per_gene(snp_map = snpspos[,1:3], gene_map = genepos[,1:4], 
+                                                 nearby = TRUE, dist = cisDist)
+  shared_n_tests_per_gene = data.frame(shared_n_tests_per_gene)
+  
+  if(ncol(shared_n_tests_per_gene) < 2){
+    shared_n_tests_per_gene = data.frame(gene = rownames(shared_n_tests_per_gene), shared_n_tests_per_gene)
+    names(shared_n_tests_per_gene) = c("family", "n_tests")
+  }
+  
+  
+  if(four_level){
     specific_eGenes=get_eGenes_multi_tissue_mod(
-                                  m_eqtl_out_dir = data_dir, 
-                                  treeQTL_dir = out_dir, 
-                                  tissue_names = context_names,
-                                  level1 = level1, level2 = level2, level3 = level3, 
-                                  exp_suffix = "specific",
-                                  four_level = four_level,
-                                  shared_n_tests_per_gene = shared_n_tests_per_gene)
+      m_eqtl_out_dir = data_dir, 
+      treeQTL_dir = out_dir, 
+      tissue_names = context_names,
+      level1 = level1, level2 = level2, level3 = level3, 
+      exp_suffix = "specific",
+      four_level = four_level,
+      shared_n_tests_per_gene = shared_n_tests_per_gene)
     write.table(x = specific_eGenes, file = paste0(out_dir,"specific_eGenes.txt"), quote = F, row.names = F, col.names = T, sep = '\t')
-}else{
+  }else{
     specific_eGenes=get_eGenes_multi_tissue_mod(
-                                  m_eqtl_out_dir = data_dir, 
-                                  treeQTL_dir = out_dir, 
-                                  tissue_names = context_names,
-                                  level1 = level1, level2 = level2, level3 = level3, 
-                                  exp_suffix = "specific",
-                                  four_level = four_level)
+      m_eqtl_out_dir = data_dir, 
+      treeQTL_dir = out_dir, 
+      tissue_names = context_names,
+      level1 = level1, level2 = level2, level3 = level3, 
+      exp_suffix = "specific",
+      four_level = four_level)
     write.table(x = specific_eGenes, file = paste0(out_dir,"specific_eGenes.txt"), quote = F, row.names = F, col.names = T, sep = '\t')
-
+    
     pattern=("shared.all_pairs.txt")
     shared_eGenes = get_eGenes(n_tests_per_gene = shared_n_tests_per_gene, 
-                                m_eqtl_out = list.files(data_dir, pattern = pattern,full.names = T), 
-                                method = "BH",
-                                level1 = level1, level2 = level2,
-                                slice_size = 1e+05,
-                                silent = FALSE)
-
+                               m_eqtl_out = list.files(data_dir, pattern = pattern,full.names = T), 
+                               method = "BH",
+                               level1 = level1, level2 = level2,
+                               slice_size = 1e+05,
+                               silent = FALSE)
+    
     write.table(x = shared_eGenes, file = paste0(out_dir,"shared_eGenes.txt"), quote = F, row.names = F, col.names = T, sep = '\t')
-
-
+    
+    
     eAssociations = get_eAssociations(eDiscoveries = shared_eGenes, n_tests = n_tests_per_gene, 
-                    m_eqtl_out = list.files(data_dir, pattern = pattern,full.names = T),
-                    out_file = paste0(out_dir,"eAssoc_by_gene.context_shared.txt"), 
-                    by_snp = F, slice_size = 1e+05,
-                    silent = FALSE)
-}
-
+                                      m_eqtl_out = list.files(data_dir, pattern = pattern,full.names = T),
+                                      out_file = paste0(out_dir,"eAssoc_by_gene.context_shared.txt"), 
+                                      by_snp = F, slice_size = 1e+05,
+                                      silent = FALSE)
+  }
+  
   
 }
