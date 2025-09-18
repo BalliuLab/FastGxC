@@ -41,68 +41,7 @@ treeQTL_step = function(data_dir, snps_location_file_name, gene_location_file_na
   shared_n_tests_per_gene = data.frame(gene = rownames(shared_n_tests_per_gene), shared_n_tests_per_gene)
   names(shared_n_tests_per_gene) = c("family", "n_tests")
   
-  get_eGenes_multi_tissue_mod <- function(m_eqtl_out_dir, treeQTL_dir, tissue_names, level1 = 0.05, level2 = 0.05, level3 = 0.05, exp_suffix, four_level = FALSE, shared_n_tests_per_gene) {
-    pattern <- paste0("context", 1:length(tissue_names), "_", exp_suffix, ".cis_pairs.txt")
-    m_eqtl_outfiles <- file.path(m_eqtl_out_dir, pattern)
-    print("Constructed MatrixEQTL output files:")
-    print(m_eqtl_outfiles)
-    
-    if (!all(file.exists(m_eqtl_outfiles))) {
-      stop("Some expected MatrixEQTL files do not exist.")
-    }
-    
-    n_tissue <- length(tissue_names)
-    for (i in 1:n_tissue) {
-      cur_tissue_name <- tissue_names[i]
-      m_eqtl_out <- m_eqtl_outfiles[i]
-      print(paste("Computing summary statistics for tissue", cur_tissue_name))
-      n_SNPs_per_gene_this_tissue <- fread(m_eqtl_out) %>% select(gene) %>% group_by(gene) %>% mutate(n = n()) %>% distinct()
-      colnames(n_SNPs_per_gene_this_tissue) <- c("family", "n_tests")
-      gene_simes_cur_tissue <- get_eGenes(n_tests_per_gene = n_SNPs_per_gene_this_tissue, m_eqtl_out = m_eqtl_out, method = "BH", level1 = 1, level2 = 1, silent = TRUE)
-      gene_simes_cur_tissue <- merge(gene_simes_cur_tissue, n_SNPs_per_gene_this_tissue, by = "family", all = TRUE)
-      gene_simes_cur_tissue$fam_p[which(is.na(gene_simes_cur_tissue$fam_p))] <- 1
-      if (i == 1) {
-        eGene_pvals <- gene_simes_cur_tissue[, c("family", "fam_p")]
-        n_SNPs_per_gene_xT <- n_SNPs_per_gene_this_tissue
-      } else {
-        eGene_pvals <- merge(eGene_pvals, gene_simes_cur_tissue[, c("family", "fam_p")], by = "family", all = TRUE)
-        n_SNPs_per_gene_xT <- merge(n_SNPs_per_gene_xT, n_SNPs_per_gene_this_tissue, by = "family", all = TRUE)
-      }
-      names(eGene_pvals)[i + 1] <- cur_tissue_name
-      names(n_SNPs_per_gene_xT)[i + 1] <- cur_tissue_name
-    }
-    names(eGene_pvals)[1] <- "gene"
-    col_ind_pvals <- 2:(n_tissue + 1)
-    eGene_pvals$simes_p <- apply(eGene_pvals[, col_ind_pvals], 1, TreeQTL:::get_simes_p)
-    eGene_xT_qvals <- qvalue(eGene_pvals$simes_p, lambda = 0)$qvalue
-    R_G <- sum(eGene_xT_qvals <= level1)
-    print(paste("Number of cross-tissue eGenes = ", R_G))
-    
-    if (R_G == 0) {
-      warning("No eGenes selected at level1; skipping lower-level selections.")
-      return(list(
-        qvalue_table = data.frame(),
-        raw_pval_table = eGene_pvals,
-        qvals = eGene_xT_qvals
-      ))
-    }
-    
-    q2_adj <- R_G * level2 / nrow(eGene_pvals)
-    ind_sel_simes <- which(eGene_xT_qvals <= level1)
-    sel_eGenes_simes <- eGene_pvals[ind_sel_simes, ]
-    rej_simes <- t(1 * apply(sel_eGenes_simes[, col_ind_pvals], 1, TreeQTL:::qsel_by_fam, q2_adj))
-    sel_eGenes_simes$n_sel_tissues <- rowSums(rej_simes)
-    sel_eGenes_simes$n_tested_tissues <- rowSums(!is.na(sel_eGenes_simes[, col_ind_pvals]))
-    eGene_xT_sel <- data.frame(gene = sel_eGenes_simes$gene)
-    eGene_xT_sel <- cbind(eGene_xT_sel, rej_simes)
-    names(eGene_xT_sel)[2:(n_tissue + 1)] <- tissue_names
-    
-    return(list(
-      qvalue_table = eGene_xT_sel,
-      raw_pval_table = eGene_pvals,
-      qvals = eGene_xT_qvals
-    ))
-  }
+
   
   if (four_level) {
     shared_file <- list.files(path = data_dir, pattern = "shared_shared.cis_pairs.txt", full.names = TRUE)
