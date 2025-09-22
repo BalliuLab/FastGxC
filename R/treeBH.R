@@ -17,7 +17,7 @@ to_TreeBH_input <- function(data_dir, shared_file, context_names, out_dir) {
   # Prepare list to hold each context-specific + shared df
   num_contexts <- length(context_names)
   df_list      <- vector("list", num_contexts + 1)
-
+  
   # Inline file-reading and p-value/column validation per context
   for (i in seq_len(num_contexts)) {
     context <- context_names[i]
@@ -25,22 +25,22 @@ to_TreeBH_input <- function(data_dir, shared_file, context_names, out_dir) {
     files   <- list.files(path = data_dir, pattern = pattern, full.names = TRUE)
     if (length(files) == 0) stop("No file matching pattern ", pattern)
     df      <- readr::read_tsv(files[[1]], col_types = readr::cols())
-
+    
     # Ensure columns exist and types are correct
     if (!"p-value" %in% names(df)) stop("Missing 'p-value' in ", files[[1]])
     p <- df[["p-value"]]
     if (!is.numeric(p) || any(is.na(p))) stop("`p-value` must be numeric without NAs")
     if (any(p < 0 | p > 1)) stop("`p-value` entries must lie between 0 and 1")
-
+    
     if (!"gene" %in% names(df)) stop("Missing 'gene' in ", files[[1]])
     if (!is.character(df[["gene"]])) stop("`gene` must be character in ", files[[1]])
-
+    
     if (!"SNP" %in% names(df)) stop("Missing 'SNP' in ", files[[1]])
     if (!is.character(df[["SNP"]])) stop("`SNP` must be character in ", files[[1]])
-
+    
     df_list[[i]] <- df
   }
-
+  
   # Shared file: same inline checks
   df_shared <- readr::read_tsv(shared_file, col_types = readr::cols())
   for (col in c("p-value","gene","SNP")) {
@@ -54,23 +54,23 @@ to_TreeBH_input <- function(data_dir, shared_file, context_names, out_dir) {
     }
   }
   df_list[[num_contexts + 1]] <- df_shared
-
+  
   # Build grouping labels
   rows_per_df     <- vapply(df_list, nrow, integer(1))
   context_index   <- rep(seq_along(df_list), times = rows_per_df)
   context_label   <- c(context_names, "shared")[context_index]
   component_label <- ifelse(context_label == "shared", "shared", "specific")
-
+  
   # Extract columns across all data.frames
   p_values   <- unlist(lapply(df_list, `[[`, "p-value"),   use.names = FALSE)
   gene_names <- unlist(lapply(df_list, `[[`, "gene"),      use.names = FALSE)
   snp_names  <- unlist(lapply(df_list, `[[`, "SNP"),       use.names = FALSE)
-
+  
   # Build hierarchical identifiers
   gene_snp_id  <- paste0(gene_names, "_", snp_names)
   component_id <- paste0(gene_snp_id, "_", component_label)
   context_id   <- paste0(component_id, "_", context_label)
-
+  
   # Assemble final data.frame
   out_df <- data.frame(
     gene_name          = gene_names,
@@ -85,7 +85,7 @@ to_TreeBH_input <- function(data_dir, shared_file, context_names, out_dir) {
   )
   
   if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
-
+  
   # Write file
   write.table(
     out_df,
