@@ -117,7 +117,8 @@ builtins.run_tensorqtl = run_tensorqtl
     py$phenotype_pos_df <- phenotype_pos_df
     py$genotype_df <- genotype_df
     py$variant_df <- variant_df
-    py$prefix <- file.path(out_dir, paste0(context, "_tensor"))
+    tensorqtl_prefix <- file.path(out_dir, paste0(context, "_", shared_specific))
+    py$prefix <- tensorqtl_prefix
     
     # ✅ Run TensorQTL safely
     tryCatch({
@@ -134,7 +135,7 @@ builtins.run_tensorqtl = run_tensorqtl
     })
     
     # ✅ Validate output file
-    parquet_path <- file.path(out_dir, paste0(context, "_tensor.cis_qtl_pairs.chr1.parquet"))
+    parquet_path <- paste0(py$prefix, ".cis_qtl_pairs.chr1.parquet")
     if (!file.exists(parquet_path)) stop("TensorQTL failed: .parquet output not found")
     
     # ✅ Load and convert output
@@ -147,13 +148,13 @@ builtins.run_tensorqtl = run_tensorqtl
       phenotype_id = "gene",
       variant_id = "SNP",
       slope = "beta",
-      pval_nominal = "p.value"
+      pval_nominal = "p-value"
     ), inplace = TRUE)
     
     # ✅ Extract results and save
-    pq_df <- py_eval("pq.loc[:, ['SNP', 'gene', 'beta', 'p.value']]", convert = TRUE)
-    pq_df$FDR <- p.adjust(pq_df$p.value, method = "BH")
-    pq_df <- pq_df[order(pq_df$p.value), ]
+    pq_df <- py_eval("pq.loc[:, ['SNP', 'gene', 'beta', 'p-value']]", convert = TRUE)
+    pq_df$FDR <- p.adjust(pq_df$`p-value`, method = "BH")
+    pq_df <- pq_df[order(pq_df$`p-value`), ]
     
     write.table(pq_df, file = output_file_name_cis, sep = '\t', row.names = FALSE, quote = FALSE)
   } else {
