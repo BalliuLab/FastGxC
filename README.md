@@ -13,7 +13,7 @@ Please read the [BioRxiv](https://www.biorxiv.org/content/10.1101/2021.06.17.448
 <!-- Extended data with FastGxC results on GTEx, OneK1K, and CLUES cohorts can be found [here](https://zenodo.org/record/5015123#.YNJ1WpNKjOR) -->
 
 
-## Please see the Wiki above for a tutorial on how to install, run, and apply FastGxC to simulated and real data.
+## Please see the [Wiki](https://github.com/BalliuLab/FastGxC/wiki) for a tutorial on how to install, run, and apply FastGxC to simulated and real data.
 
 
 
