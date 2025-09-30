@@ -11,7 +11,7 @@ treeQTL_step(
   context_names,
   out_dir,
   fdr_thresh = 0.05,
-  four_level = F
+  four_level = FALSE
 )
 }
 \arguments{

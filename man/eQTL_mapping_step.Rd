@@ -10,9 +10,12 @@ eQTL_mapping_step(
   expression_file_name,
   gene_location_file_name,
   context,
+  shared_specific,
   out_dir,
-  output_file_name_cis = output_file_name_cis,
-  output_file_name_tra = output_file_name_tra,
+  output_file_name_cis = file.path(out_dir, paste0(context, "_", shared_specific,
+    ".cis_pairs.txt")),
+  output_file_name_tra = file.path(out_dir, paste0(context, "_", shared_specific,
+    ".trans_pairs.txt")),
   method = "MatrixEQTL",
   use_model = modelLINEAR,
   cis_dist = 1e+06,
@@ -31,6 +34,8 @@ eQTL_mapping_step(
 \item{gene_location_file_name}{Full path to gene location file.}
 
 \item{context}{Context name for labeling output.}
+
+\item{shared_specific}{Context specific or context shared}
 
 \item{out_dir}{Output directory.}
 
