@@ -39,7 +39,7 @@ treeQTL_step = function(data_dir, snps_location_file_name, gene_location_file_na
     shared_n_tests_per_gene = get_n_tests_per_gene(snp_map = snpspos[,1:3], gene_map = genepos[,1:4], 
                                                    nearby = TRUE, dist = cisDist)
     shared_n_tests_per_gene = data.frame(shared_n_tests_per_gene)
-    shared_n_tests_per_gene = data.frame(gene = rownames(shared_n_tests_per_gene), shared_n_tests_per_gene)
+    # shared_n_tests_per_gene = data.frame(gene = rownames(shared_n_tests_per_gene), shared_n_tests_per_gene)
     names(shared_n_tests_per_gene) = c("family", "n_tests")
     
     get_eGenes_multi_tissue_mod <- function(m_eqtl_out_dir, treeQTL_dir, tissue_names, level1 = 0.05, level2 = 0.05, level3 = 0.05, exp_suffix, four_level = FALSE, shared_n_tests_per_gene) {
