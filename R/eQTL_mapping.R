@@ -78,14 +78,12 @@ eQTL_mapping_step = function(
     )
     
   } else if (method == "tensorQTL") {
-    # ✅ Expand all paths for Python compatibility
     SNP_file_name <- path.expand(SNP_file_name)
     snps_location_file_name <- path.expand(snps_location_file_name)
     gene_location_file_name <- path.expand(gene_location_file_name)
     expression_file_name <- path.expand(expression_file_name)
     out_dir <- path.expand(out_dir)
-    
-    # ✅ Define and register the Python TensorQTL helper function
+
     py_run_string("
 import os
 import torch
@@ -106,12 +104,24 @@ def run_tensorqtl(phenotype_df, phenotype_pos_df, genotype_df, variant_df, prefi
 
 builtins.run_tensorqtl = run_tensorqtl
 ")
-    
-    # ✅ Load data from R → Python
-    phenotype_df <- read.table(expression_file_name, header = TRUE, row.names = 1)
-    phenotype_pos_df <- read.table(gene_location_file_name, header = TRUE, row.names = 1)
-    genotype_df <- read.table(SNP_file_name, header = TRUE, row.names = 1)
-    variant_df <- read.table(snps_location_file_name, header = TRUE, row.names = 1)
+
+    expr <- read.table(expression_file_name, header = TRUE, sep = "\t", check.names = FALSE)
+
+    rownames(expr) <- expr[, 1]
+    expr <- expr[, -1, drop = FALSE]
+
+    write.table(
+      expr,
+      file = expression_file_name,
+      sep = "\t",
+      row.names = TRUE,
+      col.names = NA,   
+      quote = FALSE
+    )
+    phenotype_df <- suppressWarnings(read.table(expression_file_name, header = TRUE, row.names = 1))
+    phenotype_pos_df <- suppressWarnings(read.table(gene_location_file_name, header = TRUE, row.names = 1))
+    genotype_df <- suppressWarnings(read.table(SNP_file_name, header = TRUE, row.names = 1))
+    variant_df <- suppressWarnings(read.table(snps_location_file_name, header = TRUE, row.names = 1))
     
     py$phenotype_df <- phenotype_df
     py$phenotype_pos_df <- phenotype_pos_df
@@ -120,7 +130,6 @@ builtins.run_tensorqtl = run_tensorqtl
     tensorqtl_prefix <- file.path(out_dir, paste0(context, "_", shared_specific))
     py$prefix <- tensorqtl_prefix
     
-    # ✅ Run TensorQTL safely
     tryCatch({
       py$run_tensorqtl(
         py$phenotype_df,
@@ -134,16 +143,13 @@ builtins.run_tensorqtl = run_tensorqtl
       message(e$message)
     })
     
-    # ✅ Validate output file
     parquet_path <- paste0(py$prefix, ".cis_qtl_pairs.chr1.parquet")
     if (!file.exists(parquet_path)) stop("TensorQTL failed: .parquet output not found")
     
-    # ✅ Load and convert output
     pd <- import("pandas", convert = FALSE)
     pq <- pd$read_parquet(parquet_path)
     py$pq <- pq
     
-    # ✅ Rename columns
     pq$rename(columns = dict(
       phenotype_id = "gene",
       variant_id = "SNP",
@@ -151,7 +157,6 @@ builtins.run_tensorqtl = run_tensorqtl
       pval_nominal = "p-value"
     ), inplace = TRUE)
     
-    # ✅ Extract results and save
     pq_df <- py_eval("pq.loc[:, ['SNP', 'gene', 'beta', 'p-value']]", convert = TRUE)
     pq_df$FDR <- p.adjust(pq_df$`p-value`, method = "BH")
     pq_df <- pq_df[order(pq_df$`p-value`), ]
