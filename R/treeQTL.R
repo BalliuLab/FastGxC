@@ -42,7 +42,7 @@ treeQTL_step = function(data_dir, snps_location_file_name, gene_location_file_na
     # shared_n_tests_per_gene = data.frame(gene = rownames(shared_n_tests_per_gene), shared_n_tests_per_gene)
     names(shared_n_tests_per_gene) = c("family", "n_tests")
     
-    get_eGenes_multi_tissue_mod <- function(m_eqtl_out_dir, treeQTL_dir, tissue_names, level1 = 0.05, level2 = 0.05, level3 = 0.05, exp_suffix, four_level = FALSE, shared_n_tests_per_gene) {
+    get_eGenes_multi_tissue_mod <- function(m_eqtl_out_dir, treeQTL_dir, tissue_names, level1 = level1, level2 = level2, level3 = level3, exp_suffix, four_level = FALSE, shared_n_tests_per_gene) {
       pattern <- paste0("context", 1:length(tissue_names), "_", exp_suffix, ".cis_pairs.txt")
       m_eqtl_outfiles <- file.path(m_eqtl_out_dir, pattern)
       print("Constructed MatrixEQTL output files:")
@@ -152,6 +152,7 @@ treeQTL_step = function(data_dir, snps_location_file_name, gene_location_file_na
       
       if (nrow(specific_eGenes) == 0) {
         message("No specific eGenes discovered.")
+        write.table(data.frame(), file = file.path(out_dir, "specific_eGenes.txt"), quote = FALSE, row.names = FALSE, col.names = TRUE, sep = '\t')
       }
       else {
         write.table(x = specific_eGenes, file = paste0(out_dir, "specific_eGenes.txt"), quote = FALSE, row.names = FALSE, col.names = TRUE, sep = '\t')
@@ -172,7 +173,8 @@ treeQTL_step = function(data_dir, snps_location_file_name, gene_location_file_na
       
       if (nrow(shared_eGenes) == 0) {
         message("No shared eGenes discovered. Skipping shared association analysis.")
-        return(NULL)
+        write.table(data.frame(), file = file.path(out_dir, "shared_eGenes.txt"), quote = FALSE, row.names = FALSE, col.names = TRUE, sep = '\t')
+        return(invisible(NULL))
       }
       else{
         write.table(x = shared_eGenes, file = paste0(out_dir, "shared_eGenes.txt"), quote = FALSE, row.names = FALSE, col.names = TRUE, sep = '\t')
