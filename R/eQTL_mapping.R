@@ -83,7 +83,7 @@ eQTL_mapping_step = function(
     gene_location_file_name <- path.expand(gene_location_file_name)
     expression_file_name <- path.expand(expression_file_name)
     out_dir <- path.expand(out_dir)
-
+    suppressWarnings({
     py_run_string("
 import os
 import torch
@@ -103,7 +103,7 @@ def run_tensorqtl(phenotype_df, phenotype_pos_df, genotype_df, variant_df, prefi
     cis.map_nominal(genotype_df, variant_df, phenotype_df, phenotype_pos_df, prefix=prefix)
 
 builtins.run_tensorqtl = run_tensorqtl
-")
+")})
 
     expr <- read.table(expression_file_name, header = TRUE, sep = "\t", check.names = FALSE)
 
