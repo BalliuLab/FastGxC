@@ -151,10 +151,11 @@ treeQTL_step = function(data_dir, snps_location_file_name, gene_location_file_na
       specific_eGenes = res$qvalue_table
       
       if (nrow(specific_eGenes) == 0) {
-        message("No specific eGenes discovered. Skipping downstream steps.")
+        message("No specific eGenes discovered.")
       }
-      
-      write.table(x = specific_eGenes, file = paste0(out_dir, "specific_eGenes.txt"), quote = FALSE, row.names = FALSE, col.names = TRUE, sep = '\t')
+      else {
+        write.table(x = specific_eGenes, file = paste0(out_dir, "specific_eGenes.txt"), quote = FALSE, row.names = FALSE, col.names = TRUE, sep = '\t')
+      }
       
       pattern = ("shared.all_pairs.txt")
       shared_file <- list.files(path = data_dir, pattern = "shared_shared.cis_pairs.txt", full.names = TRUE)
@@ -173,8 +174,9 @@ treeQTL_step = function(data_dir, snps_location_file_name, gene_location_file_na
         message("No shared eGenes discovered. Skipping shared association analysis.")
         return(NULL)
       }
-      
-      write.table(x = shared_eGenes, file = paste0(out_dir, "shared_eGenes.txt"), quote = FALSE, row.names = FALSE, col.names = TRUE, sep = '\t')
+      else{
+        write.table(x = shared_eGenes, file = paste0(out_dir, "shared_eGenes.txt"), quote = FALSE, row.names = FALSE, col.names = TRUE, sep = '\t')
+      }
       
       eAssociations = get_eAssociations(
         eDiscoveries = shared_eGenes,

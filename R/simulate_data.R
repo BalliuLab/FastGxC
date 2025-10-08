@@ -24,9 +24,9 @@
 #'
 #' @export
 simulate_data = function(data_dir, N = 300, n_genes = 100, n_snps_per_gene = 1000,
-                        n_contexts = 10, maf = 0.2, w_corr = 0.2,
+                        n_contexts, maf = 0.2, w_corr = 0.2,
                         v_e = 1, missing = 0,
-                        hsq = rep(0,n_contexts),
+                        hsq = rep(0.2, n_contexts),
                         mus = rep(0, n_contexts)) {
   if (!dir.exists(data_dir)) dir.create(data_dir)
   sigma = matrix(w_corr, nrow = n_contexts, ncol = n_contexts)
