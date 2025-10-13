@@ -11,7 +11,9 @@ treeQTL_step(
   context_names,
   out_dir,
   fdr_thresh = 0.05,
-  four_level = FALSE
+  four_level = FALSE,
+  treeBH_method = "cpp",
+  treeBH_test = "simes"
 )
 }
 \arguments{
@@ -41,6 +43,14 @@ treeQTL_step(
 
 \item{four_level}{\itemize{
 \item boolean value (T or F) that signifies whether to use the 4-level hierarchy (set this parameter to R and test for a global eQTL across shared and specific components) or a 3-level hierarchy (this parameter is default set to F to test for shared vs specific eQTLs)
+}}
+
+\item{treeBH_method}{\itemize{
+\item character string specifying which TreeBH implementation to use when four_level = TRUE. Options: "original" (TreeBH package), "datatable" (optimized R), "cpp" (fast C++ implementation, default). Ignored when four_level = FALSE.
+}}
+
+\item{treeBH_test}{\itemize{
+\item character string specifying the p-value aggregation method for TreeBH when four_level = TRUE. Options: "simes" (Simes' method, default), "fisher" (Fisher's method). Ignored when four_level = FALSE.
 }}
 }
 \value{

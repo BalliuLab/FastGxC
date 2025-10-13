@@ -2,9 +2,8 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 #' Check if groups are properly nested in hierarchy
-#' @noRd
 checkNested <- function(groups, L) {
-    .Call('_FastGxC_checkNested', PACKAGE = 'FastGxC', groups, L)
+    .Call(`_FastGxC_checkNested`, groups, L)
 }
 
 #' Hierarchical Group P-value Calculation
@@ -15,9 +14,8 @@ checkNested <- function(groups, L) {
 #' @param N Integer specifying the number of hypotheses
 #' @param L Integer specifying the number of levels in the hierarchy
 #' @param test CharacterVector specifying the aggregation method(s)
-#' @noRd
 getGroupPvalues <- function(pvals, groups, N, L, test) {
-    .Call('_FastGxC_getGroupPvalues', PACKAGE = 'FastGxC', pvals, groups, N, L, test)
+    .Call(`_FastGxC_getGroupPvalues`, pvals, groups, N, L, test)
 }
 
 #' Hierarchical Group Selection for Multiple Testing
@@ -27,8 +25,7 @@ getGroupPvalues <- function(pvals, groups, N, L, test) {
 #' @param q NumericVector containing the q-value thresholds for each level
 #' @param N Integer specifying the number of hypotheses
 #' @param L Integer specifying the number of levels in the hierarchy
-#' @noRd
 getGroupSelections <- function(group_pvals, groups, q, N, L) {
-    .Call('_FastGxC_getGroupSelections', PACKAGE = 'FastGxC', group_pvals, groups, q, N, L)
+    .Call(`_FastGxC_getGroupSelections`, group_pvals, groups, q, N, L)
 }
 

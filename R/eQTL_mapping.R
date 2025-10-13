@@ -19,6 +19,7 @@
 #' @param  error_covariance Covariance matrix (or numeric()).
 #'
 #' @return Writes cis-eQTLs and trans-eQTLs (optional) to disk.
+#' @importFrom data.table fread setDTthreads
 #' @export
 eQTL_mapping_step = function(
     SNP_file_name,

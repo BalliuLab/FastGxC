@@ -16,6 +16,9 @@ decompose=function(X,design){
   return(list(Xw=Xw,Xb=X.mean.indiv))
 }
 
+#' @importFrom data.table fread
+#' @importFrom dplyr select group_by mutate distinct
+#' @importFrom magrittr %>%
 #' @export 
 get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_names, level1 = 0.05, level2 = 0.05, level3 = 0.05, exp_suffix, four_level = F, shared_n_tests_per_gene) {
   pattern=paste0(exp_suffix,".all_pairs.txt")
@@ -224,6 +227,9 @@ get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_name
 #  eGene_xT_sel
 #}
 
+#' @importFrom data.table fread
+#' @importFrom dplyr mutate select
+#' @importFrom magrittr %>%
 #' @export
 get_pvals_and_fam_p_mod = function(genes_by_tissue, snps_by_tissue, m_eqtl_out_dir, tissue_names, exp_suffix) {
   pattern=paste0(exp_suffix,".all_pairs.txt")
