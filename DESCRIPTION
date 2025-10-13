@@ -10,7 +10,6 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
 Depends: R (>= 4.2.0)
-
 Imports:
     devtools,
     dplyr,
@@ -19,8 +18,10 @@ Imports:
     mvtnorm,
     reshape2,
     magrittr,
-    reticulate
-
+    reticulate,
+    Rcpp
+LinkingTo:
+    Rcpp
 Suggests:
     qvalue,
     TreeQTL,
@@ -28,5 +29,4 @@ Suggests:
     knitr,
     rmarkdown,
     testthat (>= 3.0.0)
-
 Config/testthat/edition: 3

@@ -1,3 +1,7 @@
+#' @useDynLib FastGxC, .registration = TRUE
+#' @importFrom Rcpp sourceCpp
+NULL
+
 #' Converting eQTL Mapping Output to TreeBH Input
 #' 
 #' @param data_dir - full filepath of the directory where eQTL output files are stored. This function assumes that files are named as outputted by FastGxC's eQTL mapping function
@@ -102,23 +106,60 @@ to_TreeBH_input <- function(data_dir, shared_file, context_names, out_dir) {
 #' @param matrix - output of to_TreeBH_Input, matrix with the groups and pvalues
 #' @param fdr_thres -  value between 0 and 1 that signifies what FDR threshold for multiple testing correction. The same value will be used across all hierarchical levels.
 #' @param out_dir - full filepath of the output directory where the output of TreeBH can be stored
+#' @param method - character string specifying which implementation to use:
+#'   - "original" (default): uses the TreeBH package implementation
+#'   - "datatable": uses data.table optimized R implementation
+#'   - "cpp": uses Rcpp C++ implementation for maximum performance
+#' @param test - character string specifying the aggregation method for p-values:
+#'   - "simes" (default): uses Simes' method
+#'   - "fisher": uses Fisher's method
 #' @return A matrix with identification columns and output columns:
 #' - gene                    : gene name
 #' - snp                     : snp name
 #' - context                 : context name or "specific"
 #' - treeBH Output Columns   : eGene, eQTL, Component, Context Specific
 #' @export
-treeBH_step <- function(matrix, fdr_thres, out_dir) {
+treeBH_step <- function(matrix, fdr_thres, out_dir, method = "original", test = "simes") {
   
+  # Validate method parameter
+  method <- match.arg(method, c("original", "datatable", "cpp"))
+  
+  # Extract components from input matrix
   id_mat <- matrix[, 1:3]
   groups <- matrix[, c(1, 4, 5, 6)]
   p_values <- matrix[, 7] |> as.vector() |> as.numeric()
   
   num_levels <- 4
   
-  treeBH_results <- TreeBH::get_TreeBH_selections(pvals = p_values, 
-                                                  groups = groups, 
-                                                  q = rep(fdr_thres, num_levels)) 
+  # Call appropriate implementation based on method parameter
+  treeBH_results <- switch(method,
+    original = {
+      # Original TreeBH package implementation
+      TreeBH::get_TreeBH_selections(
+        pvals = p_values, 
+        groups = groups, 
+        q = rep(fdr_thres, num_levels)
+      )
+    },
+    datatable = {
+      # Optimized R implementation using data.table
+      get_TreeBH_selections_datatable(
+        pvals = p_values,
+        groups = groups,
+        q = rep(fdr_thres, num_levels),
+        test = test
+      )
+    },
+    cpp = {
+      # C++ implementation using Rcpp
+      get_TreeBH_selections_cpp(
+        pvals = p_values,
+        groups = groups,
+        q = rep(fdr_thres, num_levels),
+        test = test
+      )
+    }
+  )
   
   colnames(treeBH_results) <- c("eGene", "eQTL", "Component", "ContextSpecific")
   
@@ -132,4 +173,145 @@ treeBH_step <- function(matrix, fdr_thres, out_dir) {
     col.names = TRUE,
     quote     = FALSE
   )
+}
+
+#' Optimized TreeBH Implementation using data.table
+#' @keywords internal
+get_TreeBH_selections_datatable <- function(pvals, groups, q, test = "simes") {
+  # Checks
+  N <- length(pvals)
+  L <- ncol(groups)
+  if (length(q) != L) {
+    stop("Must specify target q for each level of hierarchy")
+  }
+  if (min(q) < 0 || max(q) > 1) {
+    stop("Target q must be in the range 0 - 1")
+  }
+  if (min(pvals, na.rm = TRUE) < 0 || max(pvals, na.rm = TRUE) > 1) {
+    stop("P-values must be in the range 0 - 1")
+  }
+  if (length(pvals) != nrow(groups)) {
+    stop("Dimension mismatch between pvals and groups")
+  }
+
+  # Convert to data.table for faster group operations
+  dt_groups <- data.table::as.data.table(as.data.frame(groups))
+  data.table::setnames(dt_groups, paste0("Level", 1:L))
+
+  # Step 1: Check hierarchy nesting
+  for (cur_level in 2:L) {
+    cur_col <- paste0("Level", cur_level)
+    parent_col <- paste0("Level", cur_level - 1)
+
+    check <- dt_groups[, .(parent_count = data.table::uniqueN(get(parent_col))), by = get(cur_col)]
+
+    if (any(check$parent_count != 1)) {
+      stop("Groups must be nested within hierarchy")
+    }
+  }
+
+  if (data.table::uniqueN(groups[, L]) != nrow(groups)) {
+    stop("Assumption is that lowest level in tree corresponds to individual hypotheses")
+  }
+
+  # Initialization
+  sel <- matrix(0, nrow = N, ncol = L)
+  if (length(test) == 1) {
+    test <- rep(test, L - 1)
+  }
+  q_adj <- matrix(NA, nrow = N, ncol = L)
+  q_adj[, 1] <- q[1]
+  group_pvals <- matrix(NA, nrow = N, ncol = L)
+  group_pvals[, L] <- pvals
+
+  # Step 3: Aggregate group-level p-values
+  for (cur_level in (L - 1):1) {
+    cur_groups <- unique(groups[, cur_level])
+    for (cur_group in cur_groups) {
+      cur_inds <- which(groups[, cur_level] == cur_group)
+
+      # Gets the children of all pvalues in the current group
+      child_pvals <- group_pvals[cur_inds, cur_level + 1]
+      agg_p <- switch(test[cur_level],
+                      simes = get_simes_p(child_pvals),
+                      fisher = get_fisher_p(child_pvals),
+                      stop("Options for parameter test are 'simes' and 'fisher'"))
+      group_pvals[cur_inds[1], cur_level] <- agg_p
+    }
+  }
+
+  for (cur_level in 1:L) {
+    if (cur_level > 1 && sum(sel[, cur_level - 1]) == 0) {
+      break
+    }
+    if (cur_level == 1) {
+      sel_prev <- 1
+    }
+    else {
+      sel_prev <- which(sel[, cur_level - 1] == 1)
+    }
+    for (parent_sel in sel_prev) {
+      if (cur_level == 1) {
+        parent_group_ind <- 1
+        child_inds <- which(!is.na(group_pvals[, cur_level]))
+      }
+      else {
+        parent_group_num <- groups[parent_sel, cur_level - 1]
+        parent_group_ind <- min(which(groups[, cur_level - 1] == parent_group_num))
+        child_inds <- which(groups[, cur_level - 1] == parent_group_num & 
+                            !is.na(group_pvals[, cur_level]))
+      }
+      if (length(child_inds) > 1) {
+        sel_ind_within_group <- which(qvalue::qvalue(group_pvals[child_inds, cur_level], 
+                                                     lambda = 0)$qvalue <= 
+                                      q_adj[parent_group_ind, cur_level])
+      }
+      else {
+        sel_ind_within_group <- which(group_pvals[child_inds, cur_level] <= 
+                                      q_adj[parent_group_ind, cur_level])
+      }
+      sel[child_inds[sel_ind_within_group], cur_level] <- 1
+      if (cur_level < L) {
+        R_parent_sel <- length(sel_ind_within_group)
+        n_parent_sel <- length(child_inds)
+        q_adj[child_inds[sel_ind_within_group], cur_level + 1] <- 
+          q[cur_level + 1] * q_adj[parent_sel, cur_level]/q[cur_level] * 
+          R_parent_sel/n_parent_sel
+      }
+    }
+  }
+  sel
+}
+
+#' C++ TreeBH Implementation using Rcpp
+#' @keywords internal
+get_TreeBH_selections_cpp <- function(pvals, groups, q, test = "simes") {
+  N <- length(pvals)
+  L <- ncol(groups)
+  if (length(q) != L) {
+    stop("Must specify target q for each level of hierarchy")
+  }
+  if (min(q) < 0 || max(q) > 1) {
+    stop("Target q must be in the range 0 - 1")
+  }
+  if (min(pvals, na.rm = TRUE) < 0 || max(pvals, na.rm = TRUE) > 1) {
+    stop("P-values must be in the range 0 - 1")
+  }
+  if (length(pvals) != nrow(groups)) {
+    stop("Dimension mismatch between pvals and groups")
+  }
+
+  # Check hierarchy structure using C++ function
+  error <- checkNested(groups = groups, L = L)
+  if(error != "") {
+    stop(error)
+  }
+
+  # Get group p-values using C++ function
+  group_pvals <- getGroupPvalues(pvals, groups, N, L, test)
+  
+  # Get selections using C++ function
+  selections <- getGroupSelections(group_pvals, groups, q, N, L)
+  
+  return(selections)
 }

@@ -5,7 +5,7 @@
 \title{Multiple Testing Correction with TreeBH
 Function to adjust for hierarchical multiple testing correction using TreeBH.}
 \usage{
-treeBH_step(matrix, fdr_thres, out_dir)
+treeBH_step(matrix, fdr_thres, out_dir, method = "original", test = "simes")
 }
 \arguments{
 \item{matrix}{\itemize{
@@ -18,6 +18,23 @@ treeBH_step(matrix, fdr_thres, out_dir)
 
 \item{out_dir}{\itemize{
 \item full filepath of the output directory where the output of TreeBH can be stored
+}}
+
+\item{method}{\itemize{
+\item character string specifying which implementation to use:
+\itemize{
+\item "original" (default): uses the TreeBH package implementation
+\item "datatable": uses data.table optimized R implementation
+\item "cpp": uses Rcpp C++ implementation for maximum performance
+}
+}}
+
+\item{test}{\itemize{
+\item character string specifying the aggregation method for p-values:
+\itemize{
+\item "simes" (default): uses Simes' method
+\item "fisher": uses Fisher's method
+}
 }}
 }
 \value{
