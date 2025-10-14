@@ -301,6 +301,15 @@ get_TreeBH_selections_cpp <- function(pvals, groups, q, test = "simes") {
     stop("Dimension mismatch between pvals and groups")
   }
 
+  # Convert groups to character matrix if it's not already
+  # This ensures compatibility with C++ CharacterMatrix type
+  if (!is.matrix(groups)) {
+    groups <- as.matrix(groups)
+  }
+  if (mode(groups) != "character") {
+    mode(groups) <- "character"
+  }
+
   # Check hierarchy structure using C++ function
   error <- checkNested(groups = groups, L = L)
   if(error != "") {
