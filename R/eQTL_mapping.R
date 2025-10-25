@@ -42,7 +42,16 @@ eQTL_mapping_step = function(
     setDTthreads(1)
     
     expression_mat <- as.matrix(data.frame(fread(expression_file_name, header = TRUE), row.names = 1, check.names = FALSE))
-    genepos <- read.table(gene_location_file_name, header = TRUE)[, c("geneid", "chr", "s1", "s2")]
+    genepos <- data.table::fread(gene_location_file_name, sep = NULL, header = TRUE, data.table = FALSE)
+    names(genepos) <- tolower(names(genepos)) 
+    
+    genepos <- genepos |>
+      dplyr::rename(
+        geneid = dplyr::coalesce(names(genepos)[grepl("gene", names(genepos))][1], "geneid"),
+        s1     = dplyr::coalesce(names(genepos)[grepl("start|s1", names(genepos))][1], "s1"),
+        s2     = dplyr::coalesce(names(genepos)[grepl("end|s2", names(genepos))][1], "s2")
+      ) |>
+      dplyr::select(geneid, chr, s1, s2)
     
     snps <- SlicedData$new()
     snps$fileDelimiter <- "\t"
