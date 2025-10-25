@@ -48,7 +48,7 @@ treeQTL_step = function(data_dir, snps_location_file_name, gene_location_file_na
     names(shared_n_tests_per_gene) = c("family", "n_tests")
     
     get_eGenes_multi_tissue_mod <- function(m_eqtl_out_dir, treeQTL_dir, tissue_names, level1 = level1, level2 = level2, level3 = level3, exp_suffix, four_level = FALSE, shared_n_tests_per_gene) {
-      pattern <- paste0("context", 1:length(tissue_names), "_", exp_suffix, ".cis_pairs.txt")
+      pattern <- paste0(tissue_names, "_", exp_suffix, ".cis_pairs.txt")
       m_eqtl_outfiles <- file.path(m_eqtl_out_dir, pattern)
       print("Constructed MatrixEQTL output files:")
       print(m_eqtl_outfiles)
