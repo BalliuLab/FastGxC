@@ -75,6 +75,7 @@ treeQTL_step = function(data_dir, snps_location_file_name, gene_location_file_na
           colnames(context_eGenes)[1] <- "family"
           context_eGenes$pval <- 0
           context_eGenes$n_sel <- 1
+          dir.create(treeQTL_dir, recursive = TRUE, showWarnings = FALSE)
           
           eAssoc_file <- paste0(treeQTL_dir, "/eAssoc_by_gene.context_", cur_tissue_name, ".txt")
           get_eAssociations(
