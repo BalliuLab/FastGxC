@@ -82,7 +82,7 @@ if(four_level){
     write.table(x = shared_eGenes, file = paste0(out_dir,"shared_eGenes.txt"), quote = F, row.names = F, col.names = T, sep = '\t')
 
 
-    eAssociations = get_eAssociations(eDiscoveries = shared_eGenes, n_tests = n_tests_per_gene, 
+    eAssociations = get_eAssociations(eDiscoveries = shared_eGenes, n_tests = shared_n_tests_per_gene, 
                     m_eqtl_out = list.files(data_dir, pattern = pattern,full.names = T),
                     out_file = paste0(out_dir,"eAssoc_by_gene.context_shared.txt"), 
                     by_snp = F, slice_size = 1e+05,
