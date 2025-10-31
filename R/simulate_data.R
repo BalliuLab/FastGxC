@@ -11,8 +11,8 @@
 #' @param w_corr - error covariance between contexts
 #' @param v_e - error variance in each context (maybe take this out and set it to 1)
 #' @param missing - decimal value signifying percentage of missingness in simulated expression data (e.g. parameter value of 0.3 would indicate 30% missing values in outputted expression matrix)
-#' @param seed - can set seed for reproducibility 
-#' @param sim_scenario - must be either "null" or "single_context_het" to signify simulations under the null case (no genetic effects in any context) or the case of single context heterogeneity (one context drives the genetic effect heterogeneity)
+#' @param seed - can set seed for reproducibility #sim_scenario - must be either "null" or "single_context_het" to signify simulations under the null case (no genetic effects in any context) or the case of single context heterogeneity (one context drives the genetic effect heterogeneity)
+#' @param hsq - heritability vector for each context. must be a numeric vector that is the length of the number of contexts. default is single context heterogeneity case of 0.05 heritability in one context and 0 elsewhere.
 #' @return outputs an expression matrix file, a genotype matrix file, a SNP location file, and a gene location file all in the format needed for FastGxC's decomposition step and then subsequent eQTL mapping step with Matrix eQTL.
 #'
 #' @export
