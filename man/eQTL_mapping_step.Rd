@@ -8,10 +8,19 @@ eQTL_mapping_step(
   SNP_file_name,
   snps_location_file_name,
   expression_file_name,
-  gene_location_file_name,
+  ene_location_file_name,
   context,
   shared_specific,
-  out_dir
+  out_dir,
+  output_file_name_cis = file.path(out_dir, paste0(context, "_", shared_specific,
+    ".cis_pairs.txt")),
+  output_file_name_tra = file.path(out_dir, paste0(context, "_", shared_specific,
+    ".trans_pairs.txt")),
+  use_model = modelLINEAR,
+  cis_dist = 1e+06,
+  pv_threshold_cis = 1,
+  pv_threshold_tra = 0,
+  error_covariance = numeric()
 )
 }
 \arguments{
@@ -27,10 +36,6 @@ eQTL_mapping_step(
 \item full file path with expression matrix of individuals per gene
 }}
 
-\item{gene_location_file_name}{\itemize{
-\item full file path with gene ids, start, and end positions
-}}
-
 \item{context}{\itemize{
 \item name of context for output file naming purposes
 }}
@@ -41,6 +46,10 @@ eQTL_mapping_step(
 
 \item{out_dir}{\itemize{
 \item full file path of output directory where eQTL file will be written out
+}}
+
+\item{gene_location_file_name}{\itemize{
+\item full file path with gene ids, start, and end positions
 }}
 }
 \value{

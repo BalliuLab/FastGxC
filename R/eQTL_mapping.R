@@ -12,34 +12,25 @@
 #' @return outputs one file of mapped cis eQTLs
 #'
 #' @export
-eQTL_mapping_step = function(SNP_file_name, snps_location_file_name, expression_file_name, gene_location_file_name, context, shared_specific, out_dir){
-
-# Output file name
-output_file_name_cis = paste0(out_dir, context, "_", shared_specific, ".all_pairs.txt"); 
-output_file_name_tra = tempfile();
+eQTL_mapping_step = function(SNP_file_name, 
+                             snps_location_file_name, 
+                             expression_file_name, 
+                             ene_location_file_name, 
+                             context, 
+                             shared_specific, 
+                             out_dir,
+                             output_file_name_cis = file.path(out_dir, paste0(context, "_", shared_specific, ".cis_pairs.txt")),
+                             output_file_name_tra = file.path(out_dir, paste0(context, "_", shared_specific, ".trans_pairs.txt")),
+                             use_model = modelLINEAR,
+                             cis_dist = 1e6,
+                             pv_threshold_cis = 1,
+                             pv_threshold_tra = 0,
+                             error_covariance = numeric()){
 
 setDTthreads(1)
-print(paste0("data.table getDTthreads(): ",getDTthreads()))
 
 string1 = sprintf("Running analysis for %s \n", expression_file_name)
 cat(string1)
-
-#%%%%%%%%%%%%%%%%%%%%%%%%
-#%%%%%%%%%%%%%%%%%%%%%%%% MatrixEQTL parameters
-#%%%%%%%%%%%%%%%%%%%%%%%%
-
-# Linear model to use
-useModel = modelLINEAR; 
-
-# Only associations significant at this level will be saved
-pvOutputThreshold_cis = 1; 
-pvOutputThreshold_tra = 0;
-
-# Error covariance matrix
-errorCovariance = numeric();
-
-# Distance for local gene-SNP pairs
-cisDist = 1e6;
 
 #%%%%%%%%%%%%%%%%%%%%%%%%
 #%%%%%%%%%%%%%%%%%%%%%%%% Read files
@@ -47,25 +38,29 @@ cisDist = 1e6;
 
 ## Raw gene expression data with gene position
 expression_mat=as.matrix(data.frame(data.table::fread(input = expression_file_name, header = T),row.names = 1, check.names = F))
-genepos = read.table(file = gene_location_file_name, header = TRUE, stringsAsFactors = FALSE)[,1:4];
+genepos <- data.table::fread(gene_location_file_name, sep = NULL, header = TRUE, data.table = FALSE)
+names(genepos) <- tolower(names(genepos)) 
 
-## Genotype data with snp position
-snps = MatrixEQTL::SlicedData$new();
-snps$fileDelimiter = "\t";      # the TAB character
-snps$fileOmitCharacters = "NA"; # denote missing values;
-snps$fileSkipRows = 1;          # one row of column labels
-snps$fileSkipColumns = 1;       # one column of row labels
-snps$fileSliceSize = 2000;      # read file in slices of 2,000 rows
-snps$LoadFile(SNP_file_name);
+genepos <- genepos |>
+  dplyr::rename(
+    geneid = dplyr::coalesce(names(genepos)[grepl("gene", names(genepos))][1], "geneid"),
+    s1     = dplyr::coalesce(names(genepos)[grepl("start|s1", names(genepos))][1], "s1"),
+    s2     = dplyr::coalesce(names(genepos)[grepl("end|s2", names(genepos))][1], "s2")
+  ) |>
+  dplyr::select(geneid, chr, s1, s2)
 
-snpspos = read.table(file = snps_location_file_name, header = TRUE, stringsAsFactors = FALSE)[,1:3];
+snps <- SlicedData$new()
+snps$fileDelimiter <- "\t"
+snps$fileOmitCharacters <- "NA"
+snps$fileSkipRows <- 1
+snps$fileSkipColumns <- 1
+snps$fileSliceSize <- 2000
+snps$LoadFile(SNP_file_name)
 
-print(dim(snps))
-print(snps$columnNames)
+snpspos <- read.table(snps_location_file_name, header = TRUE)[, c("snpid", "chr", "pos")]
+snps$ColumnSubsample(which(snps$columnNames %in% colnames(expression_mat)))
+expression_mat <- expression_mat[, snps$columnNames]
 
-## Make sure order of individuals is the same in gene expression and genotype matrices  
-snps$ColumnSubsample(which(snps$columnNames %in% colnames(expression_mat))) # Match SNP and expression individuals
-expression_mat=expression_mat[,snps$columnNames]
 gene = SlicedData$new();
 gene$CreateFromMatrix(expression_mat)
 
@@ -73,24 +68,23 @@ gene$CreateFromMatrix(expression_mat)
 #%%%%%%%%%%%%%%%%%%%%%%%% Run the analysis
 #%%%%%%%%%%%%%%%%%%%%%%%%
 
-me = Matrix_eQTL_main(
+Matrix_eQTL_main(
   snps = snps,
   gene = gene,
   cvrt = SlicedData$new(),
-  output_file_name  = output_file_name_tra,
-  pvOutputThreshold  = pvOutputThreshold_tra,
-  useModel = useModel,
-  errorCovariance = errorCovariance,
+  output_file_name = output_file_name_tra,
+  pvOutputThreshold = pv_threshold_tra,
+  useModel = use_model,
+  errorCovariance = error_covariance,
   verbose = TRUE,
   output_file_name.cis = output_file_name_cis,
-  pvOutputThreshold.cis = pvOutputThreshold_cis,
+  pvOutputThreshold.cis = pv_threshold_cis,
   snpspos = snpspos,
   genepos = genepos,
-  cisDist = cisDist,
+  cisDist = cis_dist,
   pvalue.hist = FALSE,
   min.pv.by.genesnp = FALSE,
-  noFDRsaveMemory = FALSE);
+  noFDRsaveMemory = FALSE
+)
 
-## Results:
-cat('Analysis finished in: ', me$time.in.sec, ' seconds', '\n')
 }
