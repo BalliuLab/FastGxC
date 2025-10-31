@@ -60,21 +60,24 @@ genos_with_effect = genos[,seq(from = 1, to = (n_snps_per_gene*n_genes), by = n_
 # Generate expression matrix
 exp_mat=expand.grid(iid=paste0("ind",1:N),context=paste0("context",1:n_contexts))
 
-betas=sqrt((hsq*v_e)/((1-hsq)*var(genos_with_effect[,i]))) 
-
-# expression of gene per context without noise
-Y = matrix(0,nrow=N,ncol=n_contexts, dimnames = list(paste0("ind",1:N), paste0("context",1:n_contexts))) 
-for (j in 1:n_contexts)  Y[,j] = mus[j] + genos_with_effect[,i]*betas[j]
-
-# get noise per individual
-for(j in 1:N) Y[j,] = Y[j,] + rmvnorm(1, rep(0,n_contexts), sigma)
-
-data_mat=melt(data = data.table(Y,keep.rownames = T), id.vars = "rn") 
-colnames(data_mat) =  c("iid", "context", paste0("gene",i))
-exp_mat = merge(x = exp_mat, y = data_mat)
-
-rownames(exp_mat) = paste(exp_mat$iid,exp_mat$context, sep = " - ")
-exp_mat = cbind(data.frame(design = paste(exp_mat$iid,exp_mat$context, sep = " - ")), exp_mat)
+for(i in 1:n_genes){
+  
+  betas=sqrt((hsq*v_e)/((1-hsq)*var(genos_with_effect[,i]))) 
+  
+  # expression of gene per context without noise
+  Y = matrix(0,nrow=N,ncol=n_contexts, dimnames = list(paste0("ind",1:N), paste0("context",1:n_contexts))) 
+  for (j in 1:n_contexts)  Y[,j] = mus[j] + genos_with_effect[,i]*betas[j]
+  
+  # get noise per individual
+  for(j in 1:N) Y[j,] = Y[j,] + rmvnorm(1, rep(0,n_contexts), sigma)
+  
+  data_mat=melt(data = data.table(Y,keep.rownames = T), id.vars = "rn") 
+  colnames(data_mat) =  c("iid", "context", paste0("gene",i))
+  exp_mat = merge(x = exp_mat, y = data_mat)
+  
+  rownames(exp_mat) = paste(exp_mat$iid,exp_mat$context, sep = " - ")
+  exp_mat = cbind(data.frame(design = paste(exp_mat$iid,exp_mat$context, sep = " - ")), exp_mat)
+}
 
 ## add missing values 
 total_elements = prod(dim(exp_mat[,-c(1,2,3)]))
