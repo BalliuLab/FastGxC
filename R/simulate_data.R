@@ -11,12 +11,13 @@
 #' @param w_corr - error covariance between contexts
 #' @param v_e - error variance in each context (maybe take this out and set it to 1)
 #' @param missing - decimal value signifying percentage of missingness in simulated expression data (e.g. parameter value of 0.3 would indicate 30% missing values in outputted expression matrix)
-#' @param seed - can set seed for reproducibility #sim_scenario - must be either "null" or "single_context_het" to signify simulations under the null case (no genetic effects in any context) or the case of single context heterogeneity (one context drives the genetic effect heterogeneity)
+#' @param seed - can set seed for reproducibility 
+#' @param sim_scenario - string added to file names for identification. default is "FastGxC"
 #' @param hsq - heritability vector for each context. must be a numeric vector that is the length of the number of contexts. default is single context heterogeneity case of 0.05 heritability in one context and 0 elsewhere.
 #' @return outputs an expression matrix file, a genotype matrix file, a SNP location file, and a gene location file all in the format needed for FastGxC's decomposition step and then subsequent eQTL mapping step with Matrix eQTL.
 #'
 #' @export
-simulate_data = function(data_dir, N = 300, n_genes=100, n_snps_per_gene=1000, n_contexts=10, maf=0.2, w_corr=0.2, v_e=1, missing = 0, seed = 1, hsq = c(rep(0.0, n_contexts-1),.05)){
+simulate_data = function(data_dir, N = 300, n_genes=100, n_snps_per_gene=1000, n_contexts=10, maf=0.2, w_corr=0.2, v_e=1, missing = 0, seed = 1, sim_scenario = "FastGxC", hsq = c(rep(0.0, n_contexts-1),.05)){
 
 if(!dir.exists(data_dir)) dir.create(data_dir)
 
