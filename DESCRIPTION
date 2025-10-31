@@ -5,7 +5,15 @@ Authors@R:
     person("Lena", "Krockenberger", , "lkrocken@g.ucla.edu", role = c("aut", "cre"),
            comment = c(ORCID = "0009-0002-5987-5496"))
 Description: Functions to run FastGxC decomposition and subsequent context-specific eQTL mapping with multiple testing adjustment. This software also can be used to simulate data and run eQTL mapping on toy examples.
-Suggests:
+Imports:
+    dplyr,
+    data.table,
+    MatrixEQTL,
+    mvtnorm,
+    reshape2,
+    magrittr,
+    TreeQTL
+Depends:
     dplyr,
     data.table,
     MatrixEQTL,
