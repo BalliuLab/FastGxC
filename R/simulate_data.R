@@ -32,8 +32,8 @@ diag(sigma) = v_e
 genos = sapply(X = 1:(n_snps_per_gene*n_genes), FUN = function(X) rbinom(N, 2, maf))
 colnames(genos) = paste0("snp",1:(n_snps_per_gene*n_genes))
 rownames(genos) = paste0("ind",1:N)
-write.table(x = t(data.table(genos, keep.rownames = T) %>% rename(snpid=rn)), 
-            file = paste0(data_dir,sim_scenario, "_SNPs.txt"), quote = F, sep = '\t', row.names = T, col.names = F)
+write.table(x = t(data.table(genos, keep.rownames = T) %>%
+                    rename(snpid = rn)), file = paste0(data_dir, "SNPs.txt"), quote = F, sep = "\t", row.names = T, col.names = F)
 
 print("Finished simulating and saving genotypes")
 
@@ -42,7 +42,8 @@ print("Finished simulating and saving genotypes")
 snp_loc=data.frame(snpid=colnames(genos), chr="chr1",
                    pos=rep(x = seq(1,n_genes*1e9, by = 1e9), each=n_snps_per_gene), 
                    matrix(data = 1, nrow = ncol(genos), ncol = n_contexts, dimnames = list(NULL, paste0("context",1:n_contexts))))
-write.table(x = snp_loc, file = paste0(data_dir,sim_scenario,"_snpsloc.txt"), quote = F, sep = '\t', row.names = F, col.names = T)
+write.table(x = snp_loc, file = paste0(data_dir,"snpsloc.txt"), quote = F, sep = "\t", row.names = F,
+            col.names = T)
 
 print("Finished saving snp location file")
 
@@ -53,7 +54,8 @@ gene_loc=data.frame(geneid=paste0("gene",1:n_genes),
                     s1=seq(1,n_genes*1e9, by = 1e9), 
                     s2=seq(1,n_genes*1e9, by = 1e9)+ 1000,
                     matrix(data = 1, nrow = n_genes, ncol = n_contexts, dimnames = list(NULL, paste0("context",1:n_contexts))))
-write.table(x = gene_loc, file = paste0(data_dir,sim_scenario,"_geneloc.txt"), quote = F, sep = '\t', row.names = F, col.names = T)
+write.table(x = gene_loc, file = paste0(data_dir, "geneloc.txt"), quote = F, sep = "\t", row.names = F,
+            col.names = T)
 
 print("Finished saving gene location file")
 
