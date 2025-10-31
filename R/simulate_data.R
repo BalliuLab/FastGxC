@@ -65,9 +65,6 @@ exp_mat=expand.grid(iid=paste0("ind",1:N),context=paste0("context",1:n_contexts)
 
 which_context=rep_len(x = 1:n_contexts, length.out = n_genes)
 
-if(sim_scenario == "null"){
-which_context=rep_len(x = 1:n_contexts, length.out = n_genes)
-
 for (i in 1:n_genes) {
   betas = sqrt((hsq * v_e)/((1 - hsq) * var(genos_with_effect[, i])))
   Y = matrix(0, nrow = N, ncol = n_contexts, dimnames = list(paste0("ind", 1:N), paste0("context", 1:n_contexts)))
