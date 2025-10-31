@@ -14,8 +14,8 @@ simulate_data(
   w_corr = 0.2,
   v_e = 1,
   missing = 0,
-  seed = 1,
-  sim_scenario = "single_context_het"
+  hsq = rep(0.2, n_contexts),
+  mus = rep(0, n_contexts)
 )
 }
 \arguments{
@@ -55,12 +55,12 @@ simulate_data(
 \item decimal value signifying percentage of missingness in simulated expression data (e.g. parameter value of 0.3 would indicate 30\% missing values in outputted expression matrix)
 }}
 
-\item{seed}{\itemize{
-\item can set seed for reproducibility
+\item{hsq}{\itemize{
+\item numeric vector with length of the number of contexts representing heritability explained by the eQTL in each context
 }}
 
-\item{sim_scenario}{\itemize{
-\item must be either "null" or "single_context_het" to signify simulations under the null case (no genetic effects in any context) or the case of single context heterogeneity (one context drives the genetic effect heterogeneity)
+\item{mus}{\itemize{
+\item numberic vector with length of the number of contexts representing average expression in each context.
 }}
 }
 \value{
