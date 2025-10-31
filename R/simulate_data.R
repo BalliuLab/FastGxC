@@ -12,11 +12,12 @@
 #' @param v_e - error variance in each context (maybe take this out and set it to 1)
 #' @param missing - decimal value signifying percentage of missingness in simulated expression data (e.g. parameter value of 0.3 would indicate 30% missing values in outputted expression matrix)
 #' @param seed - can set seed for reproducibility 
-#' @param sim_scenario - must be either "null" or "single_context_het" to signify simulations under the null case (no genetic effects in any context) or the case of single context heterogeneity (one context drives the genetic effect heterogeneity)
+#' @param sim_scenario - string added to file names for identification. default is "FastGxC"
+#' @param hsq - heritability vector for each context. must be a numeric vector that is the length of the number of contexts. default is single context heterogeneity case of 0.05 heritability in one context and 0 elsewhere.
 #' @return outputs an expression matrix file, a genotype matrix file, a SNP location file, and a gene location file all in the format needed for FastGxC's decomposition step and then subsequent eQTL mapping step with Matrix eQTL.
 #'
 #' @export
-simulate_data = function(data_dir, N = 300, n_genes=100, n_snps_per_gene=1000, n_contexts=10, maf=0.2, w_corr=0.2, v_e=1, missing = 0, seed = 1, sim_scenario = "single_context_het"){
+simulate_data = function(data_dir, N = 300, n_genes=100, n_snps_per_gene=1000, n_contexts=10, maf=0.2, w_corr=0.2, v_e=1, missing = 0, seed = 1, sim_scenario = "FastGxC", hsq = c(rep(0.0, n_contexts-1),.05)){
 
 if(!dir.exists(data_dir)) dir.create(data_dir)
 
@@ -59,17 +60,8 @@ genos_with_effect = genos[,seq(from = 1, to = (n_snps_per_gene*n_genes), by = n_
 # Generate expression matrix
 exp_mat=expand.grid(iid=paste0("ind",1:N),context=paste0("context",1:n_contexts))
 
-which_context=rep_len(x = 1:n_contexts, length.out = n_genes)
-
-if(sim_scenario == "null"){
-which_context=rep_len(x = 1:n_contexts, length.out = n_genes)
-
 for(i in 1:n_genes){
   
-  # Genotypic effect in each context for assumed heritability 
-  hsq=rep(NA, n_contexts)  # expression heritability, i.e. proportion of gene expression variance explained by genetics, in each context
-  hsq[which_context[i]]= 0
-  hsq[-which_context[i]]= rep(0, n_contexts-1)
   betas=sqrt((hsq*v_e)/((1-hsq)*var(genos_with_effect[,i]))) 
   
   # expression of gene per context without noise
@@ -83,36 +75,9 @@ for(i in 1:n_genes){
   colnames(data_mat) =  c("iid", "context", paste0("gene",i))
   exp_mat = merge(x = exp_mat, y = data_mat)
   
+  rownames(exp_mat) = paste(exp_mat$iid,exp_mat$context, sep = " - ")
+  exp_mat = cbind(data.frame(design = paste(exp_mat$iid,exp_mat$context, sep = " - ")), exp_mat)
 }
-}
-
-if(sim_scenario == "single_context_het"){
-which_context=rep_len(x = 1:n_contexts, length.out = n_genes)
-
-for(i in 1:n_genes){
-  
-  # Genotypic effect in each context for assumed heritability 
-  hsq=rep(NA, n_contexts)  # expression heritability, i.e. proportion of gene expression variance explained by genetics, in each context
-  hsq[which_context[i]]= 0.2
-  hsq[-which_context[i]]= rep(0.1, n_contexts-1)
-  betas=sqrt((hsq*v_e)/((1-hsq)*var(genos_with_effect[,i]))) 
-  
-  # expression of gene per context without noise
-  Y = matrix(0,nrow=N,ncol=n_contexts, dimnames = list(paste0("ind",1:N), paste0("context",1:n_contexts))) 
-  for (j in 1:n_contexts)  Y[,j] = mus[j] + genos_with_effect[,i]*betas[j]
-  
-  # get noise per individual
-  for(j in 1:N) Y[j,] = Y[j,] + rmvnorm(1, rep(0,n_contexts), sigma)
-  
-  data_mat=melt(data = data.table(Y,keep.rownames = T), id.vars = "rn") 
-  colnames(data_mat) =  c("iid", "context", paste0("gene",i))
-  exp_mat = merge(x = exp_mat, y = data_mat)
-  
-}
-}
-
-rownames(exp_mat) = paste(exp_mat$iid,exp_mat$context, sep = " - ")
-exp_mat = cbind(data.frame(design = paste(exp_mat$iid,exp_mat$context, sep = " - ")), exp_mat)
 
 ## add missing values 
 total_elements = prod(dim(exp_mat[,-c(1,2,3)]))
