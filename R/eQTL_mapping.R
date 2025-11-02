@@ -68,8 +68,6 @@ eQTL_mapping_step = function(SNP_file_name,
   # Filter individuals from genotypes
   genos = genos[,colnames(expression_mat)]
   
-  gene$CreateFromMatrix(as.matrix(expression_mat))
-  
   ## Load genotype data
   snps = SlicedData$new();
   snps$CreateFromMatrix(as.matrix(genos))
