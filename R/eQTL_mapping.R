@@ -15,7 +15,7 @@
 eQTL_mapping_step = function(SNP_file_name, 
                              snps_location_file_name, 
                              expression_file_name, 
-                             ene_location_file_name, 
+                             gene_location_file_name, 
                              context, 
                              shared_specific, 
                              out_dir,
