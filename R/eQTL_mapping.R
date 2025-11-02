@@ -7,7 +7,6 @@
 #' @param  expression_file_name Full path to expression matrix.
 #' @param  gene_location_file_name Full path to gene location file.
 #' @param  context Context name for labeling output.
-#' @param  shared_specific Context specific or context shared
 #' @param  out_dir Output directory.
 #' @param  output_file_name_cis Path to write cis-eQTL output.
 #' @param  output_file_name_tra Path to write trans-eQTL output.
@@ -26,7 +25,6 @@ eQTL_mapping_step = function(SNP_file_name,
                              expression_file_name, 
                              gene_location_file_name, 
                              context, 
-                             shared_specific, 
                              out_dir,
                              output_file_name_cis = file.path(out_dir, paste0(context, "_", shared_specific, ".cis_pairs.txt")),
                              output_file_name_tra = file.path(out_dir, paste0(context, "_", shared_specific, ".trans_pairs.txt")),
