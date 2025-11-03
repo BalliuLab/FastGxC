@@ -36,7 +36,6 @@ eQTL_mapping_step = function(SNP_file_name,
 
   setDTthreads(1)
   
-  expression_file_name = file.path(input_dir, paste0(context, "_specific_expression.txt"))
   string1 = sprintf("Running analysis for %s \n", expression_file_name)
   cat(string1)
   
