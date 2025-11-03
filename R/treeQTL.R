@@ -9,10 +9,11 @@
 #' @param context_names - vector of all context names in the format c("tissue1", "tissue2", ..., etc.)
 #' @param fdr_thresh - value between 0 and 1 that signifies what FDR threshold for multiple testing correction. The same value will be used across all hierarchical levels.
 #' @param four_level - boolean value (T or F) that signifies whether to use the 4-level hierarchy (set this parameter to R and test for a global eQTL across shared and specific components) or a 3-level hierarchy (this parameter is default set to F to test for shared vs specific eQTLs)
+#' @param qtl_type - string value "cis" or "trans" denoting the type of eQTL mapped. Default is set to "cis"
 #' @return outputs one file of specific eGenes across all contexts and one file of shared eGenes. Outputs an eAssociation file for each context and one for shared eQTLs with snp-gene pairs and FDR adjusted p-values. 
 #'
 #' @export
-treeQTL_step = function(data_dir, snps_location_file_name, gene_location_file_name, context_names, out_dir, fdr_thresh = 0.05, four_level = F){
+treeQTL_step = function(data_dir, snps_location_file_name, gene_location_file_name, context_names, out_dir, fdr_thresh = 0.05, four_level = F, qtl_type = "cis"){
 
 # use a single thread
 print(paste0("data.table getDTthreads(): ",getDTthreads()))
@@ -29,6 +30,11 @@ level3=fdr_thresh
 
 # Distance for local gene-SNP pairs
 cisDist = 1e6;
+nearby = TRUE
+if(qtl_type != "cis"){
+  nearby = FALSE
+  print(paste("Performing multiple testing adjustment for FastGxC trans-eQTLs."))
+}
 
 snpspos = fread(file = snps_location_file_name);
 genepos = fread(file = gene_location_file_name);
@@ -41,8 +47,25 @@ if (is.vector(context_names)) {
 }
 # Use treeQTL to perform hierarchical FDR and get specific_eGenes, i.e. genes with at least one context-specific eQTL, and shared_eGenes, i.e. genes with at least one context-shared eQTL
   
-shared_n_tests_per_gene = get_n_tests_per_gene(snp_map = snpspos[,1:3], gene_map = genepos[,1:4], 
-                                            nearby = TRUE, dist = cisDist)
+
+names(genepos) <- tolower(names(genepos)) 
+names(snpspos) <- tolower(names(snpspos))
+
+genepos <- genepos |>
+  dplyr::rename(
+    geneid = dplyr::coalesce(names(genepos)[grepl("gene", names(genepos))][1], "geneid"),
+    s1     = dplyr::coalesce(names(genepos)[grepl("start|s1", names(genepos))][1], "s1"),
+    s2     = dplyr::coalesce(names(genepos)[grepl("end|s2", names(genepos))][1], "s2")
+  ) 
+snpspos <- snpspos |>
+  dplyr::rename(
+    snpid = dplyr::coalesce(names(snpspos)[grepl("SNP|snp", names(snpspos))][1], "snpid"),
+    pos     = dplyr::coalesce(names(snpspos)[grepl("position|pos", names(snpspos))][1], "pos")
+  ) 
+
+
+shared_n_tests_per_gene = get_n_tests_per_gene(snp_map = snpspos %>% dplyr::select(snpid, chr, pos), gene_map = genepos %>% dplyr::select(geneid, chr, s1, s2), 
+                                            nearby = nearby, dist = cisDist)
 shared_n_tests_per_gene = data.frame(shared_n_tests_per_gene)
 
 if(ncol(shared_n_tests_per_gene) < 2){
@@ -59,6 +82,7 @@ if(four_level){
                                   level1 = level1, level2 = level2, level3 = level3, 
                                   exp_suffix = "specific",
                                   four_level = four_level,
+                                  qtl_type = qtl_type,
                                   shared_n_tests_per_gene = shared_n_tests_per_gene)
     write.table(x = specific_eGenes, file = paste0(out_dir,"specific_eGenes.txt"), quote = F, row.names = F, col.names = T, sep = '\t')
 }else{
@@ -68,10 +92,11 @@ if(four_level){
                                   tissue_names = context_names,
                                   level1 = level1, level2 = level2, level3 = level3, 
                                   exp_suffix = "specific",
-                                  four_level = four_level)
+                                  four_level = four_level,
+                                  qtl_type = qtl_type)
     write.table(x = specific_eGenes, file = paste0(out_dir,"specific_eGenes.txt"), quote = F, row.names = F, col.names = T, sep = '\t')
 
-    pattern=("shared.all_pairs.txt")
+    pattern=(paste0("shared.", qtl_type, "_pairs.txt"))
     shared_eGenes = get_eGenes(n_tests_per_gene = shared_n_tests_per_gene, 
                                 m_eqtl_out = list.files(data_dir, pattern = pattern,full.names = T), 
                                 method = "BH",

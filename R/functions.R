@@ -17,8 +17,8 @@ decompose=function(X,design){
 }
 
 #' @export 
-get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_names, level1 = 0.05, level2 = 0.05, level3 = 0.05, exp_suffix, four_level = F, shared_n_tests_per_gene) {
-  pattern=paste0(exp_suffix,".all_pairs.txt")
+get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_names, level1 = 0.05, level2 = 0.05, level3 = 0.05, exp_suffix, four_level = F, qtl_type = "cis", shared_n_tests_per_gene) {
+  pattern=paste0(exp_suffix,".", qtl_type, "_pairs.txt")
   
   print(paste("Step 0.1: Computing summary statistics for each tissue"))
   m_eqtl_outfiles <- list.files(m_eqtl_out_dir, pattern = pattern, full.names = TRUE)
@@ -30,9 +30,6 @@ get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_name
     m_eqtl_out = m_eqtl_outfiles[grepl(paste0("/", cur_tissue_name, "_"), m_eqtl_outfiles)]
     
     print(paste("Computing summary statistics for tissue ", cur_tissue_name, sep = ""))
-    #n_SNPs_per_gene_this_tissue <- data.frame(fread(input = n_SNPs_per_gene_outfiles[i], header = F), stringsAsFactors = F,check.names = F)
-    #colnames(n_SNPs_per_gene_this_tissue)=c("family","n_tests")
-    #n_SNPs_per_gene_this_tissue <- n_SNPs_per_gene_this_tissue[n_SNPs_per_gene_this_tissue$n_tests > 0, ]
     n_SNPs_per_gene_this_tissue = fread(m_eqtl_out) %>% select(gene) %>% group_by(gene) %>% mutate(n = n()) %>% distinct()
     colnames(n_SNPs_per_gene_this_tissue)=c("family","n_tests")
 
@@ -133,7 +130,7 @@ get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_name
       print("No significant associations for this tissue. Not writing output file.")
       next
     }else{
-      out_file_name <- paste0(treeQTL_dir,"/eAssoc_by_gene.", cur_tissue_name,"_", exp_suffix,".txt")
+      out_file_name <- paste0(treeQTL_dir,"/eAssoc_by_gene.", cur_tissue_name,"_", exp_suffix, "_", qtl_type, ".txt")
       print(paste("Writing output file", out_file_name))
       get_eAssociations(data.frame(family = n_sel_per_gene$family, pval = NA, n_sel = n_sel_per_gene$n_sel_snp), NULL, 
                       m_eqtl_outfiles[i], out_file_name, by_snp = FALSE, silent = TRUE)
