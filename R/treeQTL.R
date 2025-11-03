@@ -34,6 +34,8 @@ nearby = TRUE
 if(qtl_type != "cis"){
   nearby = FALSE
   print(paste("Performing multiple testing adjustment for FastGxC trans-eQTLs."))
+}else{
+  print(paste("Performing multiple testing adjustment for FastGxC cis-eQTLs."))
 }
 
 snpspos = fread(file = snps_location_file_name);

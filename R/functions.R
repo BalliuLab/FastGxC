@@ -30,7 +30,7 @@ get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_name
     m_eqtl_out = m_eqtl_outfiles[grepl(paste0("/", cur_tissue_name, "_"), m_eqtl_outfiles)]
     
     print(paste("Computing summary statistics for tissue ", cur_tissue_name, sep = ""))
-    n_SNPs_per_gene_this_tissue = fread(m_eqtl_out) %>% select(gene) %>% group_by(gene) %>% mutate(n = n()) %>% distinct()
+    n_SNPs_per_gene_this_tissue = fread(m_eqtl_out) %>% dplyr::select(gene) %>% group_by(gene) %>% mutate(n = n()) %>% distinct()
     colnames(n_SNPs_per_gene_this_tissue)=c("family","n_tests")
 
     gene_simes_cur_tissue <- get_eGenes(n_tests_per_gene = n_SNPs_per_gene_this_tissue, m_eqtl_out = m_eqtl_out, method = "BH", level1 = 1, level2 = 1, silent = TRUE)
@@ -67,7 +67,7 @@ get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_name
                             slice_size = 1e+05,
                             silent = FALSE)
     
-    n_SNPs_per_gene_shared = fread(m_eqtl_out) %>% select(gene) %>% group_by(gene) %>% mutate(n = n()) %>% distinct()
+    n_SNPs_per_gene_shared = fread(m_eqtl_out) %>% dplyr::select(gene) %>% group_by(gene) %>% mutate(n = n()) %>% distinct()
     colnames(n_SNPs_per_gene_shared)=c("family","n_tests")
 
     gene_simes_shared <- merge(gene_simes_shared, n_SNPs_per_gene_shared, by = "family", all = TRUE)
