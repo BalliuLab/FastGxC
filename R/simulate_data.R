@@ -40,7 +40,7 @@ print("Finished simulating and saving genotypes")
 # Save SNP location file
 # Data frame with 3 initial columns (name, chrom, and position) that match standard SNP map file, followed by 1 column for each context with a 0/1 indicator of whether the given SNP passed QC in that tissue. 
 snp_loc=data.frame(snpid=colnames(genos), chr="chr1",
-                   pos=rep(x = seq(1,n_genes*1e9, by = 1e9), each=n_snps_per_gene), 
+                   pos=rep(x = seq(1,n_genes*1e7, by = 1e7), each=n_snps_per_gene), 
                    matrix(data = 1, nrow = ncol(genos), ncol = n_contexts, dimnames = list(NULL, paste0("context",1:n_contexts))))
 write.table(x = snp_loc, file = paste0(data_dir,"snpsloc.txt"), quote = F, sep = "\t", row.names = F,
             col.names = T)
@@ -51,8 +51,8 @@ print("Finished saving snp location file")
 # data frame with 4 initial columns (name, chrom, and start and end position) that match standard gene map file, followed by 1 column for each context with a 0/1 indicator of whether the given gene passed QC in that context 
 gene_loc=data.frame(geneid=paste0("gene",1:n_genes), 
                     chr="chr1",
-                    s1=seq(1,n_genes*1e9, by = 1e9), 
-                    s2=seq(1,n_genes*1e9, by = 1e9)+ 1000,
+                    s1=seq(1,n_genes*1e7, by = 1e7), 
+                    s2=seq(1,n_genes*1e7, by = 1e7)+ 1000,
                     matrix(data = 1, nrow = n_genes, ncol = n_contexts, dimnames = list(NULL, paste0("context",1:n_contexts))))
 write.table(x = gene_loc, file = paste0(data_dir, "geneloc.txt"), quote = F, sep = "\t", row.names = F,
             col.names = T)
@@ -64,8 +64,6 @@ genos_with_effect = genos[,seq(from = 1, to = (n_snps_per_gene*n_genes), by = n_
 
 # Generate expression matrix
 exp_mat=expand.grid(iid=paste0("ind",1:N),context=paste0("context",1:n_contexts))
-
-which_context=rep_len(x = 1:n_contexts, length.out = n_genes)
 
 for (i in 1:n_genes) {
   betas = sqrt((hsq * v_e)/((1 - hsq) * var(genos_with_effect[, i])))
