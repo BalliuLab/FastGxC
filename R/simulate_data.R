@@ -67,8 +67,10 @@ print("Finished saving gene location file")
 # Use only one snp per gene to generate expression
 genos_with_effect = genos[,seq(from = 1, to = (n_snps_per_gene*n_genes), by = n_snps_per_gene)]
 
+print("here")
 # Generate expression matrix
 exp_mat=expand.grid(iid=paste0("ind",1:N),context=paste0("context",1:n_contexts))
+print("here2")
 
 for (i in 1:n_genes) {
   betas = sqrt((hsq * v_e)/((1 - hsq) * var(genos_with_effect[, i])))
@@ -80,6 +82,8 @@ for (i in 1:n_genes) {
   colnames(data_mat) = c("iid", "context", paste0("gene", i))
   exp_mat = merge(x = exp_mat, y = data_mat)
 }
+
+print("here3 ")
 
 rownames(exp_mat) = paste(exp_mat$iid, exp_mat$context, sep = " - ")
 exp_mat = cbind(data.frame(design = paste(exp_mat$iid, exp_mat$context,  sep = " - ")), exp_mat)
