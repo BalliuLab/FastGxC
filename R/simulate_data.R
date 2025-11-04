@@ -25,7 +25,7 @@ simulate_data = function(data_dir, N = 300, n_genes=100, n_snps_per_gene=1000,
                          seed = NULL){
 
 if(!dir.exists(data_dir)) dir.create(data_dir)
-if(seed != NULL){
+if(!is.null(seed)){
   set.seed(seed)
 }
 
