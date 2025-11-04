@@ -76,6 +76,7 @@ for (i in 1:n_genes) {
   betas = sqrt((hsq * v_e)/((1 - hsq) * var(genos_with_effect[, i])))
   Y = matrix(0, nrow = N, ncol = n_contexts, dimnames = list(paste0("ind", 1:N), paste0("context", 1:n_contexts)))
   print("here2")
+  n_contexts = n_contexts
   for (j in 1:n_contexts) Y[, j] = mus[j] + genos_with_effect[, i] * betas[j]
   print("here3")
   for (j in 1:N) Y[j, ] = Y[j, ] + rmvnorm(1, rep(0, n_contexts), sigma)
