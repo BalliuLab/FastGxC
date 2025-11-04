@@ -75,15 +75,17 @@ for (i in 1:n_genes) {
   print(n_contexts)
   betas = sqrt((hsq * v_e)/((1 - hsq) * var(genos_with_effect[, i])))
   Y = matrix(0, nrow = N, ncol = n_contexts, dimnames = list(paste0("ind", 1:N), paste0("context", 1:n_contexts)))
+  print("here2")
   for (j in 1:n_contexts) Y[, j] = mus[j] + genos_with_effect[, i] * betas[j]
+  print("here3")
   for (j in 1:N) Y[j, ] = Y[j, ] + rmvnorm(1, rep(0, n_contexts), sigma)
+  print("here4")
   data_mat = melt(data = data.table(Y, keep.rownames = T),
                   id.vars = "rn")
   colnames(data_mat) = c("iid", "context", paste0("gene", i))
   exp_mat = merge(x = exp_mat, y = data_mat)
 }
 
-print("here3 ")
 
 rownames(exp_mat) = paste(exp_mat$iid, exp_mat$context, sep = " - ")
 exp_mat = cbind(data.frame(design = paste(exp_mat$iid, exp_mat$context,  sep = " - ")), exp_mat)
