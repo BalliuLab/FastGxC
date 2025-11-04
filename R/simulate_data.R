@@ -12,7 +12,8 @@
 #' @param v_e - error variance in each context (maybe take this out and set it to 1)
 #' @param missing - decimal value signifying percentage of missingness in simulated expression data (e.g. parameter value of 0.3 would indicate 30% missing values in outputted expression matrix)
 #' @param hsq - numeric vector with length of the number of contexts representing heritability explained by the eQTL in each context
-#' @param mus - numberic vector with length of the number of contexts representing average expression in each context. 
+#' @param mus - numeric vector with length of the number of contexts representing average expression in each context. 
+#' @param seed - random seed for reproducibility. Default value is NULL
 #' @return outputs an expression matrix file, a genotype matrix file, a SNP location file, and a gene location file all in the format needed for FastGxC's decomposition step and then subsequent eQTL mapping step with Matrix eQTL.
 #'
 #' @export
@@ -20,9 +21,13 @@ simulate_data = function(data_dir, N = 300, n_genes=100, n_snps_per_gene=1000,
                          n_contexts=10, maf=0.2, w_corr=0.2, 
                          v_e=1, missing = 0, 
                          hsq = rep(0.2, n_contexts),
-                         mus = rep(0, n_contexts)){
+                         mus = rep(0, n_contexts),
+                         seed = NULL){
 
 if(!dir.exists(data_dir)) dir.create(data_dir)
+if(seed != NULL){
+  set.seed(seed)
+}
 
 # Error variance-covariance matrix
 sigma = matrix(w_corr,nrow=n_contexts,ncol=n_contexts) # Error variance-covariance matrix
