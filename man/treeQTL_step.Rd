@@ -11,7 +11,8 @@ treeQTL_step(
   context_names,
   out_dir,
   fdr_thresh = 0.05,
-  four_level = F
+  four_level = F,
+  qtl_type = "cis"
 )
 }
 \arguments{
@@ -41,6 +42,10 @@ treeQTL_step(
 
 \item{four_level}{\itemize{
 \item boolean value (T or F) that signifies whether to use the 4-level hierarchy (set this parameter to R and test for a global eQTL across shared and specific components) or a 3-level hierarchy (this parameter is default set to F to test for shared vs specific eQTLs)
+}}
+
+\item{qtl_type}{\itemize{
+\item string value "cis" or "trans" denoting the type of eQTL mapped. Default is set to "cis"
 }}
 }
 \value{

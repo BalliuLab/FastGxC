@@ -8,9 +8,8 @@ eQTL_mapping_step(
   SNP_file_name,
   snps_location_file_name,
   expression_file_name,
-  ene_location_file_name,
+  gene_location_file_name,
   context,
-  shared_specific,
   out_dir,
   output_file_name_cis = file.path(out_dir, paste0(context, "_", shared_specific,
     ".cis_pairs.txt")),
@@ -24,36 +23,36 @@ eQTL_mapping_step(
 )
 }
 \arguments{
-\item{SNP_file_name}{\itemize{
-\item full file path with genotypes of all individuals
-}}
+\item{SNP_file_name}{Full path to SNP genotype matrix.}
 
-\item{snps_location_file_name}{\itemize{
-\item full file path with snp ids, start, and end positions
-}}
+\item{snps_location_file_name}{Full path to SNP location file.}
 
-\item{expression_file_name}{\itemize{
-\item full file path with expression matrix of individuals per gene
-}}
+\item{expression_file_name}{Full path to expression matrix.}
 
-\item{context}{\itemize{
-\item name of context for output file naming purposes
-}}
+\item{gene_location_file_name}{Full path to gene location file.}
 
-\item{shared_specific}{\itemize{
-\item either "shared" if mapping eQTLs with shared component or "specific" if mapping eQTLs with specific component
-}}
+\item{context}{Context name for labeling output.}
 
-\item{out_dir}{\itemize{
-\item full file path of output directory where eQTL file will be written out
-}}
+\item{out_dir}{Output directory.}
 
-\item{gene_location_file_name}{\itemize{
-\item full file path with gene ids, start, and end positions
-}}
+\item{output_file_name_cis}{Path to write cis-eQTL output.}
+
+\item{output_file_name_tra}{Path to write trans-eQTL output.}
+
+\item{use_model}{MatrixEQTL model (default: modelLINEAR).}
+
+\item{cis_dist}{Distance threshold for cis-eQTLs.}
+
+\item{pv_threshold_cis}{P-value threshold for cis.}
+
+\item{pv_threshold_tra}{P-value threshold for trans.}
+
+\item{error_covariance}{Covariance matrix (or numeric()).}
+
+\item{method}{Either "MatrixEQTL" or "tensorQTL".}
 }
 \value{
-outputs one file of mapped cis eQTLs
+Writes cis-eQTLs and trans-eQTLs (optional) to file.
 }
 \description{
 Function to map cis eQTLs - cis window is defined as 1Mb

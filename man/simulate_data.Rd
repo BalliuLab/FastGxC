@@ -15,7 +15,8 @@ simulate_data(
   v_e = 1,
   missing = 0,
   hsq = rep(0.2, n_contexts),
-  mus = rep(0, n_contexts)
+  mus = rep(0, n_contexts),
+  seed = NULL
 )
 }
 \arguments{
@@ -60,7 +61,11 @@ simulate_data(
 }}
 
 \item{mus}{\itemize{
-\item numberic vector with length of the number of contexts representing average expression in each context.
+\item numeric vector with length of the number of contexts representing average expression in each context.
+}}
+
+\item{seed}{\itemize{
+\item random seed for reproducibility. Default value is NULL
 }}
 }
 \value{
