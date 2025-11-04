@@ -71,16 +71,11 @@ genos_with_effect = genos[,seq(from = 1, to = (n_snps_per_gene*n_genes), by = n_
 exp_mat=expand.grid(iid=paste0("ind",1:N),context=paste0("context",1:n_contexts))
 
 for (i in 1:n_genes) {
-  print("here")
-  print(n_contexts)
   betas = sqrt((hsq * v_e)/((1 - hsq) * var(genos_with_effect[, i])))
   Y = matrix(0, nrow = N, ncol = n_contexts, dimnames = list(paste0("ind", 1:N), paste0("context", 1:n_contexts)))
-  print("here2")
   n_contexts = n_contexts
   for (j in 1:n_contexts) Y[, j] = mus[j] + genos_with_effect[, i] * betas[j]
-  print("here3")
   for (j in 1:N) Y[j, ] = Y[j, ] + rmvnorm(1, rep(0, n_contexts), sigma)
-  print("here4")
   data_mat = melt(data = data.table(Y, keep.rownames = T),
                   id.vars = "rn")
   colnames(data_mat) = c("iid", "context", paste0("gene", i))
