@@ -57,7 +57,7 @@ get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_name
   if(four_level == T){
     level4 = level1
     print("Step 0.2 Part 2: Computing summary statistics across shared component")
-    pattern=("shared.all_pairs.txt")
+    pattern=paste0("shared.", qtl_type, "_pairs.txt")
     cur_tissue_name = "shared"
     m_eqtl_out = list.files(m_eqtl_out_dir, pattern = pattern,full.names = T)
     gene_simes_shared = get_eGenes(n_tests_per_gene = shared_n_tests_per_gene, 
@@ -67,8 +67,7 @@ get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_name
                                    slice_size = 1e+05,
                                    silent = FALSE)
     
-    n_SNPs_per_gene_shared = fread(m_eqtl_out) %>% dplyr::select(gene) %>% group_by(gene) %>% mutate(n = n()) %>% distinct()
-    colnames(n_SNPs_per_gene_shared)=c("family","n_tests")
+    n_SNPs_per_gene_shared = shared_n_tests_per_gene
     
     gene_simes_shared <- merge(gene_simes_shared, n_SNPs_per_gene_shared, by = "family", all = TRUE)
     gene_simes_shared$fam_p[which(is.na(gene_simes_shared$fam_p))] <- 1
@@ -95,8 +94,12 @@ get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_name
     
     # convert rej simes to dataframe here and then add it as a column
     eGene_xT_sel_global <- data.frame(gene = sel_eGenes_simes$gene, global_eGene = rej_simes)
+    eGene_xT_sel_global_pvals <- data.frame(gene = sel_eGenes_simes$gene, global_eGene = sel_eGenes_simes$simes_global_p)
+    names(eGene_xT_sel_global_pvals) = c("gene", "pvalue")
     out_file_name <- paste0(treeQTL_dir, "/global_eGenes.txt")
+    out_file_name_pvals <- paste0(treeQTL_dir, "/global_eGenes_pvalues.txt")
     fwrite(eGene_xT_sel_global, file = out_file_name, sep = "\t")
+    fwrite(eGene_xT_sel_global_pvals, file = out_file_name_pvals)
   }
   
   print("Step 1: Selecting eGenes across tissues")
@@ -145,6 +148,10 @@ get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_name
                         m_eqtl_outfiles[i], out_file_name, by_snp = FALSE, silent = TRUE)
     }
   }
+  
+  # write out eGene pvalues
+  write.table(x = sel_eGenes_simes[,c(1, col_ind_pvals)], file = paste0(treeQTL_dir,"specific_eGenes_pvalues.txt"), 
+              quote = F, row.names = F, col.names = T, sep = '\t')
   eGene_xT_sel <- data.frame(gene = sel_eGenes_simes$gene)
   eGene_xT_sel <- cbind(eGene_xT_sel, rej_simes)
   names(eGene_xT_sel)[2:(n_tissue + 1)] <- tissue_names
