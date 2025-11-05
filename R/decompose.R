@@ -7,7 +7,7 @@
 #' @return outputs one file with the shared component of expression per individual and C files for each specific expression component for each of the C contexts
 #'
 #' @export
-decomposition_step = function(exp_mat_filename, data_dir){
+decomposition_step = function(exp_mat_filename, data_dir, out_dir = data_dir){
 if(!dir.exists(data_dir)) dir.create(data_dir)
 #%%%%%%%%%%%%%%% Read expression matrix, genes in columns, samples in rows.
 #exp_mat=read.table(file = paste0(data_dir,exp_mat_filename), sep = '\t')
@@ -44,7 +44,7 @@ print("Finished decomposition, saving files")
 
 print("Saving between-individuals variation matrix")
 fwrite(x = data.table::data.table(t(bexp_all),keep.rownames = T) %>% {setnames(., old = "rn", new = "geneID")[]},
-       file = paste0(data_dir,"context_shared_expression.txt"), quote = F, row.names = F,
+       file = paste0(out_dir,"context_shared_expression.txt"), quote = F, row.names = F,
        col.names = T, append = F, sep = '\t')
 
 print("Saving within-individuals variation matrix for context: ")
@@ -53,7 +53,7 @@ for(i in 1:length(contexts)){
   wexp_t = wexp_all[grep(pattern = paste0(contexts[i],"$"), rownames(wexp_all)),]
   rownames(wexp_t)=gsub(pattern = paste0(" - ",contexts[i]), replacement = "", x = rownames(wexp_t))
   fwrite(x = data.table::data.table(t(wexp_t),keep.rownames = T) %>% {setnames(., old = "rn", new = "geneID")[]},
-         file = paste0(data_dir,contexts[i],"_specific_expression.txt"),quote = F, row.names = F,
+         file = paste0(out_dir,contexts[i],"_specific_expression.txt"),quote = F, row.names = F,
          col.names = T, append = F, sep = '\t')
 }
 }
