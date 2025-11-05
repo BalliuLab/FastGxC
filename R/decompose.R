@@ -9,6 +9,7 @@
 #' @export
 decomposition_step = function(exp_mat_filename, data_dir, out_dir = data_dir){
 if(!dir.exists(data_dir)) dir.create(data_dir)
+if(!dir.exists(out_dir)) dir.create(out_dir)
 #%%%%%%%%%%%%%%% Read expression matrix, genes in columns, samples in rows.
 #exp_mat=read.table(file = paste0(data_dir,exp_mat_filename), sep = '\t')
 exp_mat=data.table::fread(file = exp_mat_filename, sep = '\t', data.table = F)
