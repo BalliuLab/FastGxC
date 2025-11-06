@@ -110,10 +110,10 @@ get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_name
   print("Step 2: Selecting tissues in which eGenes are active")
   if(R_G == 0){
     print("no significant eGenes. writing empty eGene file.")
-    empty_df <- as.data.frame(matrix("", nrow = 1, ncol = length(contexts_vec)))
-    colnames(empty_df) <- contexts_vec
+    empty_df <- as.data.frame(matrix("", nrow = 1, ncol = length(tissue_names)))
+    colnames(empty_df) <- tissue_names
     empty_df$gene <- ""
-    empty_df <- empty_df[, c("gene", contexts_vec)]
+    empty_df <- empty_df[, c("gene", tissue_names)]
     return(empty_df)
   }
   q2_adj <- R_G * level2/nrow(eGene_pvals)
