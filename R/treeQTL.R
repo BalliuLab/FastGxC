@@ -6,6 +6,7 @@
 #' @param snps_location_file_name - full filepath of the snpsloc file used in the eQTL mapping step
 #' @param gene_location_file_name - full filepath of the geneloc file used in the eQTL mapping step
 #' @param out_dir - full filepath of the output directory that FDR adjusted eQTLs should be written out to.
+#' @param cisDist - numeric value of defined cis window. Note: this should match the cisDist set in the eQTL mapping step.
 #' @param context_names - vector of all context names in the format c("tissue1", "tissue2", ..., etc.)
 #' @param fdr_thresh - value between 0 and 1 that signifies what FDR threshold for multiple testing correction. The same value will be used across all hierarchical levels.
 #' @param four_level - boolean value (T or F) that signifies whether to use the 4-level hierarchy (set this parameter to R and test for a global eQTL across shared and specific components) or a 3-level hierarchy (this parameter is default set to F to test for shared vs specific eQTLs)
@@ -13,7 +14,7 @@
 #' @return outputs one file of specific eGenes across all contexts and one file of shared eGenes. Outputs an eAssociation file for each context and one for shared eQTLs with snp-gene pairs and FDR adjusted p-values. 
 #'
 #' @export
-treeQTL_step = function(data_dir, snps_location_file_name, gene_location_file_name, context_names, out_dir, fdr_thresh = 0.05, four_level = F, qtl_type = "cis"){
+treeQTL_step = function(data_dir, snps_location_file_name, gene_location_file_name, context_names, out_dir, cisDist = 1e6, fdr_thresh = 0.05, four_level = F, qtl_type = "cis"){
 
 # use a single thread
 print(paste0("data.table getDTthreads(): ",getDTthreads()))
@@ -29,7 +30,6 @@ level2=fdr_thresh
 level3=fdr_thresh
 
 # Distance for local gene-SNP pairs
-cisDist = 1e6;
 nearby = TRUE
 if(qtl_type != "cis"){
   nearby = FALSE
