@@ -13,6 +13,7 @@
 #' @param missing - decimal value signifying percentage of missingness in simulated expression data (e.g. parameter value of 0.3 would indicate 30% missing values in outputted expression matrix)
 #' @param hsq - numeric vector with length of the number of contexts representing heritability explained by the eQTL in each context
 #' @param mus - numeric vector with length of the number of contexts representing average expression in each context. 
+#' @param cisDist - cis window used to create geneloc and snploc files. Note: this value must be larger than 1
 #' @param seed - random seed for reproducibility. Default value is NULL
 #' @return outputs an expression matrix file, a genotype matrix file, a SNP location file, and a gene location file all in the format needed for FastGxC's decomposition step and then subsequent eQTL mapping step with Matrix eQTL.
 #'
@@ -22,6 +23,7 @@ simulate_data = function(data_dir, N = 300, n_genes=100, n_snps_per_gene=1000,
                          v_e=1, missing = 0, 
                          hsq = rep(0.2, n_contexts),
                          mus = rep(0, n_contexts),
+                         cisDist = 1e6,
                          seed = NULL){
 
 if(!dir.exists(data_dir)) dir.create(data_dir)
@@ -42,25 +44,77 @@ write.table(x = t(data.table(genos, keep.rownames = T) %>%
 
 print("Finished simulating and saving genotypes")
 
+
 # Save SNP location file
 # Data frame with 3 initial columns (name, chrom, and position) that match standard SNP map file, followed by 1 column for each context with a 0/1 indicator of whether the given SNP passed QC in that tissue. 
 snp_loc=data.frame(snpid=colnames(genos), chr="chr1",
-                   pos=rep(x = seq(1,n_genes*1e7, by = 1e7), each=n_snps_per_gene), 
+                   pos=1, 
                    matrix(data = 1, nrow = ncol(genos), ncol = n_contexts, dimnames = list(NULL, paste0("context",1:n_contexts))))
-write.table(x = snp_loc, file = paste0(data_dir,"snpsloc.txt"), quote = F, sep = "\t", row.names = F,
-            col.names = T)
-
-print("Finished saving snp location file")
 
 # Save gene location file
 # data frame with 4 initial columns (name, chrom, and start and end position) that match standard gene map file, followed by 1 column for each context with a 0/1 indicator of whether the given gene passed QC in that context 
 gene_loc=data.frame(geneid=paste0("gene",1:n_genes), 
                     chr="chr1",
-                    s1=seq(1,n_genes*1e7, by = 1e7), 
-                    s2=seq(1,n_genes*1e7, by = 1e7)+ 1000,
+                    s1=1, 
+                    s2=1,
                     matrix(data = 1, nrow = n_genes, ncol = n_contexts, dimnames = list(NULL, paste0("context",1:n_contexts))))
+
+## populate snploc and geneloc dataframes
+cur_chr = 1
+cur_position = 1
+max_position = 1e8
+snp_pos = 1
+for(gene in 1:n_genes){
+  if(cur_position < max_position){
+    gene_loc$chr[gene] = paste0("chr", cur_chr)
+    gene_loc$s1[gene] = cur_position
+    gene_loc$s2[gene] = cur_position + 1
+    
+    snp_loc$chr[snp_pos:(snp_pos + n_snps_per_gene -1)] = paste0("chr", cur_chr)
+    snp_loc$pos[snp_pos:(snp_pos + n_snps_per_gene -1)] = cur_position
+    cur_position = cur_position + cisDist
+    snp_pos = snp_pos + n_snps_per_gene
+  }
+  else{
+    cur_chr = cur_chr + 1
+    cur_position = 1
+    gene_loc$chr[gene] = paste0("chr", cur_chr)
+    gene_loc$s1[gene] = cur_position
+    gene_loc$s2[gene] = cur_position + 1
+    
+    snp_loc$chr[snp_pos:(snp_pos + n_snps_per_gene -1)] = paste0("chr", cur_chr)
+    snp_loc$pos[snp_pos:(snp_pos + n_snps_per_gene -1)] = cur_position
+    snp_pos = snp_pos + n_snps_per_gene
+    cur_position = cur_position + cisDist
+  }
+}
+
+
+write.table(x = snp_loc, file = paste0(data_dir,"snpsloc.txt"), quote = F, sep = "\t", row.names = F,
+            col.names = T)
 write.table(x = gene_loc, file = paste0(data_dir, "geneloc.txt"), quote = F, sep = "\t", row.names = F,
             col.names = T)
+
+
+# Save SNP location file
+# Data frame with 3 initial columns (name, chrom, and position) that match standard SNP map file, followed by 1 column for each context with a 0/1 indicator of whether the given SNP passed QC in that tissue. 
+#snp_loc=data.frame(snpid=colnames(genos), chr="chr1",
+#                   pos=rep(x = seq(1,n_genes*1e7, by = 1e7), each=n_snps_per_gene), 
+#                   matrix(data = 1, nrow = ncol(genos), ncol = n_contexts, dimnames = list(NULL, paste0("context",1:n_contexts))))
+#write.table(x = snp_loc, file = paste0(data_dir,"snpsloc.txt"), quote = F, sep = "\t", row.names = F,
+#            col.names = T)
+
+print("Finished saving snp location file")
+
+# Save gene location file
+# data frame with 4 initial columns (name, chrom, and start and end position) that match standard gene map file, followed by 1 column for each context with a 0/1 indicator of whether the given gene passed QC in that context 
+#gene_loc=data.frame(geneid=paste0("gene",1:n_genes), 
+#                    chr="chr1",
+#                    s1=seq(1,n_genes*1e7, by = 1e7), 
+#                    s2=seq(1,n_genes*1e7, by = 1e7)+ 1000,
+#                    matrix(data = 1, nrow = n_genes, ncol = n_contexts, dimnames = list(NULL, paste0("context",1:n_contexts))))
+#write.table(x = gene_loc, file = paste0(data_dir, "geneloc.txt"), quote = F, sep = "\t", row.names = F,
+#            col.names = T)
 
 print("Finished saving gene location file")
 
