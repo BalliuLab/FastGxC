@@ -61,10 +61,10 @@ gene_loc=data.frame(geneid=paste0("gene",1:n_genes),
 
 ## populate snploc and geneloc dataframes
 cur_chr = 1
-cur_position = 1
 max_position = 1e8
 snp_pos = 1
 for(gene in 1:n_genes){
+  cur_position = (gene-1)*cisDist+1
   if(cur_position < max_position){
     gene_loc$chr[gene] = paste0("chr", cur_chr)
     gene_loc$s1[gene] = cur_position
@@ -72,7 +72,6 @@ for(gene in 1:n_genes){
     
     snp_loc$chr[snp_pos:(snp_pos + n_snps_per_gene -1)] = paste0("chr", cur_chr)
     snp_loc$pos[snp_pos:(snp_pos + n_snps_per_gene -1)] = cur_position
-    cur_position = cur_position + cisDist + 1
     snp_pos = snp_pos + n_snps_per_gene
   }
   else{
@@ -85,7 +84,6 @@ for(gene in 1:n_genes){
     snp_loc$chr[snp_pos:(snp_pos + n_snps_per_gene -1)] = paste0("chr", cur_chr)
     snp_loc$pos[snp_pos:(snp_pos + n_snps_per_gene -1)] = cur_position
     snp_pos = snp_pos + n_snps_per_gene
-    cur_position = cur_position + cisDist + 1
   }
 }
 
