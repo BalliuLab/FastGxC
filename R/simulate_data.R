@@ -72,7 +72,7 @@ for(gene in 1:n_genes){
     
     snp_loc$chr[snp_pos:(snp_pos + n_snps_per_gene -1)] = paste0("chr", cur_chr)
     snp_loc$pos[snp_pos:(snp_pos + n_snps_per_gene -1)] = cur_position
-    cur_position = cur_position + cisDist
+    cur_position = cur_position + cisDist + 1
     snp_pos = snp_pos + n_snps_per_gene
   }
   else{
@@ -85,7 +85,7 @@ for(gene in 1:n_genes){
     snp_loc$chr[snp_pos:(snp_pos + n_snps_per_gene -1)] = paste0("chr", cur_chr)
     snp_loc$pos[snp_pos:(snp_pos + n_snps_per_gene -1)] = cur_position
     snp_pos = snp_pos + n_snps_per_gene
-    cur_position = cur_position + cisDist
+    cur_position = cur_position + cisDist + 1
   }
 }
 
