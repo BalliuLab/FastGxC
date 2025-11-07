@@ -6,13 +6,13 @@
 #' @param snps_location_file_name - full filepath of the snpsloc file used in the eQTL mapping step
 #' @param gene_location_file_name - full filepath of the geneloc file used in the eQTL mapping step
 #' @param out_dir - full filepath of the output directory that FDR adjusted eQTLs should be written out to.
+#' @param cisDist - numeric value of defined cis window. Note: this should match the cisDist set in the eQTL mapping step.
 #' @param context_names - vector of all context names in the format c("tissue1", "tissue2", ..., etc.)
 #' @param fdr_thresh - value between 0 and 1 that signifies what FDR threshold for multiple testing correction. The same value will be used across all hierarchical levels.
 #' @param four_level - boolean value (T or F) that signifies whether to use the 4-level hierarchy (set this parameter to R and test for a global eQTL across shared and specific components) or a 3-level hierarchy (this parameter is default set to F to test for shared vs specific eQTLs)
-#' @param cisDist - maximum genomic distance (in base pairs) between a SNP and a gene's transcription start site (TSS) to be considered a cis-association. 
+#' @param qtl_type - string value "cis" or "trans" denoting the type of eQTL mapped. Default is set to "cis"
 #' @param treeBH_method - character string specifying which TreeBH implementation to use when four_level = TRUE. Options: "original" (TreeBH package), "datatable" (optimized R), "cpp" (fast C++ implementation, default). Ignored when four_level = FALSE.
 #' @param treeBH_test - character string specifying the p-value aggregation method for TreeBH when four_level = TRUE. Options: "simes" (Simes' method, default), "fisher" (Fisher's method). Ignored when four_level = FALSE.
-#' @param qtl_type - string value "cis" or "trans" denoting the type of eQTL mapped. Default is set to "cis"
 #' @return outputs one file of specific eGenes across all contexts and one file of shared eGenes. Outputs an eAssociation file for each context and one for shared eQTLs with snp-gene pairs and FDR adjusted p-values. 
 #'
 #' @importFrom data.table fread getDTthreads setDTthreads
@@ -79,12 +79,8 @@ treeQTL_step = function(data_dir, snps_location_file_name, gene_location_file_na
       message("All expected FastGxC eQTL mapping output files are present.")
     }
     
-    shared_n_tests_per_gene = get_n_tests_per_gene(
-      snp_map = snpspos[, c("snpid","chr","pos")],
-      gene_map = genepos[, c("geneid","chr","s1","s2")],
-      nearby = nearby, 
-      dist = cisDist
-    )
+    shared_n_tests_per_gene = get_n_tests_per_gene(snp_map = snpspos %>% dplyr::select(snpid, chr, pos), gene_map = genepos %>% dplyr::select(geneid, chr, s1, s2), 
+                                                   nearby = nearby, dist = cisDist)
     shared_n_tests_per_gene = data.frame(shared_n_tests_per_gene)
     
     if(ncol(shared_n_tests_per_gene) < 2){
