@@ -64,7 +64,7 @@ cur_chr = 1
 max_position = 1e8
 snp_pos = 1
 for(gene in 1:n_genes){
-  cur_position = (gene-1)*cisDist+1
+  cur_position = (gene)*cisDist
   if(cur_position < max_position){
     gene_loc$chr[gene] = paste0("chr", cur_chr)
     gene_loc$s1[gene] = cur_position
