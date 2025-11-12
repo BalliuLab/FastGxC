@@ -117,7 +117,8 @@ fwrite(x = snp_loc, file = paste0(data_dir,"snpsloc.txt"), quote = F, sep = "\t"
 fwrite(x = gene_loc, file = paste0(data_dir, "geneloc.txt"), quote = F, sep = "\t", row.names = F,
             col.names = T)
 
-print("Finished saving gene location file")
+
+print("Finished saving snp and gene location files")
 
 # Use only one snp per gene to generate expression
 genos_with_effect = genos[,seq(from = 1, to = (n_snps_per_gene*n_genes), by = n_snps_per_gene)]
