@@ -9,7 +9,6 @@
 #' @param n_contexts - number of contexts to simulate (e.g. tissues or cell types) (must be a whole number)
 #' @param maf - minor allele frequency for genotypes 
 #' @param w_corr - error covariance between contexts
-#' @param v_e - error variance in each context (maybe take this out and set it to 1)
 #' @param missing - decimal value signifying percentage of missingness in simulated expression data (e.g. parameter value of 0.3 would indicate 30% missing values in outputted expression matrix)
 #' @param hsq - numeric vector with length of the number of contexts representing heritability explained by the eQTL in each context
 #' @param mus - numeric vector with length of the number of contexts representing average expression in each context. 
@@ -20,7 +19,7 @@
 #' @export
 simulate_data = function(data_dir, N = 300, n_genes=100, n_snps_per_gene=1000, 
                          n_contexts=10, maf=0.2, w_corr=0.2, 
-                         v_e=1, missing = 0, 
+                         missing = 0.05, 
                          hsq = rep(0.2, n_contexts),
                          mus = rep(0, n_contexts),
                          cisDist = 1e6,
@@ -32,15 +31,21 @@ if(!is.null(seed)){
 }
 
 # Error variance-covariance matrix
+v_e=1 # set error variance to 1 automatically
 sigma = matrix(w_corr,nrow=n_contexts,ncol=n_contexts) # Error variance-covariance matrix
 diag(sigma) = v_e
+betas = sqrt((hsq * v_e)/((1 - hsq) * (2*maf*(1-maf)))) # set effect sizes
+
+if(!is.positive.semi.definite(sigma)){
+  stop("Variance covariance matrix is not positive semidefinite.")
+}
 
 # Simulate genotypes 
 genos = sapply(X = 1:(n_snps_per_gene*n_genes), FUN = function(X) rbinom(N, 2, maf))
 colnames(genos) = paste0("snp",1:(n_snps_per_gene*n_genes))
 rownames(genos) = paste0("ind",1:N)
-write.table(x = t(data.table(genos, keep.rownames = T) %>%
-                    rename(snpid = rn)), file = paste0(data_dir, "SNPs.txt"), quote = F, sep = "\t", row.names = T, col.names = F)
+fwrite(x = data.frame(t(data.table(genos, keep.rownames = T) %>%
+                    rename(snpid = rn))), file = paste0(data_dir, "SNPs.txt"), quote = F, sep = "\t", row.names = T, col.names = F)
 
 print("Finished simulating and saving genotypes")
 
@@ -87,32 +92,10 @@ for(gene in 1:n_genes){
   }
 }
 
-
-write.table(x = snp_loc, file = paste0(data_dir,"snpsloc.txt"), quote = F, sep = "\t", row.names = F,
+fwrite(x = snp_loc, file = paste0(data_dir,"snpsloc.txt"), quote = F, sep = "\t", row.names = F,
             col.names = T)
-write.table(x = gene_loc, file = paste0(data_dir, "geneloc.txt"), quote = F, sep = "\t", row.names = F,
+fwrite(x = gene_loc, file = paste0(data_dir, "geneloc.txt"), quote = F, sep = "\t", row.names = F,
             col.names = T)
-
-
-# Save SNP location file
-# Data frame with 3 initial columns (name, chrom, and position) that match standard SNP map file, followed by 1 column for each context with a 0/1 indicator of whether the given SNP passed QC in that tissue. 
-#snp_loc=data.frame(snpid=colnames(genos), chr="chr1",
-#                   pos=rep(x = seq(1,n_genes*1e7, by = 1e7), each=n_snps_per_gene), 
-#                   matrix(data = 1, nrow = ncol(genos), ncol = n_contexts, dimnames = list(NULL, paste0("context",1:n_contexts))))
-#write.table(x = snp_loc, file = paste0(data_dir,"snpsloc.txt"), quote = F, sep = "\t", row.names = F,
-#            col.names = T)
-
-print("Finished saving snp location file")
-
-# Save gene location file
-# data frame with 4 initial columns (name, chrom, and start and end position) that match standard gene map file, followed by 1 column for each context with a 0/1 indicator of whether the given gene passed QC in that context 
-#gene_loc=data.frame(geneid=paste0("gene",1:n_genes), 
-#                    chr="chr1",
-#                    s1=seq(1,n_genes*1e7, by = 1e7), 
-#                    s2=seq(1,n_genes*1e7, by = 1e7)+ 1000,
-#                    matrix(data = 1, nrow = n_genes, ncol = n_contexts, dimnames = list(NULL, paste0("context",1:n_contexts))))
-#write.table(x = gene_loc, file = paste0(data_dir, "geneloc.txt"), quote = F, sep = "\t", row.names = F,
-#            col.names = T)
 
 print("Finished saving gene location file")
 
@@ -123,9 +106,7 @@ genos_with_effect = genos[,seq(from = 1, to = (n_snps_per_gene*n_genes), by = n_
 exp_mat=expand.grid(iid=paste0("ind",1:N),context=paste0("context",1:n_contexts))
 
 for (i in 1:n_genes) {
-  betas = sqrt((hsq * v_e)/((1 - hsq) * var(genos_with_effect[, i])))
   Y = matrix(0, nrow = N, ncol = n_contexts, dimnames = list(paste0("ind", 1:N), paste0("context", 1:n_contexts)))
-  n_contexts = n_contexts
   for (j in 1:n_contexts) Y[, j] = mus[j] + genos_with_effect[, i] * betas[j]
   for (j in 1:N) Y[j, ] = Y[j, ] + rmvnorm(1, rep(0, n_contexts), sigma)
   data_mat = melt(data = data.table(Y, keep.rownames = T),
@@ -147,7 +128,7 @@ exp_mat_missing = matrix(exp_mat_missing, nrow = nrow(exp_mat),  ncol = ncol(exp
 exp_mat_missing = as.data.frame(exp_mat_missing)
 exp_mat_missing = cbind(identifiers, exp_mat_missing)
 colnames(exp_mat_missing) = colnames(exp_mat)
-write.table(x = exp_mat_missing[, -c(2:3)], file = paste0(data_dir, "expression.txt"), quote = F,
+fwrite(x = exp_mat_missing[, -c(2:3)], file = paste0(data_dir, "expression.txt"), quote = F,
             sep = "\t", row.names = F, col.names = T)
 print("Finished simulating and saving expression file")
 }
