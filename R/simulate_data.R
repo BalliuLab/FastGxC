@@ -30,6 +30,17 @@ if(!is.null(seed)){
   set.seed(seed)
 }
 
+## parameter checks
+stopifnot("N parameter must be greater than 0" = N > 0)
+stopifnot("n_genes parameter must be greater than 0" = n_genes > 0)
+stopifnot("n_snps_per_gene parameter must be greater than 0" = n_snps_per_gene > 0)
+stopifnot("n_contexts parameter must be greater than 1" = n_contexts > 1)
+stopifnot("length of hsq parameter must be equal to the number of contexts" = length(hsq)==n_contexts)
+stopifnot("length of mus parameter must be equal to the number of contexts" = length(mus)==n_contexts)
+stopifnot("values of hsq parameter must be [0,1)" = all(hsq >= 0 & hsq < 1))
+stopifnot("w_corr parameter must be [-1,1]" = w_corr >= -1 & w_corr <= 1)
+
+
 # Error variance-covariance matrix
 v_e=1 # set error variance to 1 automatically
 sigma = matrix(w_corr,nrow=n_contexts,ncol=n_contexts) # Error variance-covariance matrix
@@ -41,11 +52,20 @@ if(!is.positive.semi.definite(sigma)){
 }
 
 # Simulate genotypes 
-genos = sapply(X = 1:(n_snps_per_gene*n_genes), FUN = function(X) rbinom(N, 2, maf))
-colnames(genos) = paste0("snp",1:(n_snps_per_gene*n_genes))
-rownames(genos) = paste0("ind",1:N)
-fwrite(x = data.frame(t(data.table(genos, keep.rownames = T) %>%
-                    rename(snpid = rn))), file = paste0(data_dir, "SNPs.txt"), quote = F, sep = "\t", row.names = T, col.names = F)
+M <- n_genes * n_snps_per_gene
+genos <- matrix(rbinom((N * M), 2,maf), nrow = N, ncol = M, byrow = FALSE)
+storage.mode(genos) <- "integer"
+dimnames(genos) <- list(paste0("ind", seq_len(N)), paste0("snp", seq_len(M)))
+snp_out <- data.frame(snpid = paste0("snp", seq_len(M)), t(genos), check.names = FALSE)
+
+if (requireNamespace("data.table", quietly = TRUE)) { 
+  data.table::fwrite(snp_out, file = file.path(data_dir, "SNPs.txt"),
+                     sep = "\t", row.names = F, col.names = T)
+} else {
+  fwrite(snp_out, file = file.path(data_dir, "SNPs.txt"),
+              sep = "\t", quote = FALSE, row.names = FALSE, col.names = TRUE)
+}
+
 
 print("Finished simulating and saving genotypes")
 
