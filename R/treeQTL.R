@@ -76,45 +76,34 @@ if(ncol(shared_n_tests_per_gene) < 2){
 }
 
 
-if(four_level){
-    specific_eGenes=get_eGenes_multi_tissue_mod(
-                                  m_eqtl_out_dir = data_dir, 
-                                  treeQTL_dir = out_dir, 
-                                  tissue_names = context_names,
-                                  level1 = level1, level2 = level2, level3 = level3, 
-                                  exp_suffix = "specific",
-                                  four_level = four_level,
-                                  qtl_type = qtl_type,
-                                  shared_n_tests_per_gene = shared_n_tests_per_gene)
-    write.table(x = specific_eGenes, file = paste0(out_dir,"specific_eGenes.txt"), quote = F, row.names = F, col.names = T, sep = '\t')
-}else{
-    specific_eGenes=get_eGenes_multi_tissue_mod(
-                                  m_eqtl_out_dir = data_dir, 
-                                  treeQTL_dir = out_dir, 
-                                  tissue_names = context_names,
-                                  level1 = level1, level2 = level2, level3 = level3, 
-                                  exp_suffix = "specific",
-                                  four_level = four_level,
-                                  qtl_type = qtl_type)
-    write.table(x = specific_eGenes, file = paste0(out_dir,"specific_eGenes.txt"), quote = F, row.names = F, col.names = T, sep = '\t')
 
-    pattern=(paste0("shared.", qtl_type, "_pairs.txt"))
-    shared_eGenes = get_eGenes(n_tests_per_gene = shared_n_tests_per_gene, 
-                                m_eqtl_out = list.files(data_dir, pattern = pattern,full.names = T), 
-                                method = "BH",
-                                level1 = level1, level2 = level2,
-                                slice_size = 1e+05,
-                                silent = FALSE)
+specific_eGenes=get_eGenes_multi_tissue_mod(
+                              m_eqtl_out_dir = data_dir, 
+                              treeQTL_dir = out_dir, 
+                              tissue_names = context_names,
+                              level1 = level1, level2 = level2, level3 = level3, 
+                              exp_suffix = "specific",
+                              four_level = four_level,
+                              qtl_type = qtl_type)
+write.table(x = specific_eGenes, file = paste0(out_dir,"specific_eGenes.txt"), quote = F, row.names = F, col.names = T, sep = '\t')
 
-    write.table(x = shared_eGenes, file = paste0(out_dir,"shared_eGenes.txt"), quote = F, row.names = F, col.names = T, sep = '\t')
+pattern=(paste0("shared.", qtl_type, "_pairs.txt"))
+shared_eGenes = get_eGenes(n_tests_per_gene = shared_n_tests_per_gene, 
+                            m_eqtl_out = list.files(data_dir, pattern = pattern,full.names = T), 
+                            method = "BH",
+                            level1 = level1, level2 = level2,
+                            slice_size = 1e+05,
+                            silent = FALSE)
+
+write.table(x = shared_eGenes, file = paste0(out_dir,"shared_eGenes.txt"), quote = F, row.names = F, col.names = T, sep = '\t')
 
 
-    eAssociations = get_eAssociations(eDiscoveries = shared_eGenes, n_tests = shared_n_tests_per_gene, 
-                    m_eqtl_out = list.files(data_dir, pattern = pattern,full.names = T),
-                    out_file = paste0(out_dir,"eAssoc_by_gene.context_shared.txt"), 
-                    by_snp = F, slice_size = 1e+05,
-                    silent = FALSE)
-}
+eAssociations = get_eAssociations(eDiscoveries = shared_eGenes, n_tests = shared_n_tests_per_gene, 
+                m_eqtl_out = list.files(data_dir, pattern = pattern,full.names = T),
+                out_file = paste0(out_dir,"eAssoc_by_gene.context_shared.txt"), 
+                by_snp = F, slice_size = 1e+05,
+                silent = FALSE)
+
 
   
 }
