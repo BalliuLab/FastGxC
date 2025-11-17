@@ -84,7 +84,8 @@ specific_eGenes=get_eGenes_multi_tissue_mod(
                               level1 = level1, level2 = level2, level3 = level3, 
                               exp_suffix = "specific",
                               four_level = four_level,
-                              qtl_type = qtl_type)
+                              qtl_type = qtl_type,
+                              shared_n_tests_per_gene = shared_n_tests_per_gene)
 write.table(x = specific_eGenes, file = paste0(out_dir,"specific_eGenes.txt"), quote = F, row.names = F, col.names = T, sep = '\t')
 
 pattern=(paste0("shared.", qtl_type, "_pairs.txt"))
