@@ -94,6 +94,8 @@ get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_name
       print("no significant eGenes. writing empty eGene file.")
       empty_df <- as.data.frame(matrix("", nrow = 1, ncol = 2))
       colnames(empty_df) <- c("gene", "global_eGene")
+      out_file_name <- paste0(treeQTL_dir, "/global_eGenes.txt")
+      fwrite(empty_df, file = out_file_name, sep = "\t")
       return(empty_df)
     }
     names(rej_simes) = "global_eGene"

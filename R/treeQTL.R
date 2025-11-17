@@ -70,12 +70,9 @@ shared_n_tests_per_gene = get_n_tests_per_gene(snp_map = snpspos %>% dplyr::sele
                                             nearby = nearby, dist = cisDist)
 shared_n_tests_per_gene = data.frame(shared_n_tests_per_gene)
 
-if(ncol(shared_n_tests_per_gene) < 2){
-  shared_n_tests_per_gene = data.frame(gene = rownames(shared_n_tests_per_gene), shared_n_tests_per_gene)
-  names(shared_n_tests_per_gene) = c("family", "n_tests")
+if (ncol(shared_n_tests_per_gene) != 2) {
+  stop("unable to compute number of tests per gene.")
 }
-
-
 
 specific_eGenes=get_eGenes_multi_tissue_mod(
                               m_eqtl_out_dir = data_dir, 
