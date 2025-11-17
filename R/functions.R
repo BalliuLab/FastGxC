@@ -89,8 +89,14 @@ get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_name
     q2_adj <- R_G * level4/nrow(eGene_pvals)
     rej_simes <- t(1 * apply(sel_eGenes_simes[, c("simes_global_p"), drop = F], 1, TreeQTL:::qsel_by_fam, q2_adj))
     rej_simes = t(data.frame(rej_simes))
-    names(rej_simes) = "global_eGene"
     print(paste("Number of global eGenes = ", R_G))
+    if(R_G == 0){
+      print("no significant eGenes. writing empty eGene file.")
+      empty_df <- as.data.frame(matrix("", nrow = 1, ncol = 2))
+      colnames(empty_df) <- c("gene", "global_eGene")
+      return(empty_df)
+    }
+    names(rej_simes) = "global_eGene"
     
     # convert rej simes to dataframe here and then add it as a column
     eGene_xT_sel_global <- data.frame(gene = sel_eGenes_simes$gene, global_eGene = rej_simes)
