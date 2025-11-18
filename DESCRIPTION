@@ -13,7 +13,8 @@ Imports:
     reshape2,
     magrittr,
     TreeQTL,
-    matrixcalc
+    matrixcalc,
+    reticulate
 Depends:
     dplyr,
     data.table,
@@ -22,7 +23,8 @@ Depends:
     reshape2,
     magrittr,
     TreeQTL,
-    matrixcalc
+    matrixcalc,
+    reticulate
 License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
     license
 Encoding: UTF-8
