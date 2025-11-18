@@ -109,24 +109,24 @@ eQTL_mapping_step = function(SNP_file_name,
       out_dir <- path.expand(out_dir)
       suppressWarnings({
         py_run_string("
-        import os
-        import torch
-        import pandas as pd
-        import numpy as np
-        from tensorqtl import cis
-        import builtins
-        
-        os.environ['CUDA_VISIBLE_DEVICES'] = ''
-        torch.set_num_threads(1)
-        
-        def run_tensorqtl(phenotype_df, phenotype_pos_df, genotype_df, variant_df, prefix=''):
-            if 's1' in phenotype_pos_df.columns and 's2' in phenotype_pos_df.columns:
-                phenotype_pos_df.rename(columns={'s1': 'start', 's2': 'end'}, inplace=True)
-            if 'chr' in variant_df.columns:
-                variant_df.rename(columns={'chr': 'chrom'}, inplace=True)
-            cis.map_nominal(genotype_df, variant_df, phenotype_df, phenotype_pos_df, prefix=prefix)
-        
-        builtins.run_tensorqtl = run_tensorqtl
+import os
+import torch
+import pandas as pd
+import numpy as np
+from tensorqtl import cis
+import builtins
+
+os.environ['CUDA_VISIBLE_DEVICES'] = ''
+torch.set_num_threads(1)
+
+def run_tensorqtl(phenotype_df, phenotype_pos_df, genotype_df, variant_df, prefix=''):
+    if 's1' in phenotype_pos_df.columns and 's2' in phenotype_pos_df.columns:
+        phenotype_pos_df.rename(columns={'s1': 'start', 's2': 'end'}, inplace=True)
+    if 'chr' in variant_df.columns:
+        variant_df.rename(columns={'chr': 'chrom'}, inplace=True)
+    cis.map_nominal(genotype_df, variant_df, phenotype_df, phenotype_pos_df, prefix=prefix)
+
+builtins.run_tensorqtl = run_tensorqtl
         ")})
       
       expr <- read.table(expression_file_name, header = TRUE, sep = "\t", check.names = FALSE)
