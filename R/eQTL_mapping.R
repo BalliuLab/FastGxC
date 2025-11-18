@@ -28,7 +28,7 @@ eQTL_mapping_step = function(SNP_file_name,
                              out_dir,
                              output_file_name_cis = file.path(out_dir, paste0(context, "_", shared_specific, ".cis_pairs.txt")),
                              output_file_name_tra = file.path(out_dir, paste0(context, "_", shared_specific, ".trans_pairs.txt")),
-                             method = "MatrixEQTL"
+                             method = "MatrixEQTL",
                              use_model = modelLINEAR,
                              cis_dist = 1e6,
                              pv_threshold_cis = 1,
