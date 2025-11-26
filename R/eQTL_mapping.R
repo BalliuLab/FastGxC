@@ -42,7 +42,7 @@ eQTL_mapping_step = function(
     setDTthreads(1)
     
     expression_mat <- as.matrix(data.frame(fread(expression_file_name, header = TRUE), row.names = 1, check.names = FALSE))
-    genepos <- data.table::fread(gene_location_file_name, sep = NULL, header = TRUE, data.table = FALSE)
+    genepos <- data.table::fread(gene_location_file_name, sep = '\t', header = TRUE, data.table = FALSE)
     names(genepos) <- tolower(names(genepos)) 
     
     genepos <- genepos |>
