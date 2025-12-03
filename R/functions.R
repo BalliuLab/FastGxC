@@ -246,6 +246,167 @@ get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_name
 #}
 
 #' @export
+get_eGenes_combined = function (m_eqtl_out_dir, treeQTL_dir, tissue_names, level1 = 0.05, level2 = 0.05, level3 = 0.05, qtl_type = "cis", shared_n_tests_per_gene) {
+
+  print("Step 0.1: Computing summary statistics for each specific context")
+  pattern_specific = paste0("specific.", qtl_type, "_pairs.txt")
+  m_eqtl_outfiles_specific <- list.files(m_eqtl_out_dir, pattern = pattern_specific, full.names = TRUE)
+  if(length(m_eqtl_outfiles_specific) != length(tissue_names)) {
+    stop(sprintf("Expecting %i specific MatrixEQTL files but got %i. Make sure that input directory provided is correct.",
+                 length(tissue_names), length(m_eqtl_outfiles_specific)))
+  }
+
+  n_tissue <- length(tissue_names)
+  for (i in 1:n_tissue) {
+    cur_tissue_name <- tissue_names[i]
+    m_eqtl_out = m_eqtl_outfiles_specific[grepl(paste0("/", cur_tissue_name, "_"), m_eqtl_outfiles_specific)]
+
+    print(paste("Computing summary statistics for context ", cur_tissue_name, sep = ""))
+    n_SNPs_per_gene_this_tissue = fread(m_eqtl_out) %>% dplyr::select(gene) %>% group_by(gene) %>% mutate(n = n()) %>% distinct()
+    colnames(n_SNPs_per_gene_this_tissue) = c("family", "n_tests")
+
+    gene_simes_cur_tissue <- get_eGenes(n_tests_per_gene = n_SNPs_per_gene_this_tissue, m_eqtl_out = m_eqtl_out, method = "BH", level1 = 1, level2 = 1, silent = TRUE)
+    gene_simes_cur_tissue <- merge(gene_simes_cur_tissue, n_SNPs_per_gene_this_tissue, by = "family", all = TRUE)
+    gene_simes_cur_tissue$fam_p[which(is.na(gene_simes_cur_tissue$fam_p))] <- 1
+
+    if (i == 1) {
+      eGene_pvals <- gene_simes_cur_tissue[, c("family", "fam_p")]
+      n_SNPs_per_gene_xT <- n_SNPs_per_gene_this_tissue
+    } else {
+      eGene_pvals <- merge(eGene_pvals, gene_simes_cur_tissue[, c("family", "fam_p")], by = "family", all = TRUE)
+      n_SNPs_per_gene_xT <- merge(n_SNPs_per_gene_xT, n_SNPs_per_gene_this_tissue, by = "family", all = TRUE)
+    }
+    names(eGene_pvals)[i + 1] <- cur_tissue_name
+    names(n_SNPs_per_gene_xT)[i + 1] <- cur_tissue_name
+  }
+  names(eGene_pvals)[1] <- "gene"
+  remove(cur_tissue_name, n_SNPs_per_gene_this_tissue, gene_simes_cur_tissue)
+
+  print("Step 0.2: Computing summary statistics for shared component")
+  pattern_shared = paste0("shared.", qtl_type, "_pairs.txt")
+  m_eqtl_out_shared = list.files(m_eqtl_out_dir, pattern = pattern_shared, full.names = TRUE)
+
+  gene_simes_shared = get_eGenes(n_tests_per_gene = shared_n_tests_per_gene,
+                                 m_eqtl_out = m_eqtl_out_shared,
+                                 method = "BH",
+                                 level1 = 1, level2 = 1,
+                                 slice_size = 1e+05,
+                                 silent = TRUE)
+
+  gene_simes_shared <- merge(gene_simes_shared, shared_n_tests_per_gene, by = "family", all = TRUE)
+  gene_simes_shared$fam_p[which(is.na(gene_simes_shared$fam_p))] <- 1
+
+  # Merge shared component into eGene_pvals
+  eGene_pvals <- merge(eGene_pvals, gene_simes_shared[, c("family", "fam_p")], by.x = "gene", by.y = "family", all = TRUE)
+  n_SNPs_per_gene_xT <- merge(n_SNPs_per_gene_xT, shared_n_tests_per_gene, by = "family", all = TRUE)
+  names(eGene_pvals)[n_tissue + 2] <- "shared"
+  names(n_SNPs_per_gene_xT)[n_tissue + 2] <- "shared"
+
+  print("Step 0.3: Computing total number of tests at Level 1 for each gene (sum across all components)")
+  # Option B: Sum of all SNPs tested across shared + all contexts
+  n_SNPs_per_gene_xT[is.na(n_SNPs_per_gene_xT)] <- 0
+  n_SNPs_per_gene_xT$total_tests <- rowSums(n_SNPs_per_gene_xT[, 2:(n_tissue + 2)])
+
+  print("Step 1: Computing summary statistics across all components (shared + specific)")
+  col_ind_pvals <- c(2:(n_tissue + 1), n_tissue + 2)  # All contexts + shared
+  eGene_pvals$simes_p <- apply(eGene_pvals[, col_ind_pvals], 1, TreeQTL:::get_simes_p)
+
+  print("Step 2: Selecting eGenes across all components")
+  eGene_xT_qvals <- qvalue(eGene_pvals$simes_p, lambda = 0)$qvalue
+  R_G <- sum(eGene_xT_qvals <= level1)
+  print(paste("Number of eGenes across all components = ", R_G))
+
+  if(R_G == 0){
+    print("No significant eGenes. Writing empty eGene file.")
+    empty_df <- as.data.frame(matrix("", nrow = 1, ncol = length(tissue_names) + 2))
+    colnames(empty_df) <- c("gene", "shared", tissue_names)
+    out_file_name <- paste0(treeQTL_dir, "/combined_eGenes.txt")
+    fwrite(empty_df, file = out_file_name, sep = "\t")
+    return(empty_df)
+  }
+
+  print("Step 3: Selecting components (shared/contexts) in which eGenes are active")
+  q2_adj <- R_G * level2 / nrow(eGene_pvals)
+  ind_sel_simes <- which(eGene_xT_qvals <= level1)
+  sel_eGenes_simes <- eGene_pvals[ind_sel_simes, ]
+  rej_simes <- t(1 * apply(sel_eGenes_simes[, c(col_ind_pvals)], 1, TreeQTL:::qsel_by_fam, q2_adj))
+
+  print("Step 4: Selecting SNPs associated to each gene in each component")
+  sel_eGenes_simes$n_sel_components <- rowSums(rej_simes)
+  sel_eGenes_simes$n_tested_components <- rowSums(!is.na(sel_eGenes_simes[, col_ind_pvals]))
+
+  # Process shared component
+  print("Selecting SNPs for shared component")
+  sel_gene_names_shared <- sel_eGenes_simes$gene[which(rej_simes[, n_tissue + 1] == 1)]  # shared is last column
+  if(length(sel_gene_names_shared) > 0) {
+    sel_gene_info_shared <- n_SNPs_per_gene_xT[which(n_SNPs_per_gene_xT$family %in% sel_gene_names_shared), c(1, n_tissue + 2)]
+    names(sel_gene_info_shared)[2] <- "n_tests"
+    sel_gene_info_shared <- merge(sel_gene_info_shared, sel_eGenes_simes[, c("gene", "n_sel_components", "n_tested_components")],
+                                   by.x = "family", by.y = "gene", all.x = TRUE, all.y = FALSE)
+    n_sel_per_gene_shared <- suppressWarnings(TreeQTL:::get_nsel_SNPs_per_gene_tissue_pair(sel_gene_info_shared, "shared", m_eqtl_out_shared,
+                                                                           R_G, nrow(eGene_pvals), level3 = level3, silent = TRUE))
+
+    print(paste("Total number of associations for shared component =", sum(n_sel_per_gene_shared$n_sel_snp)))
+    if(nrow(n_sel_per_gene_shared) > 0) {
+      out_file_name <- paste0(treeQTL_dir, "/eAssoc_by_gene.shared_", qtl_type, ".txt")
+      print(paste("Writing output file", out_file_name))
+      get_eAssociations(data.frame(family = n_sel_per_gene_shared$family, pval = NA, n_sel = n_sel_per_gene_shared$n_sel_snp), NULL,
+                        m_eqtl_out_shared, out_file_name, by_snp = FALSE, silent = TRUE)
+    }
+  }
+
+  # Process specific contexts
+  for (i in 1:n_tissue) {
+    cur_tissue_name <- tissue_names[i]
+    m_eqtl_out_file = m_eqtl_outfiles_specific[grepl(paste0("/", cur_tissue_name, "_"), m_eqtl_outfiles_specific)]
+    print(paste("Selecting SNPs for context", cur_tissue_name))
+    sel_gene_names_this_tissue <- sel_eGenes_simes$gene[which(rej_simes[, i] == 1)]
+
+    if(length(sel_gene_names_this_tissue) == 0) {
+      print(paste("No significant genes for context", cur_tissue_name))
+      next
+    }
+
+    sel_gene_info <- n_SNPs_per_gene_xT[which(n_SNPs_per_gene_xT$family %in% sel_gene_names_this_tissue), c(1, i + 1)]
+    names(sel_gene_info)[2] <- "n_tests"
+    sel_gene_info <- merge(sel_gene_info, sel_eGenes_simes[, c("gene", "n_sel_components", "n_tested_components")],
+                           by.x = "family", by.y = "gene", all.x = TRUE, all.y = FALSE)
+    n_sel_per_gene <- suppressWarnings(TreeQTL:::get_nsel_SNPs_per_gene_tissue_pair(sel_gene_info, cur_tissue_name, m_eqtl_out_file,
+                                                                   R_G, nrow(eGene_pvals), level3 = level3, silent = TRUE))
+
+    print(paste("Total number of associations for context", cur_tissue_name, "=", sum(n_sel_per_gene$n_sel_snp)))
+    if(nrow(n_sel_per_gene) == 0){
+      print("No significant associations for this context. Not writing output file.")
+      next
+    } else {
+      out_file_name <- paste0(treeQTL_dir, "/eAssoc_by_gene.", cur_tissue_name, "_specific_", qtl_type, ".txt")
+      print(paste("Writing output file", out_file_name))
+      get_eAssociations(data.frame(family = n_sel_per_gene$family, pval = NA, n_sel = n_sel_per_gene$n_sel_snp), NULL,
+                        m_eqtl_out_file, out_file_name, by_snp = FALSE, silent = TRUE)
+    }
+  }
+
+  # Write out eGene pvalues
+  pvals_output <- sel_eGenes_simes[, c(1, col_ind_pvals)]
+  names(pvals_output) <- c("gene", tissue_names, "shared")
+  write.table(x = pvals_output, file = paste0(treeQTL_dir, "combined_eGenes_pvalues.txt"),
+              quote = F, row.names = F, col.names = T, sep = '\t')
+
+  # Create final eGene output with binary indicators
+  eGene_xT_sel <- data.frame(gene = sel_eGenes_simes$gene)
+  eGene_xT_sel <- cbind(eGene_xT_sel, rej_simes)
+  names(eGene_xT_sel) <- c("gene", tissue_names, "shared")
+  # Reorder columns to have shared first, then contexts
+  eGene_xT_sel <- eGene_xT_sel[, c("gene", "shared", tissue_names)]
+
+  # Write out combined eGenes file
+  out_file_name <- paste0(treeQTL_dir, "/combined_eGenes.txt")
+  write.table(x = eGene_xT_sel, file = out_file_name, quote = F, row.names = F, col.names = T, sep = '\t')
+
+  eGene_xT_sel
+}
+
+#' @export
 get_pvals_and_fam_p_mod = function(genes_by_tissue, snps_by_tissue, m_eqtl_out_dir, tissue_names, exp_suffix) {
   pattern=paste0(exp_suffix,".all_pairs.txt")
   m_eqtl_outfiles <- list.files(path = m_eqtl_out_dir, pattern = pattern, full.names = TRUE)
