@@ -350,7 +350,7 @@ get_eGenes_combined = function (m_eqtl_out_dir, treeQTL_dir, tissue_names, level
     if(nrow(sel_gene_info_shared) == 0) {
       print("No genes with valid tests in shared component. Skipping shared SNP selection.")
     } else {
-      n_sel_per_gene_shared <- suppressWarnings(TreeQTL:::get_nsel_SNPs_per_gene_tissue_pair(sel_gene_info_shared, "shared", m_eqtl_out_shared,
+      n_sel_per_gene_shared <- suppressWarnings(get_nsel_SNPs_per_gene_tissue_pair(sel_gene_info_shared, "shared", m_eqtl_out_shared,
                                                                              R_G, nrow(eGene_pvals), level3 = level3, silent = TRUE))
 
       print(paste("Total number of associations for shared component =", sum(n_sel_per_gene_shared$n_sel_snp)))
@@ -388,7 +388,7 @@ get_eGenes_combined = function (m_eqtl_out_dir, treeQTL_dir, tissue_names, level
       next
     }
     
-    n_sel_per_gene <- suppressWarnings(TreeQTL:::get_nsel_SNPs_per_gene_tissue_pair(sel_gene_info, cur_tissue_name, m_eqtl_out_file,
+    n_sel_per_gene <- suppressWarnings(get_nsel_SNPs_per_gene_tissue_pair(sel_gene_info, cur_tissue_name, m_eqtl_out_file,
                                                                    R_G, nrow(eGene_pvals), level3 = level3, silent = TRUE))
 
     print(paste("Total number of associations for context", cur_tissue_name, "=", sum(n_sel_per_gene$n_sel_snp)))
