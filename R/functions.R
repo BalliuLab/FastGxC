@@ -343,15 +343,23 @@ get_eGenes_combined = function (m_eqtl_out_dir, treeQTL_dir, tissue_names, level
     names(sel_gene_info_shared)[2] <- "n_tests"
     sel_gene_info_shared <- merge(sel_gene_info_shared, sel_eGenes_simes[, c("gene", "n_sel_components", "n_tested_components")],
                                    by.x = "family", by.y = "gene", all.x = TRUE, all.y = FALSE)
-    n_sel_per_gene_shared <- suppressWarnings(TreeQTL:::get_nsel_SNPs_per_gene_tissue_pair(sel_gene_info_shared, "shared", m_eqtl_out_shared,
-                                                                           R_G, nrow(eGene_pvals), level3 = level3, silent = TRUE))
+    
+    # Filter out genes with 0 or NA tests to avoid TreeQTL errors
+    sel_gene_info_shared <- sel_gene_info_shared[!is.na(sel_gene_info_shared$n_tests) & sel_gene_info_shared$n_tests > 0, ]
+    
+    if(nrow(sel_gene_info_shared) == 0) {
+      print("No genes with valid tests in shared component. Skipping shared SNP selection.")
+    } else {
+      n_sel_per_gene_shared <- suppressWarnings(TreeQTL:::get_nsel_SNPs_per_gene_tissue_pair(sel_gene_info_shared, "shared", m_eqtl_out_shared,
+                                                                             R_G, nrow(eGene_pvals), level3 = level3, silent = TRUE))
 
-    print(paste("Total number of associations for shared component =", sum(n_sel_per_gene_shared$n_sel_snp)))
-    if(nrow(n_sel_per_gene_shared) > 0) {
-      out_file_name <- paste0(treeQTL_dir, "/eAssoc_by_gene.shared_", qtl_type, ".txt")
-      print(paste("Writing output file", out_file_name))
-      get_eAssociations(data.frame(family = n_sel_per_gene_shared$family, pval = NA, n_sel = n_sel_per_gene_shared$n_sel_snp), NULL,
-                        m_eqtl_out_shared, out_file_name, by_snp = FALSE, silent = TRUE)
+      print(paste("Total number of associations for shared component =", sum(n_sel_per_gene_shared$n_sel_snp)))
+      if(nrow(n_sel_per_gene_shared) > 0) {
+        out_file_name <- paste0(treeQTL_dir, "/eAssoc_by_gene.shared_", qtl_type, ".txt")
+        print(paste("Writing output file", out_file_name))
+        get_eAssociations(data.frame(family = n_sel_per_gene_shared$family, pval = NA, n_sel = n_sel_per_gene_shared$n_sel_snp), NULL,
+                          m_eqtl_out_shared, out_file_name, by_snp = FALSE, silent = TRUE)
+      }
     }
   }
 
@@ -371,6 +379,15 @@ get_eGenes_combined = function (m_eqtl_out_dir, treeQTL_dir, tissue_names, level
     names(sel_gene_info)[2] <- "n_tests"
     sel_gene_info <- merge(sel_gene_info, sel_eGenes_simes[, c("gene", "n_sel_components", "n_tested_components")],
                            by.x = "family", by.y = "gene", all.x = TRUE, all.y = FALSE)
+    
+    # Filter out genes with 0 or NA tests to avoid TreeQTL errors
+    sel_gene_info <- sel_gene_info[!is.na(sel_gene_info$n_tests) & sel_gene_info$n_tests > 0, ]
+    
+    if(nrow(sel_gene_info) == 0) {
+      print(paste("No genes with valid tests for context", cur_tissue_name))
+      next
+    }
+    
     n_sel_per_gene <- suppressWarnings(TreeQTL:::get_nsel_SNPs_per_gene_tissue_pair(sel_gene_info, cur_tissue_name, m_eqtl_out_file,
                                                                    R_G, nrow(eGene_pvals), level3 = level3, silent = TRUE))
 
