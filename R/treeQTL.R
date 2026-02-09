@@ -11,10 +11,12 @@
 #' @param fdr_thresh - value between 0 and 1 that signifies what FDR threshold for multiple testing correction. The same value will be used across all hierarchical levels.
 #' @param four_level - boolean value (T or F) that signifies whether to use the 4-level hierarchy (set this parameter to R and test for a global eQTL across shared and specific components) or a 3-level hierarchy (this parameter is default set to F to test for shared vs specific eQTLs)
 #' @param qtl_type - string value "cis" or "trans" denoting the type of eQTL mapped. Default is set to "cis"
-#' @return outputs one file of specific eGenes across all contexts and one file of shared eGenes. Outputs an eAssociation file for each context and one for shared eQTLs with snp-gene pairs and FDR adjusted p-values. 
+#' @param treeBH_method - character string specifying which TreeBH implementation to use when four_level = TRUE. Options: "original" (TreeBH package), "datatable" (optimized R), "cpp" (fast C++ implementation, default). Ignored when four_level = FALSE.
+#' @param treeBH_test - character string specifying the p-value aggregation method for TreeBH when four_level = TRUE. Options: "simes" (Simes' method, default), "fisher" (Fisher's method). Ignored when four_level = FALSE.
+#' @return outputs one file of specific eGenes across all contexts and one file of shared eGenes. Outputs an eAssociation file for each context and one for shared eQTLs with snp-gene pairs and FDR adjusted p-values.
 #'
 #' @export
-treeQTL_step = function(data_dir, snps_location_file_name, gene_location_file_name, context_names, out_dir, cisDist = 1e6, fdr_thresh = 0.05, four_level = F, qtl_type = "cis"){
+treeQTL_step = function(data_dir, snps_location_file_name, gene_location_file_name, context_names, out_dir, cisDist = 1e6, fdr_thresh = 0.05, four_level = F, qtl_type = "cis", treeBH_method = "cpp", treeBH_test = "simes"){
 
 # use a single thread
 print(paste0("data.table getDTthreads(): ",getDTthreads()))
@@ -47,6 +49,20 @@ if (is.vector(context_names)) {
 }else{
     stop(print(paste0("No valid input for context names.")))
 }
+
+# If four_level, use TreeBH for hierarchical multiple testing and return early
+if (four_level) {
+  shared_file <- list.files(path = data_dir, pattern = "shared_shared.cis_pairs.txt", full.names = TRUE)
+  if (length(shared_file) == 0) stop("No shared_shared.cis_pairs.txt file found.")
+
+  to_TreeBH_input(data_dir = data_dir, shared_file = shared_file, context_names = context_names, out_dir = out_dir)
+  df <- read.table(file.path(out_dir, "treeBH_input.txt"), header = TRUE)
+  treeBH_step(matrix = df, fdr_thres = fdr_thresh, out_dir = out_dir, method = treeBH_method, test = treeBH_test)
+
+  message("TreeBH multiple testing finished. Output written to ", out_dir)
+  return(invisible(NULL))
+}
+
 # Use treeQTL to perform hierarchical FDR and get specific_eGenes, i.e. genes with at least one context-specific eQTL, and shared_eGenes, i.e. genes with at least one context-shared eQTL
   
 
