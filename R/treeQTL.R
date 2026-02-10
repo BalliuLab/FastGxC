@@ -52,8 +52,9 @@ if (is.vector(context_names)) {
 
 # If four_level, use TreeBH for hierarchical multiple testing and return early
 if (four_level) {
-  shared_file <- list.files(path = data_dir, pattern = "shared_shared.cis_pairs.txt", full.names = TRUE)
-  if (length(shared_file) == 0) stop("No shared_shared.cis_pairs.txt file found.")
+  shared_pattern <- paste0("shared_shared.", qtl_type, "_pairs.txt")
+  shared_file <- list.files(path = data_dir, pattern = shared_pattern, full.names = TRUE)
+  if (length(shared_file) == 0) stop(paste0("No ", shared_pattern, " file found."))
 
   to_TreeBH_input(data_dir = data_dir, shared_file = shared_file, context_names = context_names, out_dir = out_dir)
   df <- read.table(file.path(out_dir, "treeBH_input.txt"), header = TRUE)

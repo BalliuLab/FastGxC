@@ -22,7 +22,7 @@ get_simes_p <- function(pvals) {
   adjusted <- sorted_pvals * n / seq_along(sorted_pvals)
   min_val <- min(adjusted)
   
-  return(min_val)
+  return(min(1, min_val))
 }
 
 #' Calculate Fisher's combined p-value
