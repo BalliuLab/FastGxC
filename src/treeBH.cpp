@@ -225,8 +225,24 @@ NumericVector computeQValues(const NumericVector& pvals) {
 NumericMatrix getGroupSelections(const NumericMatrix& group_pvals, 
                                const CharacterMatrix& groups,
                                const NumericVector& q, int N, int L) {
+  // Validate input dimensions to prevent out-of-bounds access
+  if (L <= 0) {
+    Rcpp::stop("getGroupSelections: L must be at least 1.");
+  }
+  if (group_pvals.nrow() != N || group_pvals.ncol() != L) {
+    Rcpp::stop("getGroupSelections: N and L must match group_pvals dimensions (nrow, ncol).");
+  }
+  if (groups.nrow() != N || groups.ncol() != L) {
+    Rcpp::stop("getGroupSelections: N and L must match groups dimensions (nrow, ncol).");
+  }
+  if (q.size() != L) {
+    Rcpp::stop("getGroupSelections: length(q) must be equal to L.");
+  }
   NumericMatrix sel(N, L);
   NumericMatrix q_adj(N, L);
+  
+  // Initialize selection matrix to 0 (no selections initially)
+  std::fill(sel.begin(), sel.end(), 0.0);
   
   // Fill q_adj with NA
   std::fill(q_adj.begin(), q_adj.end(), NA_REAL);
