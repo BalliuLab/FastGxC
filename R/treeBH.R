@@ -45,7 +45,10 @@ to_TreeBH_input <- function(data_dir, shared_file, context_names, out_dir) {
     df_list[[i]] <- df
   }
   
-  # Shared file: same inline checks
+  # Shared file: validate input and perform same inline checks
+  if (length(shared_file) != 1L || is.na(shared_file)) {
+    stop("`shared_file` must be a single, non-NA filepath")
+  }
   df_shared <- readr::read_tsv(shared_file, col_types = readr::cols())
   for (col in c("p-value","gene","SNP")) {
     if (!col %in% names(df_shared)) stop("Missing '", col, "' in shared_file")
@@ -103,7 +106,7 @@ to_TreeBH_input <- function(data_dir, shared_file, context_names, out_dir) {
 
 #' Multiple Testing Correction with TreeBH
 #' Function to adjust for hierarchical multiple testing correction using TreeBH. 
-#' @param matrix - output of to_TreeBH_Input, matrix with the groups and pvalues
+#' @param matrix - output of to_TreeBH_input, matrix with the groups and pvalues
 #' @param fdr_thres -  value between 0 and 1 that signifies what FDR threshold for multiple testing correction. The same value will be used across all hierarchical levels.
 #' @param out_dir - full filepath of the output directory where the output of TreeBH can be stored
 #' @param method - character string specifying which implementation to use:
