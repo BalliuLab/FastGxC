@@ -77,7 +77,13 @@ double simesPvalue(const NumericVector& pvals) {
     }
   }
 
-  return n * min_val;
+  double pvalue = n * min_val;
+  if (pvalue < 0.0) {
+    pvalue = 0.0;
+  } else if (pvalue > 1.0) {
+    pvalue = 1.0;
+  }
+  return pvalue;
 }
 
 // Calculate Fisher's pvalue
