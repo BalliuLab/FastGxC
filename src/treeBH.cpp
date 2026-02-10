@@ -10,20 +10,14 @@ using namespace std;
 // [[Rcpp::export]]
 std::string checkNested(const CharacterMatrix& groups, int L) {
   int nrow = groups.nrow();
+  int ncol = groups.ncol();
 
+  // Validate L to avoid out-of-bounds column access
+  if (L < 1 || L > ncol) {
+    return "Invalid hierarchy level L: L must be between 1 and the number of columns in 'groups'.";
+  }
   // Step 1: Check hierarchy nesting
   for (int cur_level = 1; cur_level < L; cur_level++) {
-    // Map to track parent to child relationships
-    map<string, set<string>> parent_to_children;
-
-    // Create the mapping from child to parent
-    for (int i = 0; i < nrow; i++) {
-      string child = as<string>(groups(i, cur_level));
-      string parent = as<string>(groups(i, cur_level - 1));
-
-      // Add child to parent's set of children
-      parent_to_children[parent].insert(child);
-    }
 
     // Check if any child has multiple parents
     map<string, set<string>> child_to_parents;
