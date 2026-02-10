@@ -265,8 +265,15 @@ get_TreeBH_selections_datatable <- function(pvals, groups, q, test = "simes") {
                             !is.na(group_pvals[, cur_level]))
       }
       if (length(child_inds) > 1) {
-        sel_ind_within_group <- which(qvalue::qvalue(group_pvals[child_inds, cur_level], 
-                                                     lambda = 0)$qvalue <= 
+        if (!requireNamespace("qvalue", quietly = TRUE)) {
+          stop(
+            "Package 'qvalue' is required for TreeBH selection when multiple child hypotheses exist. ",
+            "Please install it with install.packages('qvalue').",
+            call. = FALSE
+          )
+        }
+        sel_ind_within_group <- which(qvalue::qvalue(group_pvals[child_inds, cur_level],
+                                                     lambda = 0)$qvalue <=
                                       q_adj[parent_group_ind, cur_level])
       }
       else {
