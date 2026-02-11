@@ -14,7 +14,14 @@ Imports:
     magrittr,
     TreeQTL,
     matrixcalc,
-    reticulate
+    reticulate,
+    readr,
+    Rcpp
+LinkingTo:
+    Rcpp
+Suggests:
+    qvalue,
+    TreeBH
 Depends:
     dplyr,
     data.table,
