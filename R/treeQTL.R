@@ -15,119 +15,107 @@
 #' @return outputs one file of specific eGenes across all contexts and one file of shared eGenes. Outputs an eAssociation file for each context and one for shared eQTLs with snp-gene pairs and FDR adjusted p-values.
 #'
 #' @export
-treeQTL_step <- function(data_dir, snps_location_file_name, gene_location_file_name, context_names, out_dir, cisDist = 1e6, fdr_thresh = 0.05, four_level = F, unified_hierarchy = F, qtl_type = "cis") {
-  # use a single thread
-  print(paste0("data.table getDTthreads(): ", getDTthreads()))
-  setDTthreads(1)
-  print(paste0("after setting as 1 thread; data.table getDTthreads(): ", getDTthreads()))
+treeQTL_step = function(data_dir, snps_location_file_name, gene_location_file_name, context_names, out_dir, cisDist = 1e6, fdr_thresh = 0.05, four_level = F, unified_hierarchy = F, qtl_type = "cis"){
 
-  # Display all warnings as they occur
-  options(warn = 1)
+# use a single thread
+print(paste0("data.table getDTthreads(): ",getDTthreads()))
+setDTthreads(1)
+print(paste0("after setting as 1 thread; data.table getDTthreads(): ",getDTthreads()))
 
-  # FDR thresholds
-  level1 <- fdr_thresh
-  level2 <- fdr_thresh
-  level3 <- fdr_thresh
+# Display all warnings as they occur
+options(warn=1)
 
-  # Distance for local gene-SNP pairs
-  nearby <- TRUE
-  if (qtl_type != "cis") {
-    nearby <- FALSE
-    print(paste("Performing multiple testing adjustment for FastGxC trans-eQTLs."))
-  } else {
-    print(paste("Performing multiple testing adjustment for FastGxC cis-eQTLs."))
-  }
+# FDR thresholds
+level1=fdr_thresh
+level2=fdr_thresh
+level3=fdr_thresh
 
-  snpspos <- fread(file = snps_location_file_name)
-  genepos <- fread(file = gene_location_file_name)
+# Distance for local gene-SNP pairs
+nearby = TRUE
+if(qtl_type != "cis"){
+  nearby = FALSE
+  print(paste("Performing multiple testing adjustment for FastGxC trans-eQTLs."))
+}else{
+  print(paste("Performing multiple testing adjustment for FastGxC cis-eQTLs."))
+}
 
-  ## get context names
-  if (is.vector(context_names)) {
+snpspos = fread(file = snps_location_file_name);
+genepos = fread(file = gene_location_file_name);
+
+## get context names
+if (is.vector(context_names)) {
     print(paste("Input for context names is a valid vector."))
-  } else {
+}else{
     stop(print(paste0("No valid input for context names.")))
-  }
-  # Use treeQTL to perform hierarchical FDR and get specific_eGenes, i.e. genes with at least one context-specific eQTL, and shared_eGenes, i.e. genes with at least one context-shared eQTL
+}
+# Use treeQTL to perform hierarchical FDR and get specific_eGenes, i.e. genes with at least one context-specific eQTL, and shared_eGenes, i.e. genes with at least one context-shared eQTL
+  
+
+names(genepos) <- tolower(names(genepos)) 
+names(snpspos) <- tolower(names(snpspos))
+
+genepos <- genepos |>
+  dplyr::rename(
+    geneid = dplyr::coalesce(names(genepos)[grepl("gene", names(genepos))][1], "geneid"),
+    s1     = dplyr::coalesce(names(genepos)[grepl("start|s1", names(genepos))][1], "s1"),
+    s2     = dplyr::coalesce(names(genepos)[grepl("end|s2", names(genepos))][1], "s2")
+  ) 
+snpspos <- snpspos |>
+  dplyr::rename(
+    snpid = dplyr::coalesce(names(snpspos)[grepl("SNP|snp", names(snpspos))][1], "snpid"),
+    pos     = dplyr::coalesce(names(snpspos)[grepl("position|pos", names(snpspos))][1], "pos")
+  ) 
 
 
-  names(genepos) <- tolower(names(genepos))
-  names(snpspos) <- tolower(names(snpspos))
+shared_n_tests_per_gene = get_n_tests_per_gene(snp_map = snpspos %>% dplyr::select(snpid, chr, pos), gene_map = genepos %>% dplyr::select(geneid, chr, s1, s2),
+                                            nearby = nearby, dist = cisDist)
+shared_n_tests_per_gene = data.frame(shared_n_tests_per_gene)
 
-  genepos <- genepos |>
-    dplyr::rename(
-      geneid = dplyr::coalesce(names(genepos)[grepl("gene", names(genepos))][1], "geneid"),
-      s1     = dplyr::coalesce(names(genepos)[grepl("start|s1", names(genepos))][1], "s1"),
-      s2     = dplyr::coalesce(names(genepos)[grepl("end|s2", names(genepos))][1], "s2")
-    )
-  snpspos <- snpspos |>
-    dplyr::rename(
-      snpid = dplyr::coalesce(names(snpspos)[grepl("SNP|snp", names(snpspos))][1], "snpid"),
-      pos = dplyr::coalesce(names(snpspos)[grepl("position|pos", names(snpspos))][1], "pos")
-    )
+if (ncol(shared_n_tests_per_gene) != 2) {
+  stop("unable to compute number of tests per gene.")
+}
 
+if (unified_hierarchy) {
+  # Use unified hierarchy: Level 1 (Gene) -> Level 2 (Shared + Contexts) -> Level 3 (SNPs)
+  print("Using unified hierarchy where shared and specific components are at the same level")
+  combined_eGenes = get_eGenes_combined(
+                              m_eqtl_out_dir = data_dir,
+                              treeQTL_dir = out_dir,
+                              tissue_names = context_names,
+                              level1 = level1, level2 = level2, level3 = level3,
+                              qtl_type = qtl_type,
+                              shared_n_tests_per_gene = shared_n_tests_per_gene)
+} else {
+  # Use original separate hierarchies for shared and specific
+  specific_eGenes=get_eGenes_multi_tissue_mod(
+                                m_eqtl_out_dir = data_dir,
+                                treeQTL_dir = out_dir,
+                                tissue_names = context_names,
+                                level1 = level1, level2 = level2, level3 = level3,
+                                exp_suffix = "specific",
+                                four_level = four_level,
+                                qtl_type = qtl_type,
+                                shared_n_tests_per_gene = shared_n_tests_per_gene)
+  write.table(x = specific_eGenes, file = paste0(out_dir,"specific_eGenes.txt"), quote = F, row.names = F, col.names = T, sep = '\t')
 
-  shared_n_tests_per_gene <- get_n_tests_per_gene(
-    snp_map = snpspos %>% dplyr::select(snpid, chr, pos), gene_map = genepos %>% dplyr::select(geneid, chr, s1, s2),
-    nearby = nearby, dist = cisDist
-  )
-  shared_n_tests_per_gene <- data.frame(shared_n_tests_per_gene)
+  pattern=(paste0("shared.", qtl_type, "_pairs.txt"))
+  shared_eGenes = get_eGenes(n_tests_per_gene = shared_n_tests_per_gene,
+                              m_eqtl_out = list.files(data_dir, pattern = pattern,full.names = T),
+                              method = "BH",
+                              level1 = level1, level2 = level2,
+                              slice_size = 1e+05,
+                              silent = FALSE)
 
-  if (ncol(shared_n_tests_per_gene) != 2) {
-    stop("unable to compute number of tests per gene.")
-  }
-
-  if (unified_hierarchy) {
-    # Use unified hierarchy: Level 1 (Gene) -> Level 2 (Shared + Contexts) -> Level 3 (SNPs)
-    print("Using unified hierarchy where shared and specific components are at the same level")
-    combined_eGenes <- get_eGenes_combined(
-      m_eqtl_out_dir = data_dir,
-      treeQTL_dir = out_dir,
-      tissue_names = context_names,
-      level1 = level1, level2 = level2, level3 = level3,
-      qtl_type = qtl_type,
-      shared_n_tests_per_gene = shared_n_tests_per_gene
-    )
-  } else {
-    # Use original separate hierarchies for shared and specific
-    specific_eGenes <- get_eGenes_multi_tissue_mod(
-      m_eqtl_out_dir = data_dir,
-      treeQTL_dir = out_dir,
-      tissue_names = context_names,
-      level1 = level1, level2 = level2, level3 = level3,
-      exp_suffix = "specific",
-      four_level = four_level,
-      qtl_type = qtl_type,
-      shared_n_tests_per_gene = shared_n_tests_per_gene
-    )
-    write.table(x = specific_eGenes, file = paste0(out_dir, "specific_eGenes.txt"), quote = F, row.names = F, col.names = T, sep = "\t")
-
-    pattern <- (paste0("shared.", qtl_type, "_pairs.txt"))
-    shared_eGenes <- get_eGenes(
-      n_tests_per_gene = shared_n_tests_per_gene,
-      m_eqtl_out = list.files(data_dir, pattern = pattern, full.names = T),
-      method = "BH",
-      level1 = level1, level2 = level2,
-      slice_size = 1e+05,
-      silent = FALSE
-    )
-
-    write.table(x = shared_eGenes, file = paste0(out_dir, "shared_eGenes.txt"), quote = F, row.names = F, col.names = T, sep = "\t")
+  write.table(x = shared_eGenes, file = paste0(out_dir,"shared_eGenes.txt"), quote = F, row.names = F, col.names = T, sep = '\t')
 
 
-    eAssociations <- get_eAssociations(
-      eDiscoveries = shared_eGenes, n_tests = shared_n_tests_per_gene,
-      m_eqtl_out = list.files(data_dir, pattern = pattern, full.names = T),
-      out_file = paste0(out_dir, "eAssoc_by_gene.context_shared.txt"),
-      by_snp = F, slice_size = 1e+05,
-      silent = FALSE
-    )
-  }
+  eAssociations = get_eAssociations(eDiscoveries = shared_eGenes, n_tests = shared_n_tests_per_gene,
+                  m_eqtl_out = list.files(data_dir, pattern = pattern,full.names = T),
+                  out_file = paste0(out_dir,"eAssoc_by_gene.context_shared.txt"),
+                  by_snp = F, slice_size = 1e+05,
+                  silent = FALSE)
+}
 
-  # Compute combined effect sizes (shared + specific) for each context
-  get_combined_effect_sizes(
-    treeQTL_dir = out_dir,
-    context_names = context_names,
-    qtl_type = qtl_type,
-    unified_hierarchy = unified_hierarchy
-  )
+
+  
 }
