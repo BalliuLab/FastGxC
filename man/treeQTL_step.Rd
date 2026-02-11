@@ -59,7 +59,7 @@ treeQTL_step(
 }}
 }
 \value{
-outputs one file of specific eGenes across all contexts and one file of shared eGenes. Outputs an eAssociation file for each context and one for shared eQTLs with snp-gene pairs and FDR adjusted p-values.
+When four_level = TRUE, outputs TreeBH results. When unified_hierarchy = TRUE, writes \code{combined_eGenes.txt} and \code{combined_eGenes_pvalues.txt} files summarizing the unified hierarchy results (with columns ordered as gene, shared, contexts), along with eAssociation files for each component. When both are FALSE (default), outputs one file of specific eGenes across all contexts and one file of shared eGenes, plus an eAssociation file for each context and one for shared eQTLs with snp-gene pairs and FDR adjusted p-values.
 }
 \description{
 Function to adjust for hierarchical multiple testing correction using TreeQTL. Runs multiple testing correction for both FastGxC shared and specific eQTLs.

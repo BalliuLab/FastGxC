@@ -142,7 +142,7 @@ get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_name
     names(sel_gene_info)[2] <- "n_tests"
     sel_gene_info <- merge(sel_gene_info, sel_eGenes_simes[, c("gene", "n_sel_tissues", "n_tested_tissues")],
                            by.x = "family", by.y = "gene", all.x = TRUE, all.y = FALSE)
-    n_sel_per_gene <- suppressWarnings(TreeQTL:::get_nsel_SNPs_per_gene_tissue_pair(sel_gene_info, cur_tissue_name, m_eqtl_out_file, R_G, nrow(eGene_pvals),
+    n_sel_per_gene <- suppressWarnings(get_nsel_SNPs_per_gene_tissue_pair(sel_gene_info, cur_tissue_name, m_eqtl_out_file, R_G, nrow(eGene_pvals),
                                                                    level3 = level3, silent = T))
 
     print(paste("Total number of associations for tissue", cur_tissue_name, "=", sum(n_sel_per_gene$n_sel_snp)))
@@ -302,10 +302,8 @@ get_eGenes_combined = function (m_eqtl_out_dir, treeQTL_dir, tissue_names, level
   names(eGene_pvals)[n_tissue + 2] <- "shared"
   names(n_SNPs_per_gene_xT)[n_tissue + 2] <- "shared"
 
-  print("Step 0.3: Computing total number of tests at Level 1 for each gene (sum across all components)")
-  # Option B: Sum of all SNPs tested across shared + all contexts
+  print("Step 0.3: Setting NA values to 0 in test counts")
   n_SNPs_per_gene_xT[is.na(n_SNPs_per_gene_xT)] <- 0
-  n_SNPs_per_gene_xT$total_tests <- rowSums(n_SNPs_per_gene_xT[, 2:(n_tissue + 2)])
 
   print("Step 1: Computing summary statistics across all components (shared + specific)")
   col_ind_pvals <- c(2:(n_tissue + 1), n_tissue + 2)  # All contexts + shared
@@ -403,9 +401,11 @@ get_eGenes_combined = function (m_eqtl_out_dir, treeQTL_dir, tissue_names, level
     }
   }
 
-  # Write out eGene pvalues
+  # Write out eGene pvalues with consistent column order (shared first)
   pvals_output <- sel_eGenes_simes[, c(1, col_ind_pvals)]
   names(pvals_output) <- c("gene", tissue_names, "shared")
+  # Reorder columns to have shared first, then contexts
+  pvals_output <- pvals_output[, c("gene", "shared", tissue_names)]
   write.table(x = pvals_output, file = paste0(treeQTL_dir, "combined_eGenes_pvalues.txt"),
               quote = F, row.names = F, col.names = T, sep = '\t')
 

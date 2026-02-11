@@ -14,7 +14,7 @@
 #' @param qtl_type - string value "cis" or "trans" denoting the type of eQTL mapped. Default is set to "cis"
 #' @param treeBH_method - character string specifying which TreeBH implementation to use when four_level = TRUE. Options: "original" (TreeBH package), "datatable" (optimized R), "cpp" (fast C++ implementation, default). Ignored when four_level = FALSE.
 #' @param treeBH_test - character string specifying the p-value aggregation method for TreeBH when four_level = TRUE. Options: "simes" (Simes' method, default), "fisher" (Fisher's method). Ignored when four_level = FALSE.
-#' @return When four_level = TRUE, outputs TreeBH results. When unified_hierarchy = TRUE, outputs combined_eGenes.txt. Otherwise, outputs one file of specific eGenes across all contexts and one file of shared eGenes, plus an eAssociation file for each context and one for shared eQTLs with snp-gene pairs and FDR adjusted p-values.
+#' @return When four_level = TRUE, outputs TreeBH results. When unified_hierarchy = TRUE, writes \code{combined_eGenes.txt} and \code{combined_eGenes_pvalues.txt} files summarizing the unified hierarchy results (with columns ordered as gene, shared, contexts), along with eAssociation files for each component. When both are FALSE (default), outputs one file of specific eGenes across all contexts and one file of shared eGenes, plus an eAssociation file for each context and one for shared eQTLs with snp-gene pairs and FDR adjusted p-values.
 #'
 #' @export
 treeQTL_step <- function(data_dir, snps_location_file_name, gene_location_file_name, context_names, out_dir, cisDist = 1e6, fdr_thresh = 0.05, four_level = F, unified_hierarchy = F, qtl_type = "cis", treeBH_method = "cpp", treeBH_test = "simes") {
