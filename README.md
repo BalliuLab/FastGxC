@@ -16,8 +16,8 @@ Please read the [BioRxiv](https://www.biorxiv.org/content/10.1101/2021.06.17.448
 ## Please see the [Wiki](https://github.com/BalliuLab/FastGxC/wiki) for a tutorial on how to install and run FastGxC on simulated and real data.
 
 ## Contributors
-Brunilda Balliu - original R implementation of FastGxC
-Lena Krockenberger - integration of FastGxC R implementation and simulation code into R-package format
-Anthony Zhao - treeBH integration
-Charlie Wang - tensorQTL implementation and Wiki tutorial
+Brunilda Balliu - original R implementation of FastGxC; 
+Lena Krockenberger - integration of FastGxC R implementation and simulation code into R-package format; 
+Anthony Zhao - treeBH integration; 
+Charlie Wang - tensorQTL implementation and Wiki tutorial; 
 
