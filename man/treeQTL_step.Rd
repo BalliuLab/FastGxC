@@ -10,10 +10,8 @@ treeQTL_step(
   gene_location_file_name,
   context_names,
   out_dir,
-  cisDist = 1e+06,
   fdr_thresh = 0.05,
   four_level = F,
-  unified_hierarchy = F,
   qtl_type = "cis"
 )
 }
@@ -38,10 +36,6 @@ treeQTL_step(
 \item full filepath of the output directory that FDR adjusted eQTLs should be written out to.
 }}
 
-\item{cisDist}{\itemize{
-\item numeric value of defined cis window. Note: this should match the cisDist set in the eQTL mapping step.
-}}
-
 \item{fdr_thresh}{\itemize{
 \item value between 0 and 1 that signifies what FDR threshold for multiple testing correction. The same value will be used across all hierarchical levels.
 }}
@@ -50,21 +44,12 @@ treeQTL_step(
 \item boolean value (T or F) that signifies whether to use the 4-level hierarchy (set this parameter to R and test for a global eQTL across shared and specific components) or a 3-level hierarchy (this parameter is default set to F to test for shared vs specific eQTLs)
 }}
 
-\item{unified_hierarchy}{\itemize{
-\item boolean value (T or F) that signifies whether to use unified hierarchy where shared and specific components are tested at the same level (Level 1: Gene, Level 2: Shared + Contexts, Level 3: SNPs). When TRUE, outputs combined_eGenes.txt instead of separate shared/specific files. Default is FALSE.
-}}
-
 \item{qtl_type}{\itemize{
 \item string value "cis" or "trans" denoting the type of eQTL mapped. Default is set to "cis"
 }}
 }
 \value{
-The function outputs different files depending on the mode:
-\itemize{
-\item When \code{four_level = TRUE}: Outputs TreeBH results.
-\item When \code{unified_hierarchy = TRUE}: Writes \code{combined_eGenes.txt} and \code{combined_eGenes_pvalues.txt} files summarizing the unified hierarchy results (with columns ordered as gene, shared, contexts), along with eAssociation files for each component.
-\item When both are \code{FALSE} (default): Outputs one file of specific eGenes across all contexts and one file of shared eGenes, plus an eAssociation file for each context and one for shared eQTLs with snp-gene pairs and FDR adjusted p-values.
-}
+outputs one file of specific eGenes across all contexts and one file of shared eGenes. Outputs an eAssociation file for each context and one for shared eQTLs with snp-gene pairs and FDR adjusted p-values.
 }
 \description{
 Function to adjust for hierarchical multiple testing correction using TreeQTL. Runs multiple testing correction for both FastGxC shared and specific eQTLs.
