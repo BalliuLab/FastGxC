@@ -15,7 +15,6 @@ eQTL_mapping_step(
     ".cis_pairs.txt")),
   output_file_name_tra = file.path(out_dir, paste0(context, "_", shared_specific,
     ".trans_pairs.txt")),
-  method = "MatrixEQTL",
   use_model = modelLINEAR,
   cis_dist = 1e+06,
   pv_threshold_cis = 1,
@@ -40,8 +39,6 @@ eQTL_mapping_step(
 
 \item{output_file_name_tra}{Path to write trans-eQTL output.}
 
-\item{method}{Either "MatrixEQTL" or "tensorqtl".}
-
 \item{use_model}{MatrixEQTL model (default: modelLINEAR).}
 
 \item{cis_dist}{Distance threshold for cis-eQTLs.}
@@ -51,6 +48,8 @@ eQTL_mapping_step(
 \item{pv_threshold_tra}{P-value threshold for trans.}
 
 \item{error_covariance}{Covariance matrix (or numeric()).}
+
+\item{method}{Either "MatrixEQTL" or "tensorQTL".}
 }
 \value{
 Writes cis-eQTLs and trans-eQTLs (optional) to file.

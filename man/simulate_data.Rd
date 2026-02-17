@@ -12,10 +12,10 @@ simulate_data(
   n_contexts = 10,
   maf = 0.2,
   w_corr = 0.2,
-  missing = 0.05,
+  v_e = 1,
+  missing = 0,
   hsq = rep(0.2, n_contexts),
   mus = rep(0, n_contexts),
-  cisDist = 1e+06,
   seed = NULL
 )
 }
@@ -48,6 +48,10 @@ simulate_data(
 \item error covariance between contexts
 }}
 
+\item{v_e}{\itemize{
+\item error variance in each context (maybe take this out and set it to 1)
+}}
+
 \item{missing}{\itemize{
 \item decimal value signifying percentage of missingness in simulated expression data (e.g. parameter value of 0.3 would indicate 30\% missing values in outputted expression matrix)
 }}
@@ -58,10 +62,6 @@ simulate_data(
 
 \item{mus}{\itemize{
 \item numeric vector with length of the number of contexts representing average expression in each context.
-}}
-
-\item{cisDist}{\itemize{
-\item cis window used to create geneloc and snploc files. Note: this value must be larger than 1
 }}
 
 \item{seed}{\itemize{
