@@ -3,6 +3,7 @@
 export(decompose)
 export(decomposition_step)
 export(eQTL_mapping_step)
+export(get_eGenes_combined)
 export(get_eGenes_multi_tissue_mod)
 export(get_eSNPs_multi_tissue_mod)
 export(get_pvals_and_fam_p_mod)
