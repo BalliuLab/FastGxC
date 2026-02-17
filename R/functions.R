@@ -19,24 +19,24 @@ decompose=function(X,design){
 #' @export
 get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_names, level1 = 0.05, level2 = 0.05, level3 = 0.05, exp_suffix, four_level = F, qtl_type = "cis", shared_n_tests_per_gene) {
   pattern=paste0(exp_suffix,".", qtl_type, "_pairs.txt")
-
+  
   print(paste("Step 0.1: Computing summary statistics for each tissue"))
   m_eqtl_outfiles <- list.files(m_eqtl_out_dir, pattern = pattern, full.names = TRUE)
   if(length(m_eqtl_outfiles)!=length(tissue_names)) stop(sprintf("Expecting %i MatrixEQTL files but got %i. Make sure that input directory provided is correct.", length(tissue_names),length(m_eqtl_outfiles)))
-
+  
   n_tissue <- length(tissue_names)
   for (i in 1:n_tissue) {
     cur_tissue_name <- tissue_names[i]
     m_eqtl_out = m_eqtl_outfiles[grepl(paste0("/", cur_tissue_name, "_"), m_eqtl_outfiles)]
-
+    
     print(paste("Computing summary statistics for tissue ", cur_tissue_name, sep = ""))
     n_SNPs_per_gene_this_tissue = fread(m_eqtl_out) %>% dplyr::select(gene) %>% group_by(gene) %>% mutate(n = n()) %>% distinct()
     colnames(n_SNPs_per_gene_this_tissue)=c("family","n_tests")
-
+    
     gene_simes_cur_tissue <- get_eGenes(n_tests_per_gene = n_SNPs_per_gene_this_tissue, m_eqtl_out = m_eqtl_out, method = "BH", level1 = 1, level2 = 1, silent = TRUE)
     gene_simes_cur_tissue <- merge(gene_simes_cur_tissue, n_SNPs_per_gene_this_tissue, by = "family", all = TRUE)
     gene_simes_cur_tissue$fam_p[which(is.na(gene_simes_cur_tissue$fam_p))] <- 1
-
+    
     if (i == 1) {
       eGene_pvals <- gene_simes_cur_tissue[, c("family", "fam_p")]
       n_SNPs_per_gene_xT <- n_SNPs_per_gene_this_tissue
@@ -49,11 +49,11 @@ get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_name
   }
   names(eGene_pvals)[1] <- "gene"
   remove(cur_tissue_name, n_SNPs_per_gene_this_tissue, gene_simes_cur_tissue)
-
+  
   print("Step 0.2: Computing summary statistics across tissues")
   col_ind_pvals <- 2:(n_tissue + 1)
   eGene_pvals$simes_p <- apply(eGene_pvals[, col_ind_pvals], 1, TreeQTL:::get_simes_p)
-
+  
   if(four_level == T){
     level4 = level1
     print("Step 0.2 Part 2: Computing summary statistics across shared component")
@@ -66,21 +66,20 @@ get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_name
                                    level1 = level1, level2 = level2,
                                    slice_size = 1e+05,
                                    silent = FALSE)
-
+    
     n_SNPs_per_gene_shared = shared_n_tests_per_gene
-
+    
     gene_simes_shared <- merge(gene_simes_shared, n_SNPs_per_gene_shared, by = "family", all = TRUE)
     gene_simes_shared$fam_p[which(is.na(gene_simes_shared$fam_p))] <- 1
-
+    
     eGene_pvals <- merge(eGene_pvals, gene_simes_shared[, c("family", "fam_p")], by.x = "gene", by.y = "family", all = TRUE)
     n_SNPs_per_gene_xT <- merge(n_SNPs_per_gene_xT, n_SNPs_per_gene_shared, by = "family", all = TRUE)
     names(eGene_pvals)[n_tissue + 3] <- cur_tissue_name
     names(n_SNPs_per_gene_xT)[n_tissue + 2] <- cur_tissue_name
-
     print("Step 0.3: Computing summary statistics across shared and specific components")
     col_ind_pvals_global <- (n_tissue+2):(n_tissue+3)
     eGene_pvals$simes_global_p <- apply(eGene_pvals[, col_ind_pvals_global], 1, TreeQTL:::get_simes_p)
-
+    
     print("Step 0.4: Selecting global eGenes across contexts and shared and specific components")
     eGene_xT_qvals <- qvalue(eGene_pvals$simes_global_p, lambda = 0)$qvalue
     R_G <- sum(eGene_xT_qvals <= level1)
@@ -99,7 +98,7 @@ get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_name
       return(empty_df)
     }
     names(rej_simes) = "global_eGene"
-
+    
     # convert rej simes to dataframe here and then add it as a column
     eGene_xT_sel_global <- data.frame(gene = sel_eGenes_simes$gene, global_eGene = rej_simes)
     eGene_xT_sel_global_pvals <- data.frame(gene = sel_eGenes_simes$gene, global_eGene = sel_eGenes_simes$simes_global_p)
@@ -109,12 +108,12 @@ get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_name
     fwrite(eGene_xT_sel_global, file = out_file_name, sep = "\t")
     fwrite(eGene_xT_sel_global_pvals, file = out_file_name_pvals)
   }
-
+  
   print("Step 1: Selecting eGenes across tissues")
   eGene_xT_qvals <- qvalue(eGene_pvals$simes_p, lambda = 0)$qvalue
   R_G <- sum(eGene_xT_qvals <= level1)
   print(paste("Number of cross-tissue eGenes = ", R_G))
-
+  
   print("Step 2: Selecting tissues in which eGenes are active")
   if(R_G == 0){
     print("no significant eGenes. writing empty eGene file.")
@@ -128,11 +127,11 @@ get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_name
   ind_sel_simes <- which(eGene_xT_qvals <= level1)
   sel_eGenes_simes <- eGene_pvals[ind_sel_simes, ]
   rej_simes <- t(1 * apply(sel_eGenes_simes[, c(col_ind_pvals)], 1, TreeQTL:::qsel_by_fam, q2_adj))
-
+  
   print("Step 3: Selecting SNPs associated to each gene in each tissue")
   sel_eGenes_simes$n_sel_tissues <- rowSums(rej_simes)
   sel_eGenes_simes$n_tested_tissues <- rowSums(!is.na(sel_eGenes_simes[, col_ind_pvals]))
-
+  
   for (i in 1:n_tissue) {
     cur_tissue_name <- tissue_names[i]
     m_eqtl_out_file = m_eqtl_outfiles[grepl(paste0("/", cur_tissue_name, "_"), m_eqtl_outfiles)]
@@ -142,9 +141,9 @@ get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_name
     names(sel_gene_info)[2] <- "n_tests"
     sel_gene_info <- merge(sel_gene_info, sel_eGenes_simes[, c("gene", "n_sel_tissues", "n_tested_tissues")],
                            by.x = "family", by.y = "gene", all.x = TRUE, all.y = FALSE)
-    n_sel_per_gene <- suppressWarnings(get_nsel_SNPs_per_gene_tissue_pair(sel_gene_info, cur_tissue_name, m_eqtl_out_file, R_G, nrow(eGene_pvals),
-                                                                   level3 = level3, silent = T))
-
+    n_sel_per_gene <- suppressWarnings(TreeQTL:::get_nsel_SNPs_per_gene_tissue_pair(sel_gene_info, cur_tissue_name, m_eqtl_out_file, R_G, nrow(eGene_pvals),
+                                                                                    level3 = level3, silent = T))
+    
     print(paste("Total number of associations for tissue", cur_tissue_name, "=", sum(n_sel_per_gene$n_sel_snp)))
     if(nrow(n_sel_per_gene) == 0){
       print("No significant associations for this tissue. Not writing output file.")
@@ -153,10 +152,10 @@ get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_name
       out_file_name <- paste0(treeQTL_dir,"/eAssoc_by_gene.", cur_tissue_name,"_", exp_suffix, "_", qtl_type, ".txt")
       print(paste("Writing output file", out_file_name))
       get_eAssociations(data.frame(family = n_sel_per_gene$family, pval = NA, n_sel = n_sel_per_gene$n_sel_snp), NULL,
-                        m_eqtl_outfiles[i], out_file_name, by_snp = FALSE, silent = TRUE)
+                        m_eqtl_out_file, out_file_name, by_snp = FALSE, silent = TRUE)
     }
   }
-
+  
   # write out eGene pvalues
   write.table(x = sel_eGenes_simes[,c(1, col_ind_pvals)], file = paste0(treeQTL_dir,"specific_eGenes_pvalues.txt"),
               quote = F, row.names = F, col.names = T, sep = '\t')
