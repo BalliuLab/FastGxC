@@ -153,7 +153,7 @@ get_eGenes_multi_tissue_mod = function (m_eqtl_out_dir, treeQTL_dir, tissue_name
       out_file_name <- paste0(treeQTL_dir,"/eAssoc_by_gene.", cur_tissue_name,"_", exp_suffix, "_", qtl_type, ".txt")
       print(paste("Writing output file", out_file_name))
       get_eAssociations(data.frame(family = n_sel_per_gene$family, pval = NA, n_sel = n_sel_per_gene$n_sel_snp), NULL, 
-                        m_eqtl_outfiles[i], out_file_name, by_snp = FALSE, silent = TRUE)
+                        m_eqtl_out_file, out_file_name, by_snp = FALSE, silent = TRUE)
     }
   }
   
