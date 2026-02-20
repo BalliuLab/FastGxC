@@ -17,7 +17,7 @@ Please read the [BioRxiv](https://www.biorxiv.org/content/10.1101/2021.06.17.448
 
 ## Contributors
 Brunilda Balliu - original R implementation of FastGxC; 
-Lena Krockenberger - integration of FastGxC R implementation and simulation code into R-package format; 
+Lena Krockenberger - integration of FastGxC R implementation and simulation code into R-package; 
 Anthony Zhao - treeBH integration; 
 Charlie Wang - tensorQTL implementation and Wiki tutorial; 
 
