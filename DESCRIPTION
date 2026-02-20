@@ -16,7 +16,8 @@ Imports:
     matrixcalc,
     reticulate,
     readr,
-    Rcpp
+    Rcpp,
+    arrow
 LinkingTo:
     Rcpp
 Suggests:
@@ -31,7 +32,8 @@ Depends:
     magrittr,
     TreeQTL,
     matrixcalc,
-    reticulate
+    reticulate,
+    arrow
 License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
     license
 Encoding: UTF-8

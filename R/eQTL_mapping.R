@@ -178,29 +178,14 @@ builtins.run_tensorqtl = run_tensorqtl
                                     pattern = paste0(basename(py$prefix), ".*\\.parquet$"), 
                                     full.names = TRUE)
     
-    py$all_files <- all_parquet_files
+    parquet_list = lapply(all_parquet_files, read_parquet)
+    all_parquets = rbindlist(parquet_list)
+    all_parquets = all_parquets %>% rename("SNP" = variant_id, "gene" = phenotype_id, "beta" = slope, "p-value" = pval_nominal) %>%
+      select(SNP, gene, beta, 'p-value') %>% arrange(`p-value`)
     
-    py_run_string("
-import pandas as pd
-# Read every file in the list and concatenate them immediately
-pq_all = pd.concat([pd.read_parquet(f) for f in all_files]).reset_index(drop=True)
-
-# Rename columns to your desired R format
-pq_all = pq_all.rename(columns={
-    'variant_id': 'SNP', 
-    'phenotype_id': 'gene', 
-    'slope': 'beta', 
-    'pval_nominal': 'p-value'
-})
-")
+    all_parquets = all_parquets %>% mutate(FDR = p.adjust(`p-value`, method = "BH"))
     
-    pq_df <- py$pq_all
-    
-    pq_df <- py_eval("pq.reset_index().loc[:, ['SNP', 'gene', 'beta', 'p-value']]", convert = TRUE)
-    pq_df$FDR <- p.adjust(pq_df$`p-value`, method = "BH")
-    pq_df <- pq_df[order(pq_df$`p-value`), ]
-    
-    write.table(pq_df, file = output_file_name_cis, sep = '\t', row.names = FALSE, quote = FALSE)
+    write.table(all_parquets, file = output_file_name_cis, sep = '\t', row.names = FALSE, quote = FALSE)
     
     unlink(all_parquet_files)
     } else {
