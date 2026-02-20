@@ -116,17 +116,9 @@ import numpy as np
 from tensorqtl import cis
 import builtins
 
-os.environ['CUDA_VISIBLE_DEVICES'] = ''
 torch.set_num_threads(1)
 
 def run_tensorqtl(phenotype_df, phenotype_pos_df, genotype_df, variant_df, prefix=''):
-
-    # Check if CUDA (NVIDIA GPU support) is actually active
-    if not torch.cuda.is_available():
-        print('ERROR: NVIDIA GPU not detected!')
-        print('TensorQTL requires a GPU to compute regressions. Please run eQTL mapping with default parameters for method')
-        # Exit the Python process and return an error to R
-        sys.exit(1)
         
     if 's1' in phenotype_pos_df.columns and 's2' in phenotype_pos_df.columns:
         phenotype_pos_df.rename(columns={'s1': 'start', 's2': 'end'}, inplace=True)
