@@ -42,7 +42,7 @@ eQTL_mapping_step = function(
     setDTthreads(1)
     
     expression_mat <- as.matrix(data.frame(fread(expression_file_name, header = TRUE), row.names = 1, check.names = FALSE))
-    genepos <- data.table::fread(gene_location_file_name, sep = NULL, header = TRUE, data.table = FALSE)
+    genepos <- data.table::fread(gene_location_file_name, sep = '\t', header = TRUE, data.table = FALSE)
     names(genepos) <- tolower(names(genepos)) 
     
     genepos <- genepos |>
@@ -94,7 +94,7 @@ eQTL_mapping_step = function(
     expression_file_name <- path.expand(expression_file_name)
     out_dir <- path.expand(out_dir)
     suppressWarnings({
-    py_run_string("
+      py_run_string("
 import os
 import torch
 import pandas as pd
@@ -114,20 +114,25 @@ def run_tensorqtl(phenotype_df, phenotype_pos_df, genotype_df, variant_df, prefi
 
 builtins.run_tensorqtl = run_tensorqtl
 ")})
-
+    
     expr <- read.table(expression_file_name, header = TRUE, sep = "\t", check.names = FALSE)
-
     rownames(expr) <- expr[, 1]
     expr <- expr[, -1, drop = FALSE]
-
+    
+    expr <- t(apply(expr, 1, function(x) {
+      x[is.na(x)] <- mean(x, na.rm = TRUE)
+      x
+    }))
+    
     write.table(
       expr,
       file = expression_file_name,
       sep = "\t",
       row.names = TRUE,
-      col.names = NA,   
+      col.names = NA,
       quote = FALSE
     )
+    
     phenotype_df <- suppressWarnings(read.table(expression_file_name, header = TRUE, row.names = 1))
     phenotype_pos_df <- suppressWarnings(read.table(gene_location_file_name, header = TRUE, row.names = 1))
     genotype_df <- suppressWarnings(read.table(SNP_file_name, header = TRUE, row.names = 1))
