@@ -142,6 +142,11 @@ builtins.run_tensorqtl = run_tensorqtl
     rownames(expr) <- expr[, 1]
     expr <- expr[, -1, drop = FALSE]
     
+    expr <- t(apply(expr, 1, function(x) {
+      x[is.na(x)] <- mean(x, na.rm = TRUE)
+      x
+    }))
+    
     write.table(
       expr,
       file = expression_file_name,
