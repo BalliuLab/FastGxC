@@ -113,6 +113,7 @@ import os
 import torch
 import pandas as pd
 import numpy as np
+import glob
 from tensorqtl import cis
 import builtins
 
@@ -125,8 +126,29 @@ def run_tensorqtl(phenotype_df, phenotype_pos_df, genotype_df, variant_df, prefi
     if 'chr' in variant_df.columns:
         variant_df.rename(columns={'chr': 'chrom'}, inplace=True)
     cis.map_nominal(genotype_df, variant_df, phenotype_df, phenotype_pos_df, prefix=prefix)
+    
+def combine_and_clean_parquets(prefix):
+    files = glob.glob(f'{prefix}*.parquet')
+    if not files:
+        return None
+    
+    # Read and concatenate using Python/Arrow
+    df = pd.concat([pd.read_parquet(f) for f in files], ignore_index=True)
+    
+    # Rename and select columns
+    df = df.rename(columns={
+        'variant_id': 'SNP',
+        'phenotype_id': 'gene',
+        'slope': 'beta',
+        'pval_nominal': 'p-value'
+    })[['SNP', 'gene', 'beta', 'p-value']]
+    
+    # Sort by p-value
+    df = df.sort_values('p-value')
+    return df
 
 builtins.run_tensorqtl = run_tensorqtl
+builtins.combine_and_clean_parquets = combine_and_clean_parquets
         ")})
     
     expr <- read.table(expression_file_name, header = TRUE, sep = "\t", check.names = FALSE)
@@ -172,21 +194,21 @@ builtins.run_tensorqtl = run_tensorqtl
       message(e$message)
     })
     
+    all_parquets_py <- py$combine_and_clean_parquets(py$prefix)
     
-    # 1. Identify all matching parquet files in the folder
+    # Convert the cleaned Pandas DF to an R data frame
+    all_parquets <- as.data.frame(all_parquets_py)
+    
+    # Calculate FDR in R
+    all_parquets$FDR <- p.adjust(all_parquets$`p-value`, method = "BH")
+    
+    # Write output
+    write.table(all_parquets, file = output_file_name_cis, sep = '\t', row.names = FALSE, quote = FALSE)
+    
+    # Clean up the individual parquet files
     all_parquet_files <- list.files(path = dirname(py$prefix), 
                                     pattern = paste0(basename(py$prefix), ".*\\.parquet$"), 
                                     full.names = TRUE)
-    
-    parquet_list = lapply(all_parquet_files, read_parquet)
-    all_parquets = rbindlist(parquet_list)
-    all_parquets = all_parquets %>% rename("SNP" = variant_id, "gene" = phenotype_id, "beta" = slope, "p-value" = pval_nominal) %>%
-      select(SNP, gene, beta, 'p-value') %>% arrange(`p-value`)
-    
-    all_parquets = all_parquets %>% mutate(FDR = p.adjust(`p-value`, method = "BH"))
-    
-    write.table(all_parquets, file = output_file_name_cis, sep = '\t', row.names = FALSE, quote = FALSE)
-    
     unlink(all_parquet_files)
     } else {
       stop("Invalid method. Use 'MatrixEQTL' or 'tensorqtl'")
