@@ -168,6 +168,10 @@ treeBH_step <- function(matrix, fdr_thres, out_dir, method = "original", test = 
   
   results <- cbind(id_mat, treeBH_results)
   
+  ## filter to only return when ContextSpecific column is 1
+  cols_to_return = names(id_mat)
+  results = results %>% filter(ContextSpecific == 1) %>% select(cols_to_return)
+  
   write.table(
     results, 
     file       = file.path(out_dir, "treeBH_output.txt"),
