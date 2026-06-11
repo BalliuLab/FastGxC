@@ -1,2 +1,5 @@
-YEAR: 2026
-COPYRIGHT HOLDER: Balliu Lab
+Copyright (C) 2026 Balliu Lab
+SPDX-License-Identifier: GPL-3.0-only
+
+This project is licensed under the GNU General Public License v3.0.
+See LICENSE.md for the full license text.
