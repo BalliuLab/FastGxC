@@ -1,9 +1,13 @@
 Package: FastGxC
 Title: Efficient and Powerful Software for Simulating Data and Detecting Context-specific eQTL Effects in Multi-context Genomic Studies
-Version: 0.0.0.9000
-Authors@R: 
+Version: 1.0.0
+Authors@R: c(
+    person("Charlie", "Wang", , "charliewang@g.ucla.edu", role = "aut",
+           comment = c(ORCID = "0009-0003-1672-0774")),
     person("Lena", "Krockenberger", , "lkrocken@g.ucla.edu", role = c("aut", "cre"),
-           comment = c(ORCID = "0009-0002-5987-5496"))
+           comment = c(ORCID = "0009-0002-5987-5496")),
+    person("Anthony", "Zhao", , "azhao05@g.ucla.edu", role = "aut"),
+    person("Brunilda", "Balliu", , "bballiu@g.ucla.edu", role = c("aut", "fnd"))) 
 Description: Functions to run FastGxC decomposition and subsequent context-specific eQTL mapping with multiple testing adjustment. This software also can be used to simulate data and run eQTL mapping on toy examples.
 Imports:
     dplyr,
@@ -30,10 +34,8 @@ Depends:
     reshape2,
     magrittr,
     TreeQTL,
-    matrixcalc,
-    reticulate
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+    matrixcalc,    reticulate
+License: GPL-3
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.2
