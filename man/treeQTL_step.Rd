@@ -10,9 +10,12 @@ treeQTL_step(
   gene_location_file_name,
   context_names,
   out_dir,
+  cisDist = 1e+06,
   fdr_thresh = 0.05,
   four_level = F,
-  qtl_type = "cis"
+  qtl_type = "cis",
+  treeBH_method = "cpp",
+  treeBH_test = "simes"
 )
 }
 \arguments{
@@ -36,6 +39,10 @@ treeQTL_step(
 \item full filepath of the output directory that FDR adjusted eQTLs should be written out to.
 }}
 
+\item{cisDist}{\itemize{
+\item numeric value of defined cis window. Note: this should match the cisDist set in the eQTL mapping step.
+}}
+
 \item{fdr_thresh}{\itemize{
 \item value between 0 and 1 that signifies what FDR threshold for multiple testing correction. The same value will be used across all hierarchical levels.
 }}
@@ -46,6 +53,14 @@ treeQTL_step(
 
 \item{qtl_type}{\itemize{
 \item string value "cis" or "trans" denoting the type of eQTL mapped. Default is set to "cis"
+}}
+
+\item{treeBH_method}{\itemize{
+\item character string specifying which TreeBH implementation to use when four_level = TRUE. Options: "original" (TreeBH package), "datatable" (optimized R), "cpp" (fast C++ implementation, default). Ignored when four_level = FALSE.
+}}
+
+\item{treeBH_test}{\itemize{
+\item character string specifying the p-value aggregation method for TreeBH when four_level = TRUE. Options: "simes" (Simes' method, default), "fisher" (Fisher's method). Ignored when four_level = FALSE.
 }}
 }
 \value{
