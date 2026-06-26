@@ -27,15 +27,7 @@ Suggests:
     qvalue,
     TreeBH
 Depends:
-    dplyr,
-    data.table,
-    MatrixEQTL,
-    mvtnorm,
-    reshape2,
-    magrittr,
-    TreeQTL,
-    matrixcalc,
-    reticulate
+    R (>= 4.1.0)
 License: GPL-3 + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
