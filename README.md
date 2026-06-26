@@ -8,7 +8,7 @@ In both settings, FastGxC models **repeated samples** from each individual, remo
 
 FastGxC is also **robust to missing data** —for example, when certain individuals or genes are missing in some cell types or tissues.
 
-Please read the [BioRxiv](https://www.biorxiv.org/content/10.1101/2021.06.17.448889v2) preprint for more details. 
+Please read the [Cell Genomics](https://doi.org/10.1016/j.xgen.2026.101250) paper for more details.
 
 <!-- Extended data with FastGxC results on GTEx, OneK1K, and CLUES cohorts can be found [here](https://zenodo.org/record/5015123#.YNJ1WpNKjOR) -->
 
