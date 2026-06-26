@@ -1,0 +1,15 @@
+citHeader("To cite FastGxC in publications use:")
+
+bibentry(
+  bibtype  = "Article",
+  title    = "FastGxC: Fast and powerful context-specific eQTL mapping in bulk and single-cell data",
+  author   = c(
+    person("Brunilda", "Balliu"),
+    person("Lena", "Krockenberger"),
+    person("Charlie", "Wang"),
+    person("Anthony", "Zhao")
+  ),
+  journal  = "Cell Genomics",
+  year     = "2026",
+  doi      = "10.1016/j.xgen.2026.101250"
+)
