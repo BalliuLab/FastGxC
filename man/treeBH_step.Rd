@@ -9,7 +9,7 @@ treeBH_step(matrix, fdr_thres, out_dir, method = "original", test = "simes")
 }
 \arguments{
 \item{matrix}{\itemize{
-\item output of to_TreeBH_Input, matrix with the groups and pvalues
+\item output of to_TreeBH_input, matrix with the groups and pvalues
 }}
 
 \item{fdr_thres}{\itemize{
