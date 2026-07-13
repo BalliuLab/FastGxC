@@ -8,7 +8,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' data_dir <- tempdir()
+#' data_dir <- file.path(tempdir(), "")
 #' simulate_data(data_dir = data_dir, N = 10, n_genes = 5,
 #'               n_snps_per_gene = 10, n_contexts = 3, seed = 42)
 #' decomposition_step(
