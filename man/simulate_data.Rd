@@ -76,8 +76,9 @@ Function to generate simulated SNP and expression data
 }
 \examples{
 \dontrun{
+data_dir <- file.path(tempdir(), "")
 simulate_data(
-  data_dir = tempdir(),
+  data_dir = data_dir,
   N = 10,
   n_genes = 5,
   n_snps_per_gene = 10,
