@@ -135,8 +135,9 @@ to_TreeBH_input <- function(data_dir, shared_file, context_names, out_dir) {
 #'
 #' @examples
 #' \dontrun{
+#' matrix <- read.table(file.path(tempdir(), "treeBH_input.txt"), header = TRUE)
 #' treeBH_step(
-#'   matrix = file.path(tempdir(), "treeBH_input.txt"),
+#'   matrix = matrix,
 #'   fdr_thres = 0.05,
 #'   out_dir = tempdir()
 #' )
