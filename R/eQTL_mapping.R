@@ -21,7 +21,7 @@
 #'
 #' @examples
 #' \dontrun{
-#' data_dir <- tempdir()
+#' data_dir <- file.path(tempdir(), "")
 #' simulate_data(data_dir = data_dir, N = 10, n_genes = 5,
 #'               n_snps_per_gene = 10, n_contexts = 3, seed = 42)
 #' decomposition_step(
@@ -34,7 +34,9 @@
 #'   expression_file_name = file.path(data_dir, "context1_specific_expression.txt"),
 #'   gene_location_file_name = file.path(data_dir, "geneloc.txt"),
 #'   context = "context1",
-#'   out_dir = data_dir
+#'   out_dir = data_dir,
+#'   output_file_name_cis = file.path(data_dir, "context1_specific.cis_pairs.txt"),
+#'   output_file_name_tra = file.path(data_dir, "context1_specific.trans_pairs.txt")
 #' )
 #' }
 #'
