@@ -50,3 +50,13 @@ A matrix with identification columns and output columns:
 Multiple Testing Correction with TreeBH
 Function to adjust for hierarchical multiple testing correction using TreeBH.
 }
+\examples{
+\dontrun{
+treeBH_step(
+  matrix = file.path(tempdir(), "treeBH_input.txt"),
+  fdr_thres = 0.05,
+  out_dir = tempdir()
+)
+}
+
+}

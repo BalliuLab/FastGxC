@@ -69,3 +69,15 @@ outputs one file of specific eGenes across all contexts and one file of shared e
 \description{
 Function to adjust for hierarchical multiple testing correction using TreeQTL. Runs multiple testing correction for both FastGxC shared and specific eQTLs.
 }
+\examples{
+\dontrun{
+treeQTL_step(
+  data_dir = tempdir(),
+  snps_location_file_name = file.path(tempdir(), "snpsloc.txt"),
+  gene_location_file_name = file.path(tempdir(), "geneloc.txt"),
+  context_names = c("context1", "context2", "context3"),
+  out_dir = tempdir()
+)
+}
+
+}

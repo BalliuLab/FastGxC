@@ -38,3 +38,14 @@ A data.frame with columns:
 \description{
 Converting eQTL Mapping Output to TreeBH Input
 }
+\examples{
+\dontrun{
+to_TreeBH_input(
+  data_dir = tempdir(),
+  shared_file = file.path(tempdir(), "shared_specific.cis_pairs.txt"),
+  context_names = c("context1", "context2", "context3"),
+  out_dir = tempdir()
+)
+}
+
+}

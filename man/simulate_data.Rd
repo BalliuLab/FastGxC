@@ -74,3 +74,16 @@ outputs an expression matrix file, a genotype matrix file, a SNP location file, 
 \description{
 Function to generate simulated SNP and expression data
 }
+\examples{
+\dontrun{
+simulate_data(
+  data_dir = tempdir(),
+  N = 10,
+  n_genes = 5,
+  n_snps_per_gene = 10,
+  n_contexts = 3,
+  seed = 42
+)
+}
+
+}
