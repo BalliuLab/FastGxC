@@ -7,6 +7,8 @@ using namespace Rcpp;
 using namespace std;
 
 //' Check if groups are properly nested in hierarchy
+//' @param groups CharacterMatrix defining the group hierarchy structure
+//' @param L Integer specifying the number of levels in the hierarchy
 // [[Rcpp::export]]
 std::string checkNested(const CharacterMatrix& groups, int L) {
   int nrow = groups.nrow();

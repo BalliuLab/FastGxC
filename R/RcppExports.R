@@ -2,6 +2,8 @@
 # Generator token: 10BE3573-1514-4C36-9D1C-5A225CD40393
 
 #' Check if groups are properly nested in hierarchy
+#' @param groups CharacterMatrix defining the group hierarchy structure
+#' @param L Integer specifying the number of levels in the hierarchy
 checkNested <- function(groups, L) {
     .Call(`_FastGxC_checkNested`, groups, L)
 }

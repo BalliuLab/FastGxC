@@ -6,6 +6,11 @@
 \usage{
 checkNested(groups, L)
 }
+\arguments{
+\item{groups}{CharacterMatrix defining the group hierarchy structure}
+
+\item{L}{Integer specifying the number of levels in the hierarchy}
+}
 \description{
 Check if groups are properly nested in hierarchy
 }
