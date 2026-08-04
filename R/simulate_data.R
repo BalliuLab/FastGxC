@@ -16,6 +16,19 @@
 #' @param seed - random seed for reproducibility. Default value is NULL
 #' @return outputs an expression matrix file, a genotype matrix file, a SNP location file, and a gene location file all in the format needed for FastGxC's decomposition step and then subsequent eQTL mapping step with Matrix eQTL.
 #'
+#' @examples
+#' \dontrun{
+#' data_dir <- file.path(tempdir(), "")
+#' simulate_data(
+#'   data_dir = data_dir,
+#'   N = 10,
+#'   n_genes = 5,
+#'   n_snps_per_gene = 10,
+#'   n_contexts = 3,
+#'   seed = 42
+#' )
+#' }
+#'
 #' @export
 simulate_data = function(data_dir, N = 300, n_genes=100, n_snps_per_gene=1000, 
                          n_contexts=10, maf=0.2, w_corr=0.2, 

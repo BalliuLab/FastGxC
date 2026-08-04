@@ -15,6 +15,17 @@
 #' @param treeBH_test - character string specifying the p-value aggregation method for TreeBH when four_level = TRUE. Options: "simes" (Simes' method, default), "fisher" (Fisher's method). Ignored when four_level = FALSE.
 #' @return outputs one file of specific eGenes across all contexts and one file of shared eGenes. Outputs an eAssociation file for each context and one for shared eQTLs with snp-gene pairs and FDR adjusted p-values.
 #'
+#' @examples
+#' \dontrun{
+#' treeQTL_step(
+#'   data_dir = tempdir(),
+#'   snps_location_file_name = file.path(tempdir(), "snpsloc.txt"),
+#'   gene_location_file_name = file.path(tempdir(), "geneloc.txt"),
+#'   context_names = c("context1", "context2", "context3"),
+#'   out_dir = tempdir()
+#' )
+#' }
+#'
 #' @export
 treeQTL_step = function(data_dir, snps_location_file_name, gene_location_file_name, context_names, out_dir, cisDist = 1e6, fdr_thresh = 0.05, four_level = F, qtl_type = "cis", treeBH_method = "cpp", treeBH_test = "simes"){
 

@@ -50,3 +50,14 @@ A matrix with identification columns and output columns:
 Multiple Testing Correction with TreeBH
 Function to adjust for hierarchical multiple testing correction using TreeBH.
 }
+\examples{
+\dontrun{
+matrix <- read.table(file.path(tempdir(), "treeBH_input.txt"), header = TRUE)
+treeBH_step(
+  matrix = matrix,
+  fdr_thres = 0.05,
+  out_dir = tempdir()
+)
+}
+
+}

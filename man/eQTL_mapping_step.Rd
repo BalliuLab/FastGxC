@@ -58,3 +58,23 @@ Writes cis-eQTLs and trans-eQTLs (optional) to file.
 \description{
 Function to map cis eQTLs - cis window is defined as 1Mb
 }
+\examples{
+\dontrun{
+data_dir <- tempdir()
+simulate_data(data_dir = data_dir, N = 10, n_genes = 5,
+              n_snps_per_gene = 10, n_contexts = 3, seed = 42)
+decomposition_step(
+  exp_mat_filename = file.path(data_dir, "expression.txt"),
+  data_dir = data_dir
+)
+eQTL_mapping_step(
+  SNP_file_name = file.path(data_dir, "SNPs.txt"),
+  snps_location_file_name = file.path(data_dir, "snpsloc.txt"),
+  expression_file_name = file.path(data_dir, "context1_specific_expression.txt"),
+  gene_location_file_name = file.path(data_dir, "geneloc.txt"),
+  context = "context1",
+  out_dir = data_dir
+)
+}
+
+}

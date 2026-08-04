@@ -16,6 +16,19 @@ NULL
 #'   - component_tag : "gene_SNP_specific" or "gene_SNP_shared"
 #'   - context_tag   : "gene_SNP_component_context"
 #'   - p_value       : numeric p-value
+#'
+#' @examples
+#' \dontrun{
+#' data_dir <- file.path(tempdir(), "")
+#' out_dir <- tempdir()
+#' to_TreeBH_input(
+#'   data_dir = data_dir,
+#'   shared_file = file.path(data_dir, "shared_shared.cis_pairs.txt"),
+#'   context_names = c("context1", "context2", "context3"),
+#'   out_dir = out_dir
+#' )
+#' }
+#'
 #' @export
 to_TreeBH_input <- function(data_dir, shared_file, context_names, out_dir) {
   # Prepare list to hold each context-specific + shared df
@@ -121,6 +134,17 @@ to_TreeBH_input <- function(data_dir, shared_file, context_names, out_dir) {
 #' - snp                     : snp name
 #' - context                 : context name or "specific"
 #' - treeBH Output Columns   : eGene, eQTL, Component, Context Specific
+#'
+#' @examples
+#' \dontrun{
+#' matrix <- read.table(file.path(tempdir(), "treeBH_input.txt"), header = TRUE)
+#' treeBH_step(
+#'   matrix = matrix,
+#'   fdr_thres = 0.05,
+#'   out_dir = tempdir()
+#' )
+#' }
+#'
 #' @export
 treeBH_step <- function(matrix, fdr_thres, out_dir, method = "original", test = "simes") {
   
