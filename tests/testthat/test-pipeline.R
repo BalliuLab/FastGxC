@@ -27,26 +27,45 @@ test_that("full pipeline runs end to end", {
   all_contexts <- c(context_names, "shared")
 
   for (ctx in all_contexts) {
-    tag <- ifelse(ctx == "shared", "shared", "specific")
-    exp_file <- ifelse(ctx == "shared",
-                       paste0(data_dir, "context_shared_expression.txt"),
-                       paste0(data_dir, ctx, "_specific_expression.txt"))
+    is_shared <- identical(ctx, "shared")
+
+    exp_file <- if (is_shared) {
+      file.path(data_dir, "context_shared_expression.txt")
+    } else {
+      file.path(data_dir, paste0(ctx, "_specific_expression.txt"))
+    }
+
+    output_cis <- if (is_shared) {
+      file.path(out_dir, "shared.cis_pairs.txt")
+    } else {
+      file.path(out_dir, paste0(ctx, "_specific.cis_pairs.txt"))
+    }
+    output_tra <- if (is_shared) {
+      file.path(out_dir, "shared.trans_pairs.txt")
+    } else {
+      file.path(out_dir, paste0(ctx, "_specific.trans_pairs.txt"))
+    }
+
     eQTL_mapping_step(
-      SNP_file_name = paste0(data_dir, "SNPs.txt"),
-      snps_location_file_name = paste0(data_dir, "snpsloc.txt"),
+      SNP_file_name = file.path(data_dir, "SNPs.txt"),
+      snps_location_file_name = file.path(data_dir, "snpsloc.txt"),
       expression_file_name = exp_file,
-      gene_location_file_name = paste0(data_dir, "geneloc.txt"),
+      gene_location_file_name = file.path(data_dir, "geneloc.txt"),
       context = ctx,
       out_dir = out_dir,
-      output_file_name_cis = paste0(out_dir, ctx, "_", tag, ".cis_pairs.txt"),
-      output_file_name_tra = paste0(out_dir, ctx, "_", tag, ".trans_pairs.txt")
+      output_file_name_cis = output_cis,
+      output_file_name_tra = output_tra
     )
   }
 
   # Check eQTL output files exist
   for (ctx in all_contexts) {
-    tag <- ifelse(ctx == "shared", "shared", "specific")
-    expect_true(file.exists(paste0(out_dir, ctx, "_", tag, ".cis_pairs.txt")))
+    cis_file <- if (identical(ctx, "shared")) {
+      file.path(out_dir, "shared.cis_pairs.txt")
+    } else {
+      file.path(out_dir, paste0(ctx, "_specific.cis_pairs.txt"))
+    }
+    expect_true(file.exists(cis_file))
   }
 
   # Step 4: treeQTL multiple testing correction
