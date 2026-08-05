@@ -1,10 +1,11 @@
 library(FastGxC)
 
 test_that("full pipeline runs end to end", {
-  data_dir <- paste0(tempfile(), "/")
-  out_dir <- paste0(tempfile(), "/")
-  dir.create(data_dir)
-  dir.create(out_dir)
+  data_dir <- file.path(tempfile(), "")
+  out_dir <- file.path(tempfile(), "")
+  dir.create(data_dir, recursive = TRUE, showWarnings = FALSE)
+  dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
+  on.exit(unlink(c(data_dir, out_dir), recursive = TRUE, force = TRUE), add = TRUE)
 
   # Step 1: simulate data
   simulate_data(
