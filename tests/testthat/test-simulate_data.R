@@ -1,8 +1,8 @@
 library(FastGxC)
 test_that("simulate_data creates expected output files", {
-  data_dir <- tempfile()
-  dir.create(data_dir)
-  data_dir <- paste0(data_dir, "/")
+  data_dir <- file.path(tempfile(), "")
+  dir.create(data_dir, recursive = TRUE, showWarnings = FALSE)
+  on.exit(unlink(data_dir, recursive = TRUE, force = TRUE), add = TRUE)
 
   simulate_data(
     data_dir = data_dir,
@@ -13,10 +13,10 @@ test_that("simulate_data creates expected output files", {
     seed = 42
   )
 
-  expect_true(file.exists(paste0(data_dir, "expression.txt")))
-  expect_true(file.exists(paste0(data_dir, "SNPs.txt")))
-  expect_true(file.exists(paste0(data_dir, "snpsloc.txt")))
-  expect_true(file.exists(paste0(data_dir, "geneloc.txt")))
+  expect_true(file.exists(file.path(data_dir, "expression.txt")))
+  expect_true(file.exists(file.path(data_dir, "SNPs.txt")))
+  expect_true(file.exists(file.path(data_dir, "snpsloc.txt")))
+  expect_true(file.exists(file.path(data_dir, "geneloc.txt")))
 })
 
 test_that("simulate_data respects seed for reproducibility", {
