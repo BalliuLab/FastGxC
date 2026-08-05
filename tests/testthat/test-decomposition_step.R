@@ -1,8 +1,9 @@
 library(FastGxC)
 
 test_that("decomposition_step creates expected output files", {
-  data_dir <- paste0(tempfile(), "/")
-  dir.create(data_dir)
+  data_dir <- file.path(tempfile(), "")
+  dir.create(data_dir, recursive = TRUE, showWarnings = FALSE)
+  on.exit(unlink(data_dir, recursive = TRUE, force = TRUE), add = TRUE)
 
   simulate_data(
     data_dir = data_dir,
@@ -14,12 +15,12 @@ test_that("decomposition_step creates expected output files", {
   )
 
   decomposition_step(
-    exp_mat_filename = paste0(data_dir, "expression.txt"),
+    exp_mat_filename = file.path(data_dir, "expression.txt"),
     data_dir = data_dir
   )
 
-  expect_true(file.exists(paste0(data_dir, "context_shared_expression.txt")))
-  expect_true(file.exists(paste0(data_dir, "context1_specific_expression.txt")))
-  expect_true(file.exists(paste0(data_dir, "context2_specific_expression.txt")))
-  expect_true(file.exists(paste0(data_dir, "context3_specific_expression.txt")))
+  expect_true(file.exists(file.path(data_dir, "context_shared_expression.txt")))
+  expect_true(file.exists(file.path(data_dir, "context1_specific_expression.txt")))
+  expect_true(file.exists(file.path(data_dir, "context2_specific_expression.txt")))
+  expect_true(file.exists(file.path(data_dir, "context3_specific_expression.txt")))
 })
