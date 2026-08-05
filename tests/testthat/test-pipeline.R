@@ -58,7 +58,6 @@ test_that("full pipeline runs end to end", {
     out_dir = out_dir
   )
 
-  # treeQTL runs without error (0 eGenes is valid for small simulated data)
-  expect_true(file.exists(paste0(out_dir, "specific_eGenes_pvalues.txt")) ||
-              length(list.files(out_dir)) > 0)
+  expect_true(file.exists(file.path(out_dir, "specific_eGenes.txt")))
+  expect_true(file.exists(file.path(out_dir, "shared_eGenes.txt")))
 })
