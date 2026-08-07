@@ -25,6 +25,7 @@ LinkingTo:
     Rcpp
 Suggests:
     qvalue,
+    testthat (>= 3.0.0),
     TreeBH
 Depends:
     dplyr,
@@ -40,3 +41,4 @@ License: GPL-3 + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
+Config/testthat/edition: 3
