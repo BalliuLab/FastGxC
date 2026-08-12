@@ -199,7 +199,7 @@ builtins.combine_and_clean_parquets = combine_and_clean_parquets
     py$phenotype_pos_df <- phenotype_pos_df
     py$genotype_df <- genotype_df
     py$variant_df <- variant_df
-    tensorqtl_prefix <- file.path(out_dir, paste0(context, "_", shared_specific))
+    tensorqtl_prefix <- if (identical(context, "shared")) file.path(out_dir, "shared") else file.path(out_dir, paste0(context, "_specific"))
     py$prefix <- tensorqtl_prefix
 
     tryCatch(
