@@ -49,8 +49,16 @@ eQTL_mapping_step <- function(SNP_file_name,
                               gene_location_file_name,
                               context,
                               out_dir,
-                              output_file_name_cis = file.path(out_dir, paste0(context, "_", shared_specific, ".cis_pairs.txt")),
-                              output_file_name_tra = file.path(out_dir, paste0(context, "_", shared_specific, ".trans_pairs.txt")),
+                              output_file_name_cis = if (identical(context, "shared")) {
+                                file.path(out_dir, "shared.cis_pairs.txt")
+                              } else {
+                                file.path(out_dir, paste0(context, "_specific.cis_pairs.txt"))
+                              },
+                              output_file_name_tra = if (identical(context, "shared")) {
+                                file.path(out_dir, "shared.trans_pairs.txt")
+                              } else {
+                                file.path(out_dir, paste0(context, "_specific.trans_pairs.txt"))
+                              },
                               method = "MatrixEQTL",
                               use_model = modelLINEAR,
                               cis_dist = 1e6,
