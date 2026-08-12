@@ -3,7 +3,7 @@
 NULL
 
 #' Converting eQTL Mapping Output to TreeBH Input
-#' 
+#'
 #' @param data_dir - full filepath of the directory where eQTL output files are stored. This function assumes that files are named as outputted by FastGxC's eQTL mapping function
 #' @param shared_file - full filepath to the shared cis_pairs file from the output of the mapping function
 #' @param context_names - vector of all context names in the format c("tissue1", "tissue2", ..., etc.)
@@ -33,37 +33,37 @@ NULL
 to_TreeBH_input <- function(data_dir, shared_file, context_names, out_dir) {
   # Prepare list to hold each context-specific + shared df
   num_contexts <- length(context_names)
-  df_list      <- vector("list", num_contexts + 1)
-  
+  df_list <- vector("list", num_contexts + 1)
+
   # Inline file-reading and p-value/column validation per context
   for (i in seq_len(num_contexts)) {
     context <- context_names[i]
     pattern <- paste0(context, "_specific.cis_pairs.txt$")
-    files   <- list.files(path = data_dir, pattern = pattern, full.names = TRUE)
+    files <- list.files(path = data_dir, pattern = pattern, full.names = TRUE)
     if (length(files) == 0) stop("No file matching pattern ", pattern)
-    df      <- readr::read_tsv(files[[1]], col_types = readr::cols())
-    
+    df <- readr::read_tsv(files[[1]], col_types = readr::cols())
+
     # Ensure columns exist and types are correct
     if (!"p-value" %in% names(df)) stop("Missing 'p-value' in ", files[[1]])
     p <- df[["p-value"]]
     if (!is.numeric(p) || any(is.na(p))) stop("`p-value` must be numeric without NAs")
     if (any(p < 0 | p > 1)) stop("`p-value` entries must lie between 0 and 1")
-    
+
     if (!"gene" %in% names(df)) stop("Missing 'gene' in ", files[[1]])
     if (!is.character(df[["gene"]])) stop("`gene` must be character in ", files[[1]])
-    
+
     if (!"SNP" %in% names(df)) stop("Missing 'SNP' in ", files[[1]])
     if (!is.character(df[["SNP"]])) stop("`SNP` must be character in ", files[[1]])
-    
+
     df_list[[i]] <- df
   }
-  
+
   # Shared file: validate input and perform same inline checks
   if (length(shared_file) != 1L || is.na(shared_file)) {
     stop("`shared_file` must be a single, non-NA filepath")
   }
   df_shared <- readr::read_tsv(shared_file, col_types = readr::cols())
-  for (col in c("p-value","gene","SNP")) {
+  for (col in c("p-value", "gene", "SNP")) {
     if (!col %in% names(df_shared)) stop("Missing '", col, "' in shared_file")
     col_data <- df_shared[[col]]
     if (col == "p-value") {
@@ -74,28 +74,28 @@ to_TreeBH_input <- function(data_dir, shared_file, context_names, out_dir) {
     }
   }
   df_list[[num_contexts + 1]] <- df_shared
-  
+
   # Build grouping labels
-  rows_per_df     <- vapply(df_list, nrow, integer(1))
-  context_index   <- rep(seq_along(df_list), times = rows_per_df)
-  context_label   <- c(context_names, "shared")[context_index]
+  rows_per_df <- vapply(df_list, nrow, integer(1))
+  context_index <- rep(seq_along(df_list), times = rows_per_df)
+  context_label <- c(context_names, "shared")[context_index]
   component_label <- ifelse(context_label == "shared", "shared", "specific")
-  
+
   # Extract columns across all data.frames
-  p_values   <- unlist(lapply(df_list, `[[`, "p-value"),   use.names = FALSE)
-  gene_names <- unlist(lapply(df_list, `[[`, "gene"),      use.names = FALSE)
-  snp_names  <- unlist(lapply(df_list, `[[`, "SNP"),       use.names = FALSE)
-  
+  p_values <- unlist(lapply(df_list, `[[`, "p-value"), use.names = FALSE)
+  gene_names <- unlist(lapply(df_list, `[[`, "gene"), use.names = FALSE)
+  snp_names <- unlist(lapply(df_list, `[[`, "SNP"), use.names = FALSE)
+
   # Build hierarchical identifiers
-  gene_snp_id  <- paste0(gene_names, "_", snp_names)
+  gene_snp_id <- paste0(gene_names, "_", snp_names)
   component_id <- paste0(gene_snp_id, "_", component_label)
-  context_id   <- paste0(component_id, "_", context_label)
-  
+  context_id <- paste0(component_id, "_", context_label)
+
   # Assemble final data.frame
   out_df <- data.frame(
     gene_name          = gene_names,
-    snp_name           = snp_names, 
-    context_name       = context_label, 
+    snp_name           = snp_names,
+    context_name       = context_label,
     gene_snp           = gene_snp_id,
     component_tag      = component_id,
     context_tag        = context_id,
@@ -103,9 +103,9 @@ to_TreeBH_input <- function(data_dir, shared_file, context_names, out_dir) {
     stringsAsFactors   = FALSE,
     check.names        = FALSE
   )
-  
+
   if (!dir.exists(out_dir)) dir.create(out_dir, recursive = TRUE)
-  
+
   # Write file
   write.table(
     out_df,
@@ -118,7 +118,7 @@ to_TreeBH_input <- function(data_dir, shared_file, context_names, out_dir) {
 }
 
 #' Multiple Testing Correction with TreeBH
-#' Function to adjust for hierarchical multiple testing correction using TreeBH. 
+#' Function to adjust for hierarchical multiple testing correction using TreeBH.
 #' @param matrix - output of to_TreeBH_input, matrix with the groups and pvalues
 #' @param fdr_thres -  value between 0 and 1 that signifies what FDR threshold for multiple testing correction. The same value will be used across all hierarchical levels.
 #' @param out_dir - full filepath of the output directory where the output of TreeBH can be stored
@@ -147,24 +147,25 @@ to_TreeBH_input <- function(data_dir, shared_file, context_names, out_dir) {
 #'
 #' @export
 treeBH_step <- function(matrix, fdr_thres, out_dir, method = "original", test = "simes") {
-  
   # Validate method parameter
   method <- match.arg(method, c("original", "datatable", "cpp"))
-  
+
   # Extract components from input matrix
   id_mat <- matrix[, 1:3]
   groups <- matrix[, c(1, 4, 5, 6)]
-  p_values <- matrix[, 7] |> as.vector() |> as.numeric()
-  
+  p_values <- matrix[, 7] |>
+    as.vector() |>
+    as.numeric()
+
   num_levels <- 4
-  
+
   # Call appropriate implementation based on method parameter
   treeBH_results <- switch(method,
     original = {
       # Original TreeBH package implementation
       TreeBH::get_TreeBH_selections(
-        pvals = p_values, 
-        groups = groups, 
+        pvals = p_values,
+        groups = groups,
         q = rep(fdr_thres, num_levels)
       )
     },
@@ -187,22 +188,24 @@ treeBH_step <- function(matrix, fdr_thres, out_dir, method = "original", test = 
       )
     }
   )
-  
+
   colnames(treeBH_results) <- c("eGene", "eQTL", "Component", "ContextSpecific")
-  
+
   results <- cbind(id_mat, treeBH_results)
-  
+
   ## filter to only return when ContextSpecific column is 1
-  cols_to_return = names(id_mat)
-  results = results %>% filter(ContextSpecific == 1) %>% select(cols_to_return)
-  
+  cols_to_return <- names(id_mat)
+  results <- results %>%
+    filter(ContextSpecific == 1) %>%
+    select(dplyr::all_of(cols_to_return))
+
   write.table(
-    results, 
-    file       = file.path(out_dir, "treeBH_output.txt"),
-    sep       = "\t",
+    results,
+    file = file.path(out_dir, "treeBH_output.txt"),
+    sep = "\t",
     row.names = FALSE,
     col.names = TRUE,
-    quote     = FALSE
+    quote = FALSE
   )
 }
 
@@ -264,9 +267,10 @@ get_TreeBH_selections_datatable <- function(pvals, groups, q, test = "simes") {
       # Gets the children of all pvalues in the current group
       child_pvals <- group_pvals[cur_inds, cur_level + 1]
       agg_p <- switch(test[cur_level],
-                      simes = get_simes_p(child_pvals),
-                      fisher = get_fisher_p(child_pvals),
-                      stop("Options for parameter test are 'simes' and 'fisher'"))
+        simes = get_simes_p(child_pvals),
+        fisher = get_fisher_p(child_pvals),
+        stop("Options for parameter test are 'simes' and 'fisher'")
+      )
       group_pvals[cur_inds[1], cur_level] <- agg_p
     }
   }
@@ -277,20 +281,18 @@ get_TreeBH_selections_datatable <- function(pvals, groups, q, test = "simes") {
     }
     if (cur_level == 1) {
       sel_prev <- 1
-    }
-    else {
+    } else {
       sel_prev <- which(sel[, cur_level - 1] == 1)
     }
     for (parent_sel in sel_prev) {
       if (cur_level == 1) {
         parent_group_ind <- 1
         child_inds <- which(!is.na(group_pvals[, cur_level]))
-      }
-      else {
+      } else {
         parent_group_num <- groups[parent_sel, cur_level - 1]
         parent_group_ind <- min(which(groups[, cur_level - 1] == parent_group_num))
-        child_inds <- which(groups[, cur_level - 1] == parent_group_num & 
-                            !is.na(group_pvals[, cur_level]))
+        child_inds <- which(groups[, cur_level - 1] == parent_group_num &
+          !is.na(group_pvals[, cur_level]))
       }
       if (length(child_inds) > 1) {
         if (!requireNamespace("qvalue", quietly = TRUE)) {
@@ -301,20 +303,20 @@ get_TreeBH_selections_datatable <- function(pvals, groups, q, test = "simes") {
           )
         }
         sel_ind_within_group <- which(qvalue::qvalue(group_pvals[child_inds, cur_level],
-                                                     lambda = 0)$qvalue <=
-                                      q_adj[parent_group_ind, cur_level])
-      }
-      else {
-        sel_ind_within_group <- which(group_pvals[child_inds, cur_level] <= 
-                                      q_adj[parent_group_ind, cur_level])
+          lambda = 0
+        )$qvalue <=
+          q_adj[parent_group_ind, cur_level])
+      } else {
+        sel_ind_within_group <- which(group_pvals[child_inds, cur_level] <=
+          q_adj[parent_group_ind, cur_level])
       }
       sel[child_inds[sel_ind_within_group], cur_level] <- 1
       if (cur_level < L) {
         R_parent_sel <- length(sel_ind_within_group)
         n_parent_sel <- length(child_inds)
-        q_adj[child_inds[sel_ind_within_group], cur_level + 1] <- 
-          q[cur_level + 1] * q_adj[parent_sel, cur_level]/q[cur_level] * 
-          R_parent_sel/n_parent_sel
+        q_adj[child_inds[sel_ind_within_group], cur_level + 1] <-
+          q[cur_level + 1] * q_adj[parent_sel, cur_level] / q[cur_level] *
+            R_parent_sel / n_parent_sel
       }
     }
   }
@@ -350,15 +352,15 @@ get_TreeBH_selections_cpp <- function(pvals, groups, q, test = "simes") {
 
   # Check hierarchy structure using C++ function
   error <- checkNested(groups = groups, L = L)
-  if(error != "") {
+  if (error != "") {
     stop(error)
   }
 
   # Get group p-values using C++ function
   group_pvals <- getGroupPvalues(pvals, groups, N, L, test)
-  
+
   # Get selections using C++ function
   selections <- getGroupSelections(group_pvals, groups, q, N, L)
-  
+
   return(selections)
 }
