@@ -24,7 +24,7 @@ decomposition_step <- function(exp_mat_filename, data_dir) {
   if (!dir.exists(data_dir)) dir.create(data_dir)
   # %%%%%%%%%%%%%%% Read expression matrix, genes in columns, samples in rows.
   # exp_mat=read.table(file = paste0(data_dir,exp_mat_filename), sep = '\t')
-  exp_mat <- data.table::fread(file = exp_mat_filename, sep = "\t", data.table = F)
+  exp_mat <- data.table::fread(file = exp_mat_filename, sep = "\t", data.table = FALSE)
 
   # %%%%%%%%%%%%%%% Sample and context names
   design <- sapply(1:nrow(exp_mat), function(i) unlist(strsplit(exp_mat[, 1][i], split = " - "))[1])
