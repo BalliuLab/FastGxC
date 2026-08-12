@@ -197,7 +197,7 @@ treeBH_step <- function(matrix, fdr_thres, out_dir, method = "original", test = 
   cols_to_return <- names(id_mat)
   results <- results %>%
     filter(ContextSpecific == 1) %>%
-    select(cols_to_return)
+    select(dplyr::all_of(cols_to_return))
 
   write.table(
     results,
