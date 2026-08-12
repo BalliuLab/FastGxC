@@ -150,7 +150,7 @@ get_eGenes_multi_tissue_mod <- function(m_eqtl_out_dir, treeQTL_dir, tissue_name
       by.x = "family", by.y = "gene", all.x = TRUE, all.y = FALSE
     )
     n_sel_per_gene <- suppressWarnings(TreeQTL:::get_nsel_SNPs_per_gene_tissue_pair(sel_gene_info, cur_tissue_name, m_eqtl_out_file, R_G, nrow(eGene_pvals),
-      level3 = level3, silent = T
+      level3 = level3, silent = TRUE
     ))
 
     print(paste("Total number of associations for tissue", cur_tissue_name, "=", sum(n_sel_per_gene$n_sel_snp)))
