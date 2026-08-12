@@ -16,14 +16,16 @@
 #' @param  pv_threshold_cis P-value threshold for cis.
 #' @param  pv_threshold_tra P-value threshold for trans.
 #' @param  error_covariance Covariance matrix (or numeric()).
-#' 
+#'
 #' @return Writes cis-eQTLs and trans-eQTLs (optional) to file.
 #'
 #' @examples
 #' \dontrun{
 #' data_dir <- file.path(tempdir(), "")
-#' simulate_data(data_dir = data_dir, N = 10, n_genes = 5,
-#'               n_snps_per_gene = 10, n_contexts = 3, seed = 42)
+#' simulate_data(
+#'   data_dir = data_dir, N = 10, n_genes = 5,
+#'   n_snps_per_gene = 10, n_contexts = 3, seed = 42
+#' )
 #' decomposition_step(
 #'   exp_mat_filename = file.path(data_dir, "expression.txt"),
 #'   data_dir = data_dir
@@ -41,39 +43,37 @@
 #' }
 #'
 #' @export
-eQTL_mapping_step = function(SNP_file_name, 
-                             snps_location_file_name, 
-                             expression_file_name, 
-                             gene_location_file_name, 
-                             context, 
-                             out_dir,
-                             output_file_name_cis = file.path(out_dir, paste0(context, "_", shared_specific, ".cis_pairs.txt")),
-                             output_file_name_tra = file.path(out_dir, paste0(context, "_", shared_specific, ".trans_pairs.txt")),
-                             method = "MatrixEQTL",
-                             use_model = modelLINEAR,
-                             cis_dist = 1e6,
-                             pv_threshold_cis = 1,
-                             pv_threshold_tra = 0,
-                             error_covariance = numeric()){
-
+eQTL_mapping_step <- function(SNP_file_name,
+                              snps_location_file_name,
+                              expression_file_name,
+                              gene_location_file_name,
+                              context,
+                              out_dir,
+                              output_file_name_cis = file.path(out_dir, paste0(context, "_", shared_specific, ".cis_pairs.txt")),
+                              output_file_name_tra = file.path(out_dir, paste0(context, "_", shared_specific, ".trans_pairs.txt")),
+                              method = "MatrixEQTL",
+                              use_model = modelLINEAR,
+                              cis_dist = 1e6,
+                              pv_threshold_cis = 1,
+                              pv_threshold_tra = 0,
+                              error_covariance = numeric()) {
   setDTthreads(1)
-  
-  string1 = sprintf("Running analysis for %s \n", expression_file_name)
+
+  string1 <- sprintf("Running analysis for %s \n", expression_file_name)
   cat(string1)
-  
-  if(method == "MatrixEQTL"){
-    
-    #%%%%%%%%%%%%%%%%%%%%%%%%
-    #%%%%%%%%%%%%%%%%%%%%%%%% Read files
-    #%%%%%%%%%%%%%%%%%%%%%%%%
-    
+
+  if (method == "MatrixEQTL") {
+    # %%%%%%%%%%%%%%%%%%%%%%%%
+    # %%%%%%%%%%%%%%%%%%%%%%%% Read files
+    # %%%%%%%%%%%%%%%%%%%%%%%%
+
     ## Raw gene expression data with gene position
-    expression_mat=as.matrix(data.frame(data.table::fread(input = expression_file_name, header = T),row.names = 1, check.names = F))
-    genos = data.frame(fread(file = SNP_file_name, sep = '\t'),row.names = 1)
-    
+    expression_mat <- as.matrix(data.frame(data.table::fread(input = expression_file_name, header = TRUE), row.names = 1, check.names = FALSE))
+    genos <- data.frame(fread(file = SNP_file_name, sep = "\t"), row.names = 1)
+
     genepos <- data.table::fread(gene_location_file_name, sep = "\t", header = TRUE, data.table = FALSE)
-    names(genepos) <- tolower(names(genepos)) 
-    
+    names(genepos) <- tolower(names(genepos))
+
     genepos <- genepos |>
       dplyr::rename(
         geneid = dplyr::coalesce(names(genepos)[grepl("gene", names(genepos))][1], "geneid"),
@@ -81,28 +81,28 @@ eQTL_mapping_step = function(SNP_file_name,
         s2     = dplyr::coalesce(names(genepos)[grepl("end|s2", names(genepos))][1], "s2")
       ) |>
       dplyr::select(geneid, chr, s1, s2)
-    
+
     snpspos <- read.table(snps_location_file_name, header = TRUE)[, c("snpid", "chr", "pos")]
-    
+
     # Filter individuals with all NAs
-    expression_mat = data.frame(expression_mat) %>% select_if(~ !all(is.na(.)))
+    expression_mat <- data.frame(expression_mat) %>% select_if(~ !all(is.na(.)))
     # Filter individuals from genotypes
-    genos = genos[,colnames(expression_mat)]
-    
+    genos <- genos[, colnames(expression_mat)]
+
     ## Load genotype data
-    snps = SlicedData$new();
+    snps <- SlicedData$new()
     snps$CreateFromMatrix(as.matrix(genos))
-    
+
     snps$ColumnSubsample(which(snps$columnNames %in% colnames(expression_mat)))
     expression_mat <- expression_mat[, snps$columnNames]
-    
-    gene = SlicedData$new();
+
+    gene <- SlicedData$new()
     gene$CreateFromMatrix(as.matrix(expression_mat))
-    
-    #%%%%%%%%%%%%%%%%%%%%%%%%
-    #%%%%%%%%%%%%%%%%%%%%%%%% Run the analysis
-    #%%%%%%%%%%%%%%%%%%%%%%%%
-    
+
+    # %%%%%%%%%%%%%%%%%%%%%%%%
+    # %%%%%%%%%%%%%%%%%%%%%%%% Run the analysis
+    # %%%%%%%%%%%%%%%%%%%%%%%%
+
     Matrix_eQTL_main(
       snps = snps,
       gene = gene,
@@ -121,8 +121,7 @@ eQTL_mapping_step = function(SNP_file_name,
       min.pv.by.genesnp = FALSE,
       noFDRsaveMemory = FALSE
     )
-  }
-  else if(method == "tensorqtl"){
+  } else if (method == "tensorqtl") {
     SNP_file_name <- path.expand(SNP_file_name)
     snps_location_file_name <- path.expand(snps_location_file_name)
     gene_location_file_name <- path.expand(gene_location_file_name)
@@ -141,21 +140,21 @@ import builtins
 torch.set_num_threads(1)
 
 def run_tensorqtl(phenotype_df, phenotype_pos_df, genotype_df, variant_df, prefix=''):
-        
+
     if 's1' in phenotype_pos_df.columns and 's2' in phenotype_pos_df.columns:
         phenotype_pos_df.rename(columns={'s1': 'start', 's2': 'end'}, inplace=True)
     if 'chr' in variant_df.columns:
         variant_df.rename(columns={'chr': 'chrom'}, inplace=True)
     cis.map_nominal(genotype_df, variant_df, phenotype_df, phenotype_pos_df, prefix=prefix)
-    
+
 def combine_and_clean_parquets(prefix):
     files = glob.glob(f'{prefix}*.parquet')
     if not files:
         return None
-    
+
     # Read and concatenate using Python/Arrow
     df = pd.concat([pd.read_parquet(f) for f in files], ignore_index=True)
-    
+
     # Rename and select columns
     df = df.rename(columns={
         'variant_id': 'SNP',
@@ -163,76 +162,81 @@ def combine_and_clean_parquets(prefix):
         'slope': 'beta',
         'pval_nominal': 'p-value'
     })[['SNP', 'gene', 'beta', 'p-value']]
-    
+
     # Sort by p-value
     df = df.sort_values('p-value')
     return df
 
 builtins.run_tensorqtl = run_tensorqtl
 builtins.combine_and_clean_parquets = combine_and_clean_parquets
-        ")})
-    
+        ")
+    })
+
     expr <- read.table(expression_file_name, header = TRUE, sep = "\t", check.names = FALSE)
-    
+
     rownames(expr) <- expr[, 1]
     expr <- expr[, -1, drop = FALSE]
-    
+
     expr <- t(apply(expr, 1, function(x) {
       x[is.na(x)] <- mean(x, na.rm = TRUE)
       x
     }))
-    
+
     write.table(
       expr,
       file = expression_file_name,
       sep = "\t",
       row.names = TRUE,
-      col.names = NA,   
+      col.names = NA,
       quote = FALSE
     )
     phenotype_df <- suppressWarnings(read.table(expression_file_name, header = TRUE, row.names = 1))
     phenotype_pos_df <- suppressWarnings(read.table(gene_location_file_name, header = TRUE, row.names = 1))
     genotype_df <- suppressWarnings(read.table(SNP_file_name, header = TRUE, row.names = 1))
     variant_df <- suppressWarnings(read.table(snps_location_file_name, header = TRUE, row.names = 1))
-    
+
     py$phenotype_df <- phenotype_df
     py$phenotype_pos_df <- phenotype_pos_df
     py$genotype_df <- genotype_df
     py$variant_df <- variant_df
     tensorqtl_prefix <- file.path(out_dir, paste0(context, "_", shared_specific))
     py$prefix <- tensorqtl_prefix
-    
-    tryCatch({
-      py$run_tensorqtl(
-        py$phenotype_df,
-        py$phenotype_pos_df,
-        py$genotype_df,
-        py$variant_df,
-        prefix = py$prefix
-      )
-    }, error = function(e) {
-      message("TensorQTL failed for context: ", context)
-      message(e$message)
-    })
-    
+
+    tryCatch(
+      {
+        py$run_tensorqtl(
+          py$phenotype_df,
+          py$phenotype_pos_df,
+          py$genotype_df,
+          py$variant_df,
+          prefix = py$prefix
+        )
+      },
+      error = function(e) {
+        message("TensorQTL failed for context: ", context)
+        message(e$message)
+      }
+    )
+
     all_parquets_py <- py$combine_and_clean_parquets(py$prefix)
-    
+
     # Convert the cleaned Pandas DF to an R data frame
     all_parquets <- as.data.frame(all_parquets_py)
-    
+
     # Calculate FDR in R
     all_parquets$FDR <- p.adjust(all_parquets$`p-value`, method = "BH")
-    
-    # Write output
-    write.table(all_parquets, file = output_file_name_cis, sep = '\t', row.names = FALSE, quote = FALSE)
-    
-    # Clean up the individual parquet files
-    all_parquet_files <- list.files(path = dirname(py$prefix), 
-                                    pattern = paste0(basename(py$prefix), ".*\\.parquet$"), 
-                                    full.names = TRUE)
-    unlink(all_parquet_files)
-    } else {
-      stop("Invalid method. Use 'MatrixEQTL' or 'tensorqtl'")
-    }
-}
 
+    # Write output
+    write.table(all_parquets, file = output_file_name_cis, sep = "\t", row.names = FALSE, quote = FALSE)
+
+    # Clean up the individual parquet files
+    all_parquet_files <- list.files(
+      path = dirname(py$prefix),
+      pattern = paste0(basename(py$prefix), ".*\\.parquet$"),
+      full.names = TRUE
+    )
+    unlink(all_parquet_files)
+  } else {
+    stop("Invalid method. Use 'MatrixEQTL' or 'tensorqtl'")
+  }
+}
