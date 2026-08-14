@@ -635,7 +635,7 @@ treeQTL_step(
 @
 \end{CodeChunk}
 
-treeBH outputs a file of gene, SNP, context triplets denoting the significant pairs identified after multiple testing correction.s
+treeBH outputs a file of gene, SNP, context triplets denoting the significant pairs identified after multiple testing correction.
 \begin{CodeChunk}
 <<echo=FALSE, eval=FALSE>>=
 
