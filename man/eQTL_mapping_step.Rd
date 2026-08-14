@@ -11,10 +11,20 @@ eQTL_mapping_step(
   gene_location_file_name,
   context,
   out_dir,
-  output_file_name_cis = file.path(out_dir, paste0(context, "_", shared_specific,
-    ".cis_pairs.txt")),
-  output_file_name_tra = file.path(out_dir, paste0(context, "_", shared_specific,
-    ".trans_pairs.txt")),
+  output_file_name_cis = if (identical(context, "shared")) {
+     file.path(out_dir,
+    "shared.cis_pairs.txt")
+ } else {
+     file.path(out_dir, paste0(context,
+    "_specific.cis_pairs.txt"))
+ },
+  output_file_name_tra = if (identical(context, "shared")) {
+     file.path(out_dir,
+    "shared.trans_pairs.txt")
+ } else {
+     file.path(out_dir, paste0(context,
+    "_specific.trans_pairs.txt"))
+ },
   method = "MatrixEQTL",
   use_model = modelLINEAR,
   cis_dist = 1e+06,
@@ -60,9 +70,11 @@ Function to map cis eQTLs - cis window is defined as 1Mb
 }
 \examples{
 \dontrun{
-data_dir <- tempdir()
-simulate_data(data_dir = data_dir, N = 10, n_genes = 5,
-              n_snps_per_gene = 10, n_contexts = 3, seed = 42)
+data_dir <- file.path(tempdir(), "")
+simulate_data(
+  data_dir = data_dir, N = 10, n_genes = 5,
+  n_snps_per_gene = 10, n_contexts = 3, seed = 42
+)
 decomposition_step(
   exp_mat_filename = file.path(data_dir, "expression.txt"),
   data_dir = data_dir
@@ -73,7 +85,9 @@ eQTL_mapping_step(
   expression_file_name = file.path(data_dir, "context1_specific_expression.txt"),
   gene_location_file_name = file.path(data_dir, "geneloc.txt"),
   context = "context1",
-  out_dir = data_dir
+  out_dir = data_dir,
+  output_file_name_cis = file.path(data_dir, "context1_specific.cis_pairs.txt"),
+  output_file_name_tra = file.path(data_dir, "context1_specific.trans_pairs.txt")
 )
 }
 
