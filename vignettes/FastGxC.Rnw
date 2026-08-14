@@ -292,8 +292,9 @@ To install the required Python packages, please paste the following command into
 Next, start an R session and set the Python path:
 \begin{CodeChunk}
 <<eval=FALSE>>=
-use_python("/your/python/path/here", required = TRUE)
-py <- import_builtins()
+library(reticulate)
+reticulate::use_python("/your/python/path/here", required = TRUE)
+py <- reticulate::import_builtins()
 @
 \end{CodeChunk}
 
