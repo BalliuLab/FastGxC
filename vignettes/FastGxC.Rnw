@@ -659,10 +659,4 @@ There are possibilities to extend \pkg{FastGxC} to increase its power and applic
 
 \end{document}
 
-Proposed timeline:
-- Week of April 27: I will add Summary citations
-- Week of May 4: Your first review pass. I will address any comments or concerns
-- Week of May 11: Final review pass if needed and finalize refs.bib
-- Week of May 18: Final proofread and JSS style check
-- Week of May 25: Buffer for any remaining revisions and draft cover letter
-- Week of June 1: Final green-light from everyone and submit to JSS
+% (Removed internal planning timeline from vignette)
