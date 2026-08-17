@@ -1,0 +1,662 @@
+%\VignetteIndexEntry{FastGxC: An R Package for Fast and Powerful Context-Specific eQTL Mapping}
+%\VignetteEngine{knitr::knitr}
+%\VignetteEncoding{UTF-8}
+\documentclass[article]{jss}
+<<setup, include=FALSE>>=
+library(knitr)
+opts_chunk$set(eval=FALSE)
+@
+
+\usepackage{orcidlink,thumbpdf,lmodern}
+\usepackage{amsmath}
+\usepackage{tikz}
+\usetikzlibrary{positioning}
+
+\author{Charlie Wang \And Lena Krockenberger \And Brunilda Balliu \And Anthony Zhao}
+\Plainauthor{Charlie Wang, Lena Krockenberger, Brunilda Balliu, Anthony Zhao}
+
+\title{FastGxC: An R Package for Fast and Powerful Context-Specific eQTL 
+Mapping in Bulk and Single-Cell Data}
+\Plaintitle{FastGxC: An R Package for Fast and Powerful Context-Specific 
+eQTL Mapping in Bulk and Single-Cell Data}
+\Shorttitle{FastGxC: Context-Specific eQTL Mapping in R}
+
+\Abstract{
+  Mapping expression quantitative trait loci (eQTLs) is essential for understanding how genetic variation influences gene regulation across different contexts (i.e., cell types, tissues, and cellular states) and for linking disease-associated variants to their regulatory targets. There are many existing eQTL mapping approaches, but they face a fundamental tradeoff: linear mixed model (LMM) methods are statistically rigorous but computationally prohibitive at the transcriptome scale, while context-by-context mapping is fast but systematically underpowered and produces miscalibrated results. We present \pkg{FastGxC}, an \proglang{R} package that implements a fast, statistically principled framework for context-specific eQTL mapping in bulk and single-cell RNA-seq data. \pkg{FastGxC} decomposes gene expression into a context-shared component and context-specific components, then estimates genetic effects on each component independently using ultra-fast linear regression. This reparameterization is statistically equivalent to a powerful LMM with a genotype by context interaction while reducing runtime from years to minutes. The package provides an end-to-end workflow including data simulation, expression decomposition, eQTL mapping via \pkg{MatrixEQTL} \citep{Shabalin:2012} or \pkg{tensorqtl} 
+\citep{TaylorWeiner:2019}, and hierarchical FDR control across genes, SNPs, 
+and contexts via \pkg{TreeQTL} \citep{Peterson:2016} or \pkg{TreeBH} 
+\citep{Bogomolov:2020}. All analyses in this paper can be reproduced using the scripts provided in the package's GitHub Wiki.
+}
+
+\Keywords{eQTL mapping, context-specific, gene expression, \proglang{R}}
+\Plainkeywords{eQTL mapping, context-specific, pseudo-bulk, gene expression, R}
+
+\Address{
+  Charlie Wang (Corresponding Author)\\
+  Department of Statistics and Data Science\\
+  University of California, Los Angeles\\
+  Los Angeles, CA, USA\\
+  E-mail: \email{charliewang123@ucla.edu}\\
+  \emph{and}\\
+  Lena Krockenberger\\
+  Department of Computational Medicine\\
+  University of California, Los Angeles\\
+  Los Angeles, CA, USA\\
+  E-mail: \email{lkrocken@ucla.edu}\\
+  \emph{and}\\
+  Brunilda Balliu\\
+  Department of Computational Medicine\\
+  University of California, Los Angeles\\
+  Los Angeles, CA, USA\\
+  E-mail: \email{bballiu@ucla.edu}\\
+  \emph{and}\\
+  Anthony Zhao\\
+  Department of Mathematics\\
+  University of California, Los Angeles\\
+  Los Angeles, CA, USA\\
+  E-mail: \email{azhao05@g.ucla.edu}\\
+  
+  
+}
+
+\begin{document}
+
+\section{Summary}
+Over the past decade, genome-wide association studies (GWAS) have identified hundreds of thousands of genetic variants associated with complex traits and diseases \citep{Sollis:2022}. The majority of these variants are from non-coding regions, suggesting that their effects are mediated through transcriptional 
+regulation \citep{Maurano:2012, Nicolae:2010}. This has motivated the need to identify expression quantitative trait loci (eQTLs), genetic variants associated with changes in gene expression, and use them to link GWAS variants to their regulatory targets \citep{GTEx:2020, Gamazon:2018}. However, identification of disease-relevant eQTLs remains challenging for several reasons. The first is that most disease-relevant eQTLs are context-specific, meaning that the variant regulates the same gene's expression differently across cell types and tissues \citep{Umans:2021, Mostafavi:2023, Fujita:2024}. Second, both 
+bulk and single-cell RNA-sequencing studies rely on repeated sampling, where the donor provides samples across multiple contexts. This design introduces intra-individual correlation, which, if unaccounted for, limits the detection of eQTLs \citep{GTEx:2020, Yazar:2022}.
+
+There are many existing methods for mapping context-specific eQTLs, but none properly address all challenges. Existing methods either rely on linear mixed models (LMMs) to account for intra-individual correlation across contexts \citep{Strober:2024, Cuomo:2022, Kumasaka:2023}, which are statistically 
+rigorous but computationally expensive for large real-world datasets, or they map eQTLs separately in each context and define context-specificity post hoc \citep{GTEx:2020, Fujita:2024, Yazar:2022}, which is quick and computationally cheap but very underpowered, and can produce miscalibrated results.
+
+To address these limitations, we introduce FastGxC \citep{Krockenberger:2025}, a method that efficiently maps context-specific eQTLs by decomposing gene expression into a context-shared component and context-specific components. We then estimate genetic effects on each component using ultra-fast linear regression. This reparameterization is statistically equivalent to an LMM with a genotype by context interaction (LMM-GxC) while reducing computation time from years to minutes. \pkg{FastGxC} is an \proglang{R} package providing a flexible implementation of the FastGxC algorithm for bulk and single-cell RNA-seq data. All analyses in this paper can be reproduced using the same scripts provided in the package's GitHub Wiki at \url{https://github.com/BalliuLab/FastGxC/wiki}.
+
+
+\section{Statement of Need}
+Existing methods for mapping context-specific eQTLs broadly fall into two separate categories, each with its own limitations.
+
+First, linear mixed model (LMM)-based approaches with a genotype by context (GxC) interaction jointly model data across contexts and account for intra-individual correlation with a random intercept per individual. However, they suffer from a large computational burden, especially when applied to large datasets. In datasets with many individuals and contexts, an LMM-GxC model could take tens to upwards of 100 years. 
+
+On the other hand, context-by-context (CxC) approaches map eQTLs separately within each context and define context-specificity post hoc by comparing results across contexts. While computationally efficient, these approaches are systematically underpowered because they ignore intra-individual correlation and rely on ad hoc thresholds for defining context-specificity that can produce miscalibrated results. Furthermore, these approaches lose power by not leveraging information across contexts when identifying eQTLs.
+
+Existing methods for context-specific eQTL mapping face a crucial tradeoff between statistical rigor and computational efficiency. To address this gap, we present FastGxC, an R package providing a flexible implementation of the FastGxC algorithm. FastGxC provides (i) a statistically rigorous and well-calibrated framework for mapping context-specific eQTLs, and (ii) computational efficiency, reducing runtime from years to minutes.
+
+\section{Algorithm}
+\pkg{FastGxC} maps context-specific eQTLs in three steps. Let $E_{ijc}$ denote the normalized expression of gene $j$ in individual $i$ and context $c$, where contexts index cell types, tissues, or other cellular states $c \in \{1, \dots, C\}$, and let $G_{is}$ denote the genotype (minor allele dosage) of individual $i$ at SNP $s$. Assume individuals $i = 1, \dots, N$ are unrelated and that the expression has been adjusted for known technical and biological covariates.
+
+\textbf{Step 1: Expression decomposition.} \pkg{FastGxC} decomposes the expression of each gene into an individual-level context-shared component and context-specific deviations. Specifically, for every gene $j$ and individual $i$, we define
+
+\begin{equation}
+E_{ic} = E_{..} + \underbrace{(E_{i.} - E_{..})}_{E_i^{\mathrm{sh}}} + \underbrace{(E_{ic} - E_{i.})}_{E_{ic}^{\mathrm{sp}}}
+\end{equation}
+
+
+where $E_{..} = \left(\sum_{i=1}^{I} \sum_{c=1}^{C} E_{ic}\right) / (I \times C)$ is the average expression of the gene, computed over all $I$ individuals and all $C$ contexts, and $E_{i.} = \left(\sum_{c=1}^{C} E_{ic}\right) / C$ is the average expression of the gene for individual $i$, computed over all contexts. Here, $E_{..}$ is a term that is constant across individuals and contexts for each gene, $E_i^{\mathrm{sh}}$ is the context-shared expression component for individual $i$ and is constant across contexts for each gene and individual, and $E_{ic}^{\mathrm{sp}}$ is the context-$c$-specific expression component for individual $i$.
+
+\textbf{Step 2: Genetic effect estimation via linear regression.} \pkg{FastGxC} 
+estimates one shared and $C$ context-specific cis-genetic effects by regressing 
+the genotypes on each component using ultra-fast implementations of fixed-effect 
+linear regression models, i.e.,
+\begin{equation}
+\begin{aligned}
+E_i^{\mathrm{sh}} &= \alpha^{\mathrm{sh}} + \beta^{\mathrm{sh}} G_i + \varepsilon_i^{\mathrm{sh}}, \\[4pt]
+E_{i1}^{\mathrm{sp}} &= \alpha_1^{\mathrm{sp}} + \beta_1^{\mathrm{sp}} G_i + \varepsilon_{i1}^{\mathrm{sp}}, \\[2pt]
+&\;\;\vdots \\[2pt]
+E_{iC}^{\mathrm{sp}} &= \alpha_C^{\mathrm{sp}} + \beta_C^{\mathrm{sp}} G_i + \varepsilon_{iC}^{\mathrm{sp}},
+\end{aligned}
+\end{equation}
+where $\alpha^{\mathrm{sh}}, \alpha_1^{\mathrm{sp}}, \dots, \alpha_C^{\mathrm{sp}}$ 
+are intercepts, $G_i \in \{0, 1, 2\}$ is the genotype of individual $i$ coded as 
+the number of minor alleles, and $\beta^{\mathrm{sh}}, \beta_1^{\mathrm{sp}}, \dots, \beta_C^{\mathrm{sp}}$ 
+are the genetic effects on the shared and each of the context-specific expression 
+components. Finally, $\varepsilon_i^{\mathrm{sh}}, \varepsilon_{i1}^{\mathrm{sp}}, \dots, \varepsilon_{iC}^{\mathrm{sp}}$ 
+each normally distributed residual error with mean zero and variances 
+$\sigma_{\mathrm{sh}}^2, \sigma_{\mathrm{sp},1}^2, \dots, \sigma_{\mathrm{sp},C}^2$. 
+The total effect in context $c$ can be recovered as $\beta_c^{\mathrm{total}} = 
+\beta^{\mathrm{sh}} + \beta_c^{\mathrm{sp}}$. Because the shared and 
+context-specific components are orthogonal by construction, the models can be 
+fit independently, and each regression is univariate on residualized expression. 
+The full scan over all gene-SNP-context triples, therefore, reduces to $C + 1$ 
+independent ultra-fast matrix-eQTL passes, implemented in \pkg{FastGxC} via 
+\pkg{MatrixEQTL} \citep{Shabalin:2012} or, optionally, GPU-accelerated via 
+\pkg{tensorqtl} \citep{TaylorWeiner:2019}. This reparameterization is 
+statistically equivalent to the full linear mixed model with a gene-by-context 
+interaction (LMM-GxC) but reduces the runtime from years to minutes on 
+transcriptome-scale data. The proof for this statistical equivalence can be found in the supplement of the FastGxC paper \cite{Krockenberger:2025}.
+
+\textbf{Step 3: Hierarchical multiple testing correction.} Finally, to account 
+for multiple testing across genes, SNPs, and contexts, \pkg{FastGxC} employs 
+the hierarchical FDR-controlling procedure implemented in \pkg{TreeQTL} 
+\citep{Peterson:2016}. We define a gene-SNP pair as an eQTL if the SNP has a 
+significant effect on the shared or any of the specific components of the gene 
+expression, i.e., if the global null hypothesis 
+$H_0: \beta^{\mathrm{sh}} = \beta_1^{\mathrm{sp}} = \beta_2^{\mathrm{sp}} = \cdots = \beta_C^{\mathrm{sp}} = 0$ 
+is rejected. If an eQTL exists, we define a \emph{shared-eQTL} as a variant 
+with a statistically significant effect on the shared expression component, 
+i.e., if $H_0: \beta^{\mathrm{sh}} = 0$ is rejected, and a 
+\emph{context-specific eQTL} as a variant with a statistically significant 
+genetic effect on at least one context-specific expression component, i.e., 
+if the global null hypothesis 
+$H_0: \beta_1^{\mathrm{sp}} = \beta_2^{\mathrm{sp}} = \cdots = \beta_C^{\mathrm{sp}} = 0$ 
+is rejected. In addition, we define a \emph{specific-eQTL in context $c$} as 
+a variant with a statistically significant genetic effect on the context-$c$-specific 
+expression component, i.e., if the marginal null hypothesis 
+$H_0: \beta_c^{\mathrm{sp}} = 0$ is rejected. Figure~\ref{sfig:hierarchical_testing} 
+illustrates the hypothesis structures used by \pkg{FastGxC}.
+
+\begin{figure}[!htbp]
+    \centering
+
+    {\Large \textbf{A}}\\[0.5em]
+    \resizebox{\textwidth}{!}{%
+    \begin{tikzpicture}[
+      node distance=1cm and 0cm,
+      every node/.style={draw, rounded corners, minimum width=2.2cm, minimum height=1cm, align=center, fill=white}
+    ]
+    \node (gene1) {Gene 1};
+    \node (snp1) [below=of gene1, xshift=-3cm] {SNP 1 \\ $H_0: \beta^{sh} = \beta^{sp}_1= \beta^{sp}_2 = \ldots= 0$};
+    \node (dots_snp) [right=1.5cm of snp1, draw=none, minimum size=0pt] {\LARGE $\dots$};
+    \node (snps) [right=-1cm of dots_snp, xshift=2cm] {SNP S};
+    \node (vertical_dots) [below=of snps, draw=none, minimum size=0pt] {\LARGE $\vdots$};
+    \node (shared) [below left=of snp1, xshift=2cm] {Shared\\ $H_0: \beta^{sh} = 0$};
+    \node (specific) [below right=of snp1, xshift=-2cm] {Specific \\ $H_0: \beta^{sp}_1= \beta^{sp}_2 = \ldots= 0$};
+    \node (context1) [below left=of specific, xshift=2cm] {Context 1 \\ $H_0: \beta^{sp}_1 = 0 $};
+    \node (dots_context) [right=.5cm of context1, draw=none, minimum size=0pt] {\LARGE $\dots$};
+    \node (contexts) [right=.5cm of dots_context] {Context S \\ $H_0: \beta^{sp}_S = 0$};
+    \draw[-] (gene1) -- (snp1);
+    \draw[-] (gene1) -- (snps);
+    \draw[-] (snp1) -- (shared);
+    \draw[-] (snp1) -- (specific);
+    \draw[-] (specific) -- (context1);
+    \draw[-] (specific) -- (contexts);
+    \draw[-] (snps) -- (vertical_dots);
+    \node (dots_gene) [right=2cm of gene1, draw=none, minimum size=0pt] {\Large $\dots$};
+    \node (geneG) [right=1.5cm of dots_gene] {Gene G};
+    \node (vertical_dots2) [below=of geneG, draw=none, minimum size=0pt] {\LARGE $\vdots$};
+    \draw[-] (geneG) -- (vertical_dots2);
+    \end{tikzpicture}%
+    }
+
+    \vspace{1.5em}
+
+    {\Large \textbf{B}}\\[0.5em]
+    \resizebox{\textwidth}{!}{%
+    \begin{tikzpicture}[
+      node distance = 0.5 cm and 1cm,
+      every node/.style={draw, rounded corners, minimum width=2.2cm, minimum height=1cm, align=center, fill=white}
+    ]
+    \node (gene1) {Gene 1 - Shared};
+    \node (snp1) [below=of gene1, xshift=-2cm] {SNP 1 - Shared \\ $H_0: \beta^{sh} = 0$};
+    \node (dots_snp) [right=0cm of snp1, draw=none, minimum size=0pt] {\LARGE $\dots$};
+    \node (snps) [right=-2cm of dots_snp, xshift=2cm] {SNP S - Shared};
+    \draw[-] (gene1) -- (snp1);
+    \draw[-] (gene1) -- (snps);
+    \node (dots_gene) [right=1.5cm of gene1, draw=none, minimum size=0pt] {\Large $\dots$};
+    \node (geneG) [right=1cm of dots_gene] {Gene G - Shared};
+    \node (vertical_dots) [below=of geneG, draw=none, minimum size=0pt] {\LARGE $\vdots$};
+    \draw[-] (geneG) -- (vertical_dots);
+    \end{tikzpicture}%
+    }
+
+    \vspace{1em}
+
+    \resizebox{\textwidth}{!}{%
+    \begin{tikzpicture}[
+      node distance=1cm and 0cm,
+      every node/.style={draw, rounded corners, minimum width=2.2cm, minimum height=1cm, align=center, fill=white}
+    ]
+    \node (gene1) {Gene 1 - Specific};
+    \node (snp1) [below=of gene1, xshift=-3cm] {SNP 1 - Specific \\ $H_0: \beta^{sp}_1= \beta^{sp}_2 = \ldots= 0$};
+    \node (dots_snp) [right=1.5cm of snp1, draw=none, minimum size=0pt] {\LARGE $\dots$};
+    \node (snps) [right=-1cm of dots_snp, xshift=2cm] {SNP S - Specific};
+    \node (vertical_dots) [below=of snps, draw=none, minimum size=0pt] {\LARGE $\vdots$};
+    \node (context1) [below left=of snp1, xshift=1cm] {Context 1 \\ $H_0: \beta^{sp}_1 = 0 $};
+    \node (dots_context) [right=.5cm of context1, draw=none, minimum size=0pt] {\LARGE $\dots$};
+    \node (contexts) [right=.5cm of dots_context] {Context S \\ $H_0: \beta^{sp}_S = 0$};
+    \draw[-] (gene1) -- (snp1);
+    \draw[-] (gene1) -- (snps);
+    \draw[-] (snp1) -- (context1);
+    \draw[-] (snp1) -- (contexts);
+    \draw[-] (snps) -- (vertical_dots);
+    \node (dots_gene) [right=2cm of gene1, draw=none, minimum size=0pt] {\Large $\dots$};
+    \node (geneG) [right=1.5cm of dots_gene] {Gene G - Specific};
+    \node (vertical_dots2) [below=of geneG, draw=none, minimum size=0pt] {\LARGE $\vdots$};
+    \draw[-] (geneG) -- (vertical_dots2);
+    \end{tikzpicture}%
+    }
+
+    \caption{\textbf{Hierarchical hypothesis structures used by \pkg{FastGxC}.} 
+    \textbf{(A)} Four-level hierarchical structure used by \pkg{FastGxC} to 
+    adjust for multiple testing across genes (eGenes), gene-SNP pairs (eQTLs), 
+    gene-SNP-component triplets, and gene-SNP-component-context quadruplets. 
+    \textbf{(B)} Two-level (top) and three-level (bottom) hierarchical 
+    structures used to adjust for multiple testing for the shared (top) and 
+    Specific (bottom) eGenes/eQTLs in real data analysis.}
+    \label{sfig:hierarchical_testing}
+\end{figure}
+
+Users may alternatively apply \pkg{treeBH} \citep{Bogomolov:2020} to the output of Step 2, which 
+implements a four-level hierarchy (genes $\to$ SNPs $\to$ shared/specific 
+$\to$ contexts) that jointly adjusts for both shared and context-specific 
+effects simultaneously. This approach is more conservative and computationally 
+intensive, and is recommended only for datasets with a small number of tests. 
+Users may also apply \pkg{qvalue} \citep{Storey:2003} to construct custom 
+multiple-testing pipelines.
+
+\section{Usage}
+\subsection{Installation and Dependencies}
+The FastGxC package and its dependencies are available on GitHub and can be installed in R.
+
+First, please install these required dependencies:
+\begin{CodeChunk}
+<<eval=FALSE>>=
+if (!requireNamespace("qvalue", quietly = TRUE)) {
+  if (!require("BiocManager", quietly = TRUE)) 
+    install.packages("BiocManager")
+  BiocManager::install("qvalue")
+}
+install.packages(
+  "http://bioinformatics.org/treeqtl/TreeQTL_2.0.tar.gz",
+  repos = NULL)
+@
+\end{CodeChunk}
+
+Next, FastGxC can be directly installed using the devtools package in R:
+\begin{CodeChunk}
+<<eval=FALSE>>=
+if (!requireNamespace("devtools", quietly = TRUE)) {
+  install.packages("devtools")
+}
+devtools::install_github("BalliuLab/FastGxC")
+library(FastGxC)
+@
+\end{CodeChunk}
+
+Moreover, FastGxC supports Python integration (tensorqtl) for faster eQTL mapping. To enable this functionality, please ensure that Python is installed. Python version 3.7 or higher is required. 
+
+To check your Python setup, run the following command in your terminal:
+\begin{CodeChunk}
+<<engine="bash", eval=FALSE>>=
+which python3
+@
+\end{CodeChunk}
+
+To install the required Python packages, please paste the following command into your terminal:
+\begin{CodeChunk}
+<<engine="bash", eval=FALSE>>=
+/your/python/path/here -m pip install \
+  numpy pandas pyarrow rpy2 torch tensorqtl
+@
+\end{CodeChunk}
+
+Next, start an R session and set the Python path:
+\begin{CodeChunk}
+<<eval=FALSE>>=
+library(reticulate)
+reticulate::use_python("/your/python/path/here", required = TRUE)
+py <- reticulate::import_builtins()
+@
+\end{CodeChunk}
+
+\subsection{Simulate Data}
+FastGxC provides a built-in data simulator to generate synthetic datasets in the input format required by the package. The simulator enables (i) verification of a successful installation, (ii) validation of input/output schemas and pipeline wiring, and (iii) controlled end-to-end testing before analysis of empirical data. Users may specify sample size, numbers of genes and variants, context structure, allele frequencies, heritability, missingness, and residual correlation to reproduce a range of scenarios. For reproducibility, a random seed can be set before the simulation. 
+
+\code{simulate\_data()} generates synthetic genotype and gene expression data in user-defined contexts (e.g., cell types or tissues) in the exact input format required by FastGxC. Make sure that the data\_dir\_sim is writable; it will be created if absent. Please visit the GitHub Wiki for more information about its parameters and usage.
+\begin{CodeChunk}
+<<eval=FALSE>>=
+data_dir_sim <- "simulated_example/"
+n_contexts   <- 10
+simulate_data(
+  data_dir        = data_dir_sim,
+  N               = 300,
+  n_genes         = 100,
+  n_snps_per_gene = 1000,
+  n_contexts      = n_contexts,
+  maf             = 0.2,
+  w_corr          = 0.2,
+  missing         = 0.05,
+  hsq             = c(rep(0, n_contexts-1), 0.2),
+  mus             = rep(0, n_contexts),
+  cisDist         = 1e6,
+  seed            = 1
+)
+@
+\end{CodeChunk}
+
+The function writes four tab-delimited files to data\_dir\_sim. Unless noted, missing values will be encoded as NA. 
+
+\code{SNPs.txt} --- Genotype matrix (SNPs $\times$ individuals). 
+Rows index SNPs; columns index individuals; entries are copies of 
+minor alleles (0/1/2) or NA.
+
+\begin{CodeChunk}
+<<echo=FALSE, eval=FALSE>>=
+
+snpid  ind1  ind2  ind3  ind4  ind5  ...
+snp1      0     2     1    NA     0  ...
+snp2      1     2    NA     1     1  ...
+snp3      0     1     0     1     1  ...
+snp4      1    NA     0     1     1  ...
+snp5      0     0     0     1     1  ...
+@
+\end{CodeChunk}
+
+\code{snpsloc.txt} --- SNP annotations and context mask.
+Contains snpid, chromosome, position, followed by one column per context. Context columns use 1/0 to indicate whether the SNP is tested in that context.
+
+\begin{CodeChunk}
+<<echo=FALSE, eval=FALSE>>=
+
+snpid   chr   pos   context1  context2  ...  context10
+snp1    chr1   1        1         1           1
+snp2    chr1   1        1         1           0 
+snp3    chr1   1        1         0           1
+snp4    chr1   1        0         1           1
+snp5    chr1   1        1         1           1
+@
+\end{CodeChunk}
+
+\code{expression.txt} --- Expression matrix (design $\times$ genes)
+Each row corresponds to an individual–context pairing in the design column, followed by one column per gene.
+
+\begin{CodeChunk}
+<<echo=FALSE, eval=FALSE>>=
+
+design            gene1     gene2      gene3    ...   gene100
+ind1 - context1   0.4369    NA         -1.8113  ...   1.1721
+ind1 - context10  0.6437    -0.4357    -0.8296  ...  -0.3944
+ind1 - context2   0.1092    -0.1294    -0.3222  ...  -0.4939
+ind1 - context3   NA        -0.1947    -0.1111  ...  -0.9999
+ind1 - context4   0.8347    -0.9876    NA       ...  -0.3833
+@
+\end{CodeChunk}
+
+\code{geneloc.txt} --- Gene annotations and context mask
+Gene location file with geneid, chromosome, start (s1) and end (s2) positions of the gene, followed by one column per context. Context columns use 1/0 to indicate whether the gene is tested in that context.
+
+\begin{CodeChunk}
+<<echo=FALSE, eval=FALSE>>=
+
+geneid  chr   s1          s2          context1  context2  context3  context4
+gene1   chr1  0           1001            1         1         1         1
+gene2   chr1  100000001   100001001       1         1         1         1
+gene3   chr1  200000001   200001001       1         1         1         1
+gene4   chr1  300000001   300001001       1         1         0         1
+gene5   chr1  400000001   400001001       1         1         1         0
+gene6   chr1  500000001   500001001       1         1         1         1
+@
+\end{CodeChunk}
+
+\subsection{Decomposition Step}
+The decomposition\_step() function decomposes the input gene expression data across C contexts (e.g., tissues, cell types, or experimental conditions) into one shared and C context-specific components. By removing variation that is common across contexts, this step increases the power to detect context-specific eQTLs.
+\begin{CodeChunk}
+<<echo=FALSE, eval=FALSE>>=
+
+data_dir_decomp <- "simulated_example/"
+exp_mat_filename <- paste0(data_dir_decomp, "expression.txt")
+
+decomposition_step(exp_mat_filename, data_dir_decomp)
+@
+\end{CodeChunk}
+
+FastGxC natively supports missing expression values; imputation is not required. Before decomposition, ensure that all missing entries in the expression matrix are encoded as NA. This allows the model to correctly account for incomplete observations during fitting. 
+
+Moreover, FastGxC assumes an approximately Gaussian expression matrix. To ensure that your data fits these assumptions, you should perform a variance-stabilizing transformation (e.g., log2(TPM + 1)) or, preferably, quantile normalization before running FastGxC.
+
+In addition, to improve eQTL mapping power, we suggest residualizing the expression matrix for technical and biological covariates before running FastGxC. Common approaches include:
+
+- Regressing out measured factors (e.g., batch, sequencing depth, sex, age, or other known confounders).
+
+- Latent factor adjustment, such as PEER factors or PCA-derived covariates, to capture unmeasured sources of variation. We suggest using PCA-derived covariates.
+
+These preprocessing steps help ensure that the decomposition focuses on biologically meaningful variation rather than technical artifacts.
+
+The decomposition\_step() function expects an input expression matrix formatted with genes as columns and samples as rows. The first column must be labeled design and contain unique sample identifiers in the format "individual ID - context name" (e.g., ind1 - context3). Consistent naming is critical — mismatches in sample identifiers between the expression matrix and genotype data will cause errors in downstream steps.
+\begin{CodeChunk}
+<<echo=FALSE, eval=FALSE>>=
+
+design             gene1     gene2     gene3    ...   gene100
+ind1 - context1   0.4369    -1.7087    -1.8113  ...   1.1721
+ind1 - context10  0.6437    -0.4357    -0.8296  ...  -0.3944
+ind1 - context2   0.1092    -0.1294    -0.3222  ...  -0.4939
+ind1 - context3   0.1234    -0.1947    -0.1111  ...  -0.9999
+ind1 - context4   0.8347    -0.9876    -0.1490  ...  -0.3833
+@
+\end{CodeChunk}
+
+For C contexts, the decomposition\_step() function outputs C+1 files, one with the shared expression component (i.e., average expression of each gene and individual across context) and C with the specific expression component in each context (i.e., residual expression of each gene and individual in context after subtracting the shared component). Columns in each file correspond to individuals, and rows correspond to genes. The shared file looks identical to the C-specific files:
+\begin{CodeChunk}
+<<echo=FALSE, eval=FALSE>>=
+
+        ind1        ind2        ind3        ind4        ind5
+gene1  0.4321     -1.2345      0.5678     -0.8910      1.1203
+gene2 -0.9834      0.1342     -1.0923      0.2345     -0.7583
+gene3  1.2948      1.1023      0.8421      0.9104      1.0012
+gene4 -0.1243     -0.8934     -1.2098     -1.1342     -0.9981
+gene5  0.4587      0.5632      0.9983      1.2345      0.8231
+@
+\end{CodeChunk}
+
+\subsection{eQTL Mapping}
+FastGxC estimates genetic effects on the context-shared and each context-specific component using ultra-fast linear regression models. It uses the MatrixEQTL R package to perform cis-eQTL mapping using the eQTL\_mapping\_step() function. This function takes input genotypes, expression, and gene/SNP location files (see simulate data and decomposition sections for format of input files), and produces summary statistics in MatrixEQTL format. Below is an example code demonstration of how to run eQTL mapping on the shared and C-specific expression components from the simulated data:
+\begin{CodeChunk}
+<<eval=FALSE>>=
+input_dir <- "simulated_example/"
+out_dir <- input_dir
+expr_files <- list.files(input_dir,
+  pattern = "_specific_expression.txt$")
+nC <- length(expr_files)
+context_names <- paste0("context", seq(1, nC))
+all_contexts <- c(context_names, "shared")
+SNP_file_name <- file.path(input_dir, "SNPs.txt")
+snps_location_file_name <- file.path(input_dir, "snpsloc.txt")
+gene_location_file_name <- file.path(input_dir, "geneloc.txt")
+for (i in seq_along(all_contexts)) {
+  context <- all_contexts[i]
+  if (context == "shared") {
+    shared_specific <- "shared"
+    expression_file_name <- file.path(input_dir, 
+      "context_shared_expression.txt")
+  } else {
+    shared_specific <- "specific"
+    expression_file_name <- file.path(input_dir,
+      paste0(context, "_specific_expression.txt"))
+  }
+  eQTL_mapping_step(
+    SNP_file_name           = SNP_file_name,
+    snps_location_file_name = snps_location_file_name,
+    expression_file_name    = expression_file_name,
+    gene_location_file_name = gene_location_file_name,
+    context                 = context,
+out_dir                 = out_dir,
+    use_model               = modelLINEAR,
+    cis_dist                = 1e6,
+    pv_threshold_cis        = 1,
+    pv_threshold_tra        = 0,
+    error_covariance        = numeric()
+  )
+}
+@
+\end{CodeChunk}
+
+FastGxC also supports GPU-accelerated cis-eQTL mapping using tensorqtl, integrated via the reticulate R package. To enable this, simply pass method = "tensorqtl" to the eQTL\_mapping\_step() function. The inputs remain unchanged. This method is particularly useful for large datasets and provides substantial speedups. Please note that tensorQTL requires Python 3.7+ and appropriate libraries (tensorqtl, numpy, pandas, pyarrow, torch). Ensure your environment is properly configured.
+
+FastGxC will save C+1 summary statistics files in .txt format (see the output file example below) for compatibility with downstream FastGxC multiple testing adjustment steps:
+\begin{CodeChunk}
+<<echo=FALSE, eval=FALSE>>=
+
+SNP       gene    beta      p.value    FDR
+snp64928  gene65   0.4187   8.48e-07   0.0848
+snp42566  gene43  -0.3558   7.53e-06   0.3068
+snp22672  gene23  -0.3948   9.20e-06   0.3068
+snp73350  gene74   0.3445   1.60e-05   0.3998
+snp86064  gene87  -0.3715   3.10e-05   0.5505
+@
+\end{CodeChunk}
+
+FastGxC decomposes eQTL effects into a shared component and context-specific 
+deviations. By construction, specific effects represent deviations from the 
+mean effect across contexts. Positive values indicate stronger-than-average 
+effects; negative values indicate weaker-than-average effects. The full eQTL 
+effect size in each context $\beta_{c}$ can always be recovered by adding the 
+shared $\beta^{sh}$ and specific effects $\beta^{sp}_{c}$, i.e. $\beta_{c} = 
+\beta^{sh} + \beta^{sp}_{c}$.
+
+\begin{CodeChunk}
+<<eval=FALSE>>=
+input_dir <- "simulated_example/"
+shared <- read.table(
+  file.path(input_dir, "shared_shared.cis_pairs.txt"),
+  header = TRUE, stringsAsFactors = FALSE)
+specific_files <- list.files(input_dir,
+  pattern = "_specific\\.cis_pairs\\.txt$",
+  full.names = TRUE)
+total_effects <- lapply(specific_files, function(f) {
+  context <- gsub("_specific\\.cis_pairs\\.txt$", "", basename(f))
+  specific <- read.table(f, header = TRUE, stringsAsFactors = FALSE)
+  merged <- merge(shared, specific, by = c("SNP", "gene"),
+    suffixes = c(".sh", ".sp"))
+  merged$beta.total <- merged$beta.sh + merged$beta.sp
+  merged$context <- context
+  merged[, c("SNP", "gene", "context",
+    "beta.sh", "beta.sp", "beta.total")]
+})
+total_effects <- do.call(rbind, total_effects)
+head(total_effects)
+@
+\end{CodeChunk}
+
+\subsection{Multiple Testing Correction}
+FastGxC accounts for multiple hypothesis testing across genes, SNPs, and biological contexts using a hierarchical false discovery rate (FDR) controlling procedure. This step ensures proper correction at multiple levels (e.g., eGenes). 
+
+FastGxC leverages the TreeQTL R package to perform hierarchical multiple testing correction. The treeQTL\_step() function identifies both context-specific and shared eGenes and eAssociations by controlling FDR across a structured hypothesis space.
+
+TreeQTL requires input files formatted according to MatrixEQTL output conventions with p-values in increasing order (from smallest to largest). If you used alternative software like FastQTL, ensure the outputs are formatted correctly.
+
+You can optionally use other multiple testing frameworks, such as mashR, which may yield higher power under some assumptions.
+
+Please note that this function expects files to be named in the same way as the output files from FastGxC's eQTL mapping function.
+\begin{CodeChunk}
+<<eval=FALSE>>=
+data_dir <- "simulated_example/"
+out_dir <- data_dir
+snps_location_file_name <- file.path(data_dir, "snpsloc.txt")
+gene_location_file_name <- file.path(data_dir, "geneloc.txt")
+fdr_thresh <- 0.05
+cisDist <- 1e6
+@
+\end{CodeChunk}
+
+The first option is to perform separate multiple testing adjustments for shared (two-level hierarchy) and specific (three-level hierarchy) effects. This is the strategy used in real data analysis in the manuscript. This will return files with shared and specific eGenes and eAssociations.
+\begin{CodeChunk}
+<<eval=FALSE>>=
+treeQTL_step(
+  data_dir                = data_dir,
+  snps_location_file_name = snps_location_file_name,
+  gene_location_file_name = gene_location_file_name,
+  context_names           = context_names,
+  out_dir                 = out_dir,
+  cisDist                 = cisDist,
+  fdr_thresh              = fdr_thresh,
+  four_level              = FALSE,
+  qtl_type                = "cis"
+)
+@
+\end{CodeChunk}
+
+treeQTL outputs (i) An eAssociation file per context with context-specific SNP-gene pairs. (ii) A shared eGenes file with each shared eGene and its corresponding p-value. (iii) A specific eGene file with a 1 corresponding to the gene being a significant eGene in that particular context. A specific eGene p-value file reporting all p-value combinations for each significant eGene across all contexts.
+
+(i) eAssoc\_by\_gene.contextX\_specific\_cis.txt
+\begin{CodeChunk}
+<<echo=FALSE, eval=FALSE>>=
+
+gene     SNP         beta                t.stat                 p.value
+gene1   snp1    0.368806164512139    5.22116640681629    3.34162013627681e-07
+gene2   snp2    0.423778936498137    5.67707930801708    3.25067273366269e-08
+gene3   snp3    0.437418111526831    4.98770927957996    1.03954367213838e-06
+gene4   snp4    0.462203944759481    5.36767905554521    1.60616150168334e-07
+gene5   snp5    0.5495476161726      6.75612550096954    7.44084554530075e-11
+@
+\end{CodeChunk}
+
+(ii) shared\_eGenes.txt
+\begin{CodeChunk}
+<<echo=FALSE, eval=FALSE>>=
+
+family         fam_p           n_sel
+gene1   1.40293481281949e-09    1
+gene2   1.14061108736042e-14    1
+gene3   3.35665396944856e-12    1
+gene4   3.03128672087492e-13    1
+gene5   3.55458571779909e-11    2
+@
+\end{CodeChunk}
+
+(iii) specific\_eGenes.txt
+\begin{CodeChunk}
+<<echo=FALSE, eval=FALSE>>=
+
+gene    context1    context2   context3   context4   context5        
+gene1     0            0           0          0          0       
+gene2     1            0           0          0          0      
+gene3     0            0           0          0          0 
+gene4     0            0           0          0          0 
+gene5     0            0           0          0          0  
+@
+\end{CodeChunk}
+
+(iii) specific\_eGenes\_pvalues.txt
+\begin{CodeChunk}
+<<echo=FALSE, eval=FALSE>>=
+
+gene         context1                context2                context3
+gene1     0.623725805802154       0.62987552431814        0.888515702826435
+gene2     5.25935519127471e-05    0.571468511077802       0.33413356471655
+gene3     0.634499598043283       0.725117041047635       0.148461103453072
+gene4     0.59324391608897        0.44380106630737        0.378896498929132
+gene5     0.0929487562865985      0.756063879067856       0.54373880161688
+@
+\end{CodeChunk}
+
+The second option is to perform multiple testing adjustments across shared and specific effects using the four-level hierarchy shown below. Note that this strategy uses TreeBH in its implementation and is computationally intensive and should only be used in settings with a small number of tests performed.
+\begin{CodeChunk}
+<<eval=FALSE>>=
+treeQTL_step(
+  data_dir                = data_dir,
+  snps_location_file_name = snps_location_file_name,
+  gene_location_file_name = gene_location_file_name,
+  context_names           = context_names,
+  out_dir                 = out_dir,
+  cisDist                 = cisDist,
+  fdr_thresh              = fdr_thresh,
+  four_level              = TRUE,
+  qtl_type                = "cis"
+)
+@
+\end{CodeChunk}
+
+treeBH outputs a file of gene, SNP, context triplets denoting the significant pairs identified after multiple testing correction.
+\begin{CodeChunk}
+<<echo=FALSE, eval=FALSE>>=
+
+gene_name     snp_name    context_name
+gene1           snp1       context1
+gene2           snp2       context2
+gene3           snp3       context2
+gene4           snp4       context3
+gene5           snp5       context4
+@
+\end{CodeChunk}
+
+
+\section{Reproducibility and Dependencies}
+All examples in this paper can be reproduced using the scripts provided in the package's GitHub Wiki at \url{https://github.com/BalliuLab/FastGxC/wiki}. The analyses were performed under \proglang{R} version 4.3.2 with \pkg{FastGxC} version 1.0.0. The package depends on \pkg{MatrixEQTL} version 2.3 \citep{Shabalin:2012} (with \pkg{tensorqtl} version 1.0.8 \citep{TaylorWeiner:2019} as an alternative GPU-accelerated option) for eQTL mapping, and \pkg{TreeQTL} version 2.0 \citep{Peterson:2016} (with \pkg{treeBH} as an alternative option) for hierarchical multiple testing correction. Additional dependencies include \pkg{qvalue} version 2.34.0 \citep{Storey:2003}, \pkg{devtools} version 2.4.5, and standard tidyverse packages (\pkg{dplyr} $\geq$ 1.1.0, \pkg{tidyr} $\geq$ 1.3.0, \pkg{data.table} $\geq$ 1.14.0). Note that \pkg{qvalue} and \pkg{TreeQTL} require manual installation as described in the Installation and Dependencies subsection under the Usage section. All remaining dependencies are automatically installed and loaded upon installation of the \pkg{FastGxC} package. Optional Python integration via \pkg{tensorqtl} requires \proglang{Python} $\geq$ 3.7 with \pkg{numpy}, \pkg{pandas}, \pkg{pyarrow}, \pkg{rpy2}, and \pkg{torch}. The package passes all standard \code{R CMD check} tests without errors or warnings.
+
+\section{Implementation and Future Work}
+There are possibilities to extend \pkg{FastGxC} to increase its power and applicability. The current implementation assumes a single shared component across all contexts, which may not capture finer subgroup structures such as brain tissues in GTEx \citep{GTEx:2020}. Incorporating hierarchical decompositions could improve estimates of context-group-specific eQTL effects and context-specific eQTL effects. Additionally, the current decomposition defines context-specificity as deviation from the average effect across all contexts; adjusting the method for baseline-context comparisons would expand its applicability to time-course and environmental perturbation experiments. Further improvements could come from extending \pkg{FastGxC} to handle non-normal phenotypes using a generalized linear model, or from integrating fine-mapping approaches such as SuSiE \citep{Wang:2020} to refine candidate causal variants at significant loci. Finally, integration with single-cell-aware context-specific eQTL methods such as CellRegMap \citep{CuomoCellRegMap:2022} and SAIGE-QTL \citep{Zhou:2022} would enable direct benchmarking and hybrid workflows on large-scale single-cell RNA-seq datasets.
+
+\bibliography{refs}
+
+\end{document}
+
+% (Removed internal planning timeline from vignette)
