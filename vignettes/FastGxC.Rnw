@@ -69,7 +69,7 @@ bulk and single-cell RNA-sequencing studies rely on repeated sampling, where the
 There are many existing methods for mapping context-specific eQTLs, but none properly address all challenges. Existing methods either rely on linear mixed models (LMMs) to account for intra-individual correlation across contexts \citep{Strober:2024, Cuomo:2022, Kumasaka:2023}, which are statistically 
 rigorous but computationally expensive for large real-world datasets, or they map eQTLs separately in each context and define context-specificity post hoc \citep{GTEx:2020, Fujita:2024, Yazar:2022}, which is quick and computationally cheap but very underpowered, and can produce miscalibrated results.
 
-To address these limitations, we introduce FastGxC \citep{Krockenberger:2025}, a method that efficiently maps context-specific eQTLs by decomposing gene expression into a context-shared component and context-specific components. We then estimate genetic effects on each component using ultra-fast linear regression. This reparameterization is statistically equivalent to an LMM with a genotype by context interaction (LMM-GxC) while reducing computation time from years to minutes. \pkg{FastGxC} is an \proglang{R} package providing a flexible implementation of the FastGxC algorithm for bulk and single-cell RNA-seq data. All analyses in this paper can be reproduced using the same scripts provided in the package's GitHub Wiki at \url{https://github.com/BalliuLab/FastGxC/wiki}.
+To address these limitations, we introduce FastGxC \citep{Krockenberger:2026}, a method that efficiently maps context-specific eQTLs by decomposing gene expression into a context-shared component and context-specific components. We then estimate genetic effects on each component using ultra-fast linear regression. This reparameterization is statistically equivalent to an LMM with a genotype by context interaction (LMM-GxC) while reducing computation time from years to minutes. \pkg{FastGxC} is an \proglang{R} package providing a flexible implementation of the FastGxC algorithm for bulk and single-cell RNA-seq data. All analyses in this paper can be reproduced using the same scripts provided in the package's GitHub Wiki at \url{https://github.com/BalliuLab/FastGxC/wiki}.
 
 
 \section{Statement of Need}
@@ -122,7 +122,7 @@ independent ultra-fast matrix-eQTL passes, implemented in \pkg{FastGxC} via
 \pkg{tensorqtl} \citep{TaylorWeiner:2019}. This reparameterization is 
 statistically equivalent to the full linear mixed model with a gene-by-context 
 interaction (LMM-GxC) but reduces the runtime from years to minutes on 
-transcriptome-scale data. The proof for this statistical equivalence can be found in the supplement of the FastGxC paper \cite{Krockenberger:2025}.
+transcriptome-scale data. The proof for this statistical equivalence can be found in the supplement of the FastGxC paper \cite{Krockenberger:2026}.
 
 \textbf{Step 3: Hierarchical multiple testing correction.} Finally, to account 
 for multiple testing across genes, SNPs, and contexts, \pkg{FastGxC} employs 
