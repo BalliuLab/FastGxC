@@ -1,15 +1,42 @@
-citHeader("To cite FastGxC in publications use:")
+citHeader("To cite the FastGxC R package or its underlying method, use the appropriate reference:")
 
 bibentry(
-  bibtype  = "Article",
-  title    = "FastGxC: Fast and powerful context-specific eQTL mapping in bulk and single-cell data",
-  author   = c(
-    person("Brunilda", "Balliu"),
-    person("Lena", "Krockenberger"),
+  bibtype = "Manual",
+  title = "FastGxC: Efficient and Powerful Software for Simulating Data and Detecting Context-specific eQTL Effects in Multi-context Genomic Studies",
+  author = c(
     person("Charlie", "Wang"),
-    person("Anthony", "Zhao")
+    person("Lena", "Krockenberger"),
+    person("Anthony", "Zhao"),
+    person("Brunilda", "Balliu")
   ),
-  journal  = "Cell Genomics",
-  year     = "2026",
-  doi      = "10.1016/j.xgen.2026.101250"
+  year = "2026",
+  note = "R package version 1.0.0",
+  url = "https://github.com/BalliuLab/FastGxC"
+)
+
+# Published method paper.
+bibentry(
+  bibtype = "Article",
+  title = "FastGxC: Fast and powerful context-specific eQTL mapping in bulk and single-cell data",
+  author = c(
+    person("Lena", "Krockenberger"),
+    person("Andrew", "Lu"),
+    person("Mike", "Thompson"),
+    person("Lise A.", "Tucker"),
+    person("Cuining", "Liu"),
+    person("M. Grace", "Gordon"),
+    person("Amanda", "Ramste"),
+    person("Ivan", "Carcamo-Orive"),
+    person("Joshua W.", "Knowles"),
+    person("Andy", "Dahl"),
+    person("Chun Jimmie", "Ye"),
+    person("Noah", "Zaitlen"),
+    person("Brunilda", "Balliu")
+  ),
+  journal = "Cell Genomics",
+  volume = "6",
+  number = "6",
+  pages = "101250",
+  year = "2026",
+  doi = "10.1016/j.xgen.2026.101250"
 )
