@@ -32,7 +32,7 @@ and contexts via \pkg{TreeQTL} \citep{Peterson:2016} or \pkg{TreeBH}
 \Plainkeywords{eQTL mapping, context-specific, pseudo-bulk, gene expression, R}
 
 \Address{
-  Charlie Wang (Corresponding Author)\\
+  Charlie Wang\\
   Department of Statistics and Data Science\\
   University of California, Los Angeles\\
   Los Angeles, CA, USA\\
@@ -44,7 +44,7 @@ and contexts via \pkg{TreeQTL} \citep{Peterson:2016} or \pkg{TreeBH}
   Los Angeles, CA, USA\\
   E-mail: \email{lkrocken@ucla.edu}\\
   \emph{and}\\
-  Brunilda Balliu\\
+  Brunilda Balliu (Corresponding Author)\\
   Department of Computational Medicine\\
   University of California, Los Angeles\\
   Los Angeles, CA, USA\\
