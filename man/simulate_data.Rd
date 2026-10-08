@@ -75,7 +75,6 @@ outputs an expression matrix file, a genotype matrix file, a SNP location file, 
 Function to generate simulated SNP and expression data
 }
 \examples{
-\dontrun{
 data_dir <- file.path(tempdir(), "")
 simulate_data(
   data_dir = data_dir,
@@ -85,6 +84,5 @@ simulate_data(
   n_contexts = 3,
   seed = 42
 )
-}
 
 }
