@@ -1,7 +1,7 @@
 %\VignetteIndexEntry{FastGxC: An R Package for Fast and Powerful Context-Specific eQTL Mapping}
 %\VignetteEngine{knitr::knitr}
 %\VignetteEncoding{UTF-8}
-\documentclass[article]{jss}
+\documentclass[article,shortnames]{jss}
 <<setup, include=FALSE>>=
 library("knitr")
 opts_chunk$set(eval = FALSE)
@@ -9,11 +9,12 @@ opts_chunk$set(eval = FALSE)
 
 \usepackage{orcidlink,thumbpdf,lmodern}
 \usepackage{amsmath}
+\usepackage{amssymb}
 \usepackage{tikz}
 \usetikzlibrary{positioning}
 
-\author{Charlie Wang \And Lena Krockenberger \And Brunilda Balliu \And Anthony Zhao}
-\Plainauthor{Charlie Wang, Lena Krockenberger, Brunilda Balliu, Anthony Zhao}
+\author{Charlie Wang \And Lena Krockenberger \And Anthony Zhao \And Brunilda Balliu}
+\Plainauthor{Charlie Wang, Lena Krockenberger, Anthony Zhao, Brunilda Balliu}
 
 \title{FastGxC: An R Package for Fast and Powerful Context-Specific eQTL
 Mapping in Bulk and Single-Cell Data}
@@ -22,10 +23,7 @@ eQTL Mapping in Bulk and Single-Cell Data}
 \Shorttitle{FastGxC: Context-Specific eQTL Mapping in R}
 
 \Abstract{
-  Mapping expression quantitative trait loci (eQTLs) is essential for understanding how genetic variation influences gene regulation across different contexts (i.e., cell types, tissues, and cellular states) and for linking disease-associated variants to their regulatory targets. There are many existing eQTL mapping approaches, but they face a fundamental tradeoff: linear mixed model (LMM) methods are statistically rigorous but computationally prohibitive at the transcriptome scale, while context-by-context mapping is fast but systematically underpowered and produces miscalibrated results. We present \pkg{FastGxC}, an \proglang{R} package that implements a fast, statistically principled framework for context-specific eQTL mapping in bulk and single-cell RNA-seq data. \pkg{FastGxC} decomposes gene expression into a context-shared component and context-specific components, then estimates genetic effects on each component independently using ultra-fast linear regression. This reparameterization is statistically equivalent to a powerful LMM with a genotype-by-context interaction while reducing runtime from years to minutes. The package provides an end-to-end workflow including data simulation, expression decomposition, eQTL mapping via \pkg{MatrixEQTL} \citep{Shabalin:2012} or \pkg{tensorqtl}
-\citep{TaylorWeiner:2019}, and hierarchical FDR control across genes, SNPs,
-and contexts via \pkg{TreeQTL} \citep{Peterson:2016} or \pkg{TreeBH}
-\citep{Bogomolov:2020}. All analyses in this paper can be reproduced using the scripts provided in the package's GitHub Wiki.
+  Mapping expression quantitative trait loci (eQTLs) is essential for understanding how genetic variation influences gene regulation across different contexts (i.e., cell types, tissues, and cellular states) and for linking disease-associated variants to their regulatory targets. Many eQTL mapping approaches exist, but current methods are generally grouped into two categories, each of which faces fundamental limitations. Linear mixed model (LMM) methods can model context-specificity and are statistically rigorous but computationally prohibitive at the transcriptome scale. In contrast, context-by-context mapping is fast but underpowered and relies on ad-hoc definitions of context-specificity. We present \pkg{FastGxC}, an \proglang{R} package that implements a fast, statistically principled framework for context-specific eQTL mapping in bulk and single-cell RNA-seq data. \pkg{FastGxC} decomposes gene expression into a context-shared component and context-specific components, then estimates genetic effects on each component independently using ultra-fast linear regression. This reparameterization is equivalent to an LMM with a genotype-by-context interaction while reducing runtime from years to minutes. The package provides an end-to-end workflow including data simulation, expression decomposition, eQTL mapping via \pkg{MatrixEQTL}   or \pkg{tensorqtl}, and hierarchical FDR control across genes, SNPs, and contexts via \pkg{TreeQTL} or \pkg{TreeBH}. All analyses in this paper can be reproduced using the scripts provided in the package's GitHub Wiki.
 }
 
 \Keywords{eQTL mapping, context-specific, pseudo-bulk, gene expression, \proglang{R}}
@@ -44,45 +42,43 @@ and contexts via \pkg{TreeQTL} \citep{Peterson:2016} or \pkg{TreeBH}
   Los Angeles, CA, USA\\
   E-mail: \email{lkrocken@ucla.edu}\\
   \emph{and}\\
-  Brunilda Balliu (Corresponding Author)\\
-  Department of Computational Medicine\\
-  University of California, Los Angeles\\
-  Los Angeles, CA, USA\\
-  E-mail: \email{bballiu@ucla.edu}\\
-  \emph{and}\\
   Anthony Zhao\\
   Department of Mathematics\\
   University of California, Los Angeles\\
   Los Angeles, CA, USA\\
   E-mail: \email{azhao05@g.ucla.edu}\\
+  \emph{and}\\
+  Brunilda Balliu (Corresponding Author)\\
+  Department of Computational Medicine\\
+  University of California, Los Angeles\\
+  Los Angeles, CA, USA\\
+  E-mail: \email{bballiu@ucla.edu}\\
 
 
 }
-
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
 \begin{document}
-
+\raggedbottom
 \section{Summary}
-Over the past decade, genome-wide association studies (GWAS) have identified hundreds of thousands of genetic variants associated with complex traits and diseases \citep{Sollis:2022}. The majority of these variants are from non-coding regions, suggesting that their effects are mediated through transcriptional
-regulation \citep{Maurano:2012, Nicolae:2010}. This has motivated the need to identify expression quantitative trait loci (eQTLs), genetic variants associated with changes in gene expression, and use them to link GWAS variants to their regulatory targets \citep{GTEx:2020, Gamazon:2018}. However, identification of disease-relevant eQTLs remains challenging for several reasons. The first is that most disease-relevant eQTLs are context-specific, meaning that these variants can regulate the same gene's expression differently across cell types and tissues \citep{Umans:2021, Mostafavi:2023, Fujita:2024}. Second, both
-bulk and single-cell RNA-sequencing studies rely on repeated sampling, where the donor provides samples across multiple contexts. This design introduces intra-individual correlation, which, if unaccounted for, limits the detection of eQTLs \citep{GTEx:2020, Yazar:2022}.
 
-There are many existing methods for mapping context-specific eQTLs, but none properly address all challenges. Existing methods either rely on linear mixed models (LMMs) to account for intra-individual correlation across contexts \citep{Strober:2024, CuomoCellRegMap:2022, Kumasaka:2023}, which are statistically
-rigorous but computationally expensive for large real-world datasets, or they map eQTLs separately in each context and define context-specificity post hoc \citep{GTEx:2020, Fujita:2024, Yazar:2022}, which is computationally efficient but underpowered and can produce miscalibrated results.
+Over the past decade, genome-wide association studies (GWAS) have identified hundreds of thousands of genetic variants associated with complex traits and diseases \citep{Sollis:2022}. The majority of these variants lie in non-coding regions, suggesting that their effects are mediated through transcriptional regulation \citep{Maurano:2012, Nicolae:2010}. This has motivated the identification of expression quantitative trait loci (eQTLs), genetic variants associated with changes in gene expression, to link GWAS variants to their regulatory targets \citep{GTEx:2020, Gamazon:2018}. By connecting genetic variation to gene expression, eQTL mapping helps identify candidate disease-associated genes and the tissues or cell types in which genetic risk may act \citep{Umans:2021, Mostafavi:2023, GTEx:2020}.
 
-To address these limitations, we introduce FastGxC \citep{Krockenberger:2026}, a method that efficiently maps context-specific eQTLs by decomposing gene expression into a context-shared component and context-specific components. We then estimate genetic effects on each component using ultra-fast linear regression. This reparameterization is statistically equivalent to an LMM with a genotype-by-context interaction (LMM-GxC) while reducing computation time from years to minutes. \pkg{FastGxC} is an \proglang{R} package providing a flexible implementation of the FastGxC algorithm for bulk and single-cell RNA-seq data. All analyses in this paper can be reproduced using the same scripts provided in the package's GitHub Wiki at \url{https://github.com/BalliuLab/FastGxC/wiki}.
+However, identifying disease-relevant eQTLs remains challenging. Genetic regulatory effects can differ across cell types, tissues, and cellular states, making context-specific eQTL mapping essential for understanding the mechanisms underlying complex diseases \citep{Umans:2021, Mostafavi:2023, Fujita:2024}. Furthermore, many bulk and single-cell RNA-sequencing studies collect repeated measurements from the same individuals across multiple contexts, introducing intra-individual correlation that must be accounted for during statistical analysis \citep{GTEx:2020, Yazar:2022, CuomoCellRegMap:2022}. Existing approaches face a tradeoff between statistical rigor and computational efficiency, limiting the scalability and power of context-specific eQTL mapping \citep{Strober:2024, CuomoCellRegMap:2022, Kumasaka:2023, Krockenberger:2026}.
 
+To address these challenges, we introduce FastGxC \citep{Krockenberger:2026}, a method that efficiently maps context-specific eQTLs by decomposing gene expression into a context-shared component and context-specific components. Genetic effects on each component are then estimated using ultra-fast linear regression. This reparameterization is statistically equivalent to a linear mixed model with a genotype-by-context interaction (LMM-GxC), while reducing computation time from years to minutes. \pkg{FastGxC} is an \proglang{R} package providing a flexible implementation of the FastGxC algorithm for bulk and single-cell RNA-seq data. All analyses in this paper can be reproduced using the scripts provided in the package's GitHub Wiki at \url{https://github.com/BalliuLab/FastGxC/wiki}.
 
 \section{Statement of need}
-Existing methods for mapping context-specific eQTLs broadly fall into two categories, each with its own limitations.
 
-First, linear mixed model (LMM)-based approaches with a genotype-by-context (GxC) interaction jointly model data across contexts and account for intra-individual correlation with a random intercept per individual. However, they suffer from a large computational burden, especially when applied to large datasets. In datasets with many individuals and contexts, an LMM-GxC model could take tens to upwards of 100 years.
+Existing methods for mapping context-specific eQTLs broadly fall into two categories, each with important limitations.
 
-On the other hand, context-by-context (CxC) approaches map eQTLs separately within each context and define context-specificity post hoc by comparing results across contexts. While computationally efficient, these approaches are systematically underpowered because they ignore intra-individual correlation and rely on ad hoc thresholds for defining context-specificity that can produce miscalibrated results. Furthermore, these approaches lose power by not leveraging information across contexts when identifying eQTLs.
+Linear mixed model (LMM)-based approaches jointly model gene expression across contexts, incorporating genotype-by-context (GxC) interactions and individual-level random intercepts to account for intra-individual correlation \citep{Strober:2024, CuomoCellRegMap:2022, Kumasaka:2023}. Although statistically rigorous, these methods are computationally expensive and becoming increasingly difficult to scale to genomic datasets with large numbers of individuals and contexts. For datasets with many individuals and contexts, fitting an LMM-GxC model across all gene-variant pairs can require decades or longer of computation \citep{Krockenberger:2026}.
 
-Existing methods for context-specific eQTL mapping face a crucial tradeoff between statistical rigor and computational efficiency. To address this gap, we present \pkg{FastGxC}, an \proglang{R} package providing a flexible implementation of the FastGxC algorithm. \pkg{FastGxC} provides (i) a statistically rigorous and well-calibrated framework for mapping context-specific eQTLs, and (ii) computational efficiency, reducing runtime from years to minutes.
+Alternatively, context-by-context (CxC) approaches map eQTLs independently within each context and determine context-specificity post hoc by setting arbitrary significance thresholds and comparing results across contexts \citep{GTEx:2020, Fujita:2024, Yazar:2022}. Because they rely on fast linear regression within each context, CxC methods are computationally efficient, but they fail to leverage information across contexts. Moreover, relying on ad hoc thresholds to distinguish shared from context-specific effects can reduce statistical power and produce miscalibrated results \citep{Krockenberger:2026}.
+
+These limitations highlight the need for a method that combines the statistical rigor of joint modeling with the computational efficiency of simpler regression-based approaches. To address this gap, we present \pkg{FastGxC}, an \proglang{R} package implementing a statistically rigorous and computationally efficient framework for mapping shared and context-specific eQTLs. \pkg{FastGxC} decomposes expression across contexts and leverages fast linear regression, which enables joint eQTL analyses across contexts, reducing years of computation time to minutes \citep{Krockenberger:2026}.
 
 \section{Algorithm}
-\pkg{FastGxC} maps context-specific eQTLs in three steps. Let $E_{ic}$ denote the normalized expression of a gene in individual $i$ and context $c$, where contexts index cell types, tissues, or other cellular states $c \in \{1, \dots, C\}$, and let $G_i$ denote the genotype (minor allele dosage) of individual $i$. Assume individuals $i = 1, \dots, I$ are unrelated and that the expression has been adjusted for known technical and biological covariates.
+\pkg{FastGxC} maps context-specific eQTLs in three steps. Let $E_{ic}$ denote the normalized expression of a gene in individual $i$ and context $c$, where contexts index cell types, tissues, or other cellular states $c \in \{1, \dots, C\}$, and let $G_i$ denote the genotype (minor allele dosage) of individual $i$. Assume individuals $i = 1, \dots, I$ are unrelated and that the expression has been adjusted for known and latent technical and biological covariates.
 
 \textbf{Step 1: Expression decomposition.} \pkg{FastGxC} decomposes the expression of each gene into an individual-level context-shared component and context-specific deviations. Specifically, for every gene and individual $i$, we define
 
@@ -91,7 +87,14 @@ E_{ic} = E_{..} + \underbrace{(E_{i.} - E_{..})}_{E_i^{\mathrm{sh}}} + \underbra
 \end{equation}
 
 
-where $E_{..} = \left(\sum_{i=1}^{I} \sum_{c=1}^{C} E_{ic}\right) / (I \times C)$ is the average expression of the gene, computed over all $I$ individuals and all $C$ contexts, and $E_{i.} = \left(\sum_{c=1}^{C} E_{ic}\right) / C$ is the average expression of the gene for individual $i$, computed over all contexts. Here, $E_{..}$ is a term that is constant across individuals and contexts for each gene, $E_i^{\mathrm{sh}}$ is the context-shared expression component for individual $i$ and is constant across contexts for each gene and individual, and $E_{ic}^{\mathrm{sp}}$ is the context-$c$-specific expression component for individual $i$.
+where $E_{..} = \left(\sum_{i=1}^{I} \sum_{c=1}^{C} E_{ic}\right) / (I \times C)$
+is the global mean expression across individuals and contexts, and
+$E_{i.} = \left(\sum_{c=1}^{C} E_{ic}\right) / C$
+is the mean expression for individual $i$ across contexts.
+The term $E_i^{\mathrm{sh}}$ represents the context-shared
+expression component for individual $i$, which is constant across
+contexts, while $E_{ic}^{\mathrm{sp}}$ represents the
+context-specific deviation in context $c$.
 
 \textbf{Step 2: Genetic effect estimation via linear regression.} \pkg{FastGxC}
 estimates one shared cis-genetic effect and $C$ context-specific cis-genetic effects by regressing
@@ -117,12 +120,9 @@ The total effect in context $c$ can be recovered as $\beta_c^{\mathrm{total}} =
 context-specific components are orthogonal by construction, the models can be
 fit independently, and each regression is univariate on residualized expression.
 The full scan over all gene-SNP-context triples, therefore, reduces to $C + 1$
-independent ultra-fast matrix-eQTL passes, implemented in \pkg{FastGxC} via
+independent ultra-fast eQTL-mapping runs, implemented in \pkg{FastGxC} via
 \pkg{MatrixEQTL} \citep{Shabalin:2012} or, optionally, GPU-accelerated via
-\pkg{tensorqtl} \citep{TaylorWeiner:2019}. This reparameterization is
-statistically equivalent to the full linear mixed model with a genotype-by-context
-interaction (LMM-GxC) but reduces the runtime from years to minutes on
-transcriptome-scale data. The proof for this statistical equivalence can be found in the supplement of the FastGxC paper \cite{Krockenberger:2026}.
+\pkg{tensorqtl} \citep{TaylorWeiner:2019}. The statistical equivalence of this reparameterization to the full LMM-GxC is established in the supplementary material of \citet{Krockenberger:2026}.
 
 \textbf{Step 3: Hierarchical multiple testing correction.} Finally, to account
 for multiple testing across genes, SNPs, and contexts, \pkg{FastGxC} employs
@@ -136,15 +136,26 @@ with a statistically significant effect on the shared expression component,
 i.e., if $H_0: \beta^{\mathrm{sh}} = 0$ is rejected, and a
 \emph{context-specific eQTL} as a variant with a statistically significant
 genetic effect on at least one context-specific expression component, i.e.,
-if the global null hypothesis
+if the null hypothesis
 $H_0: \beta_1^{\mathrm{sp}} = \beta_2^{\mathrm{sp}} = \cdots = \beta_C^{\mathrm{sp}} = 0$
 is rejected. In addition, we define a \emph{specific-eQTL in context $c$} as
 a variant with a statistically significant genetic effect on the context-$c$-specific
 expression component, i.e., if the marginal null hypothesis
 $H_0: \beta_c^{\mathrm{sp}} = 0$ is rejected. Figure~\ref{sfig:hierarchical_testing}
-illustrates the hypothesis structures used by \pkg{FastGxC}.
+illustrates the \pkg{FastGxC} hypothesis structure.
 
-\begin{figure}[!htbp]
+The \pkg{FastGxC} R-package implements this hierarchical multiple testing correction scheme in two different ways. The first is a four-level hierarchy implemented using \pkg{TreeBH} \citep{Bogomolov:2020} (Figure~\ref{sfig:hierarchical_testing}A). In this hierarchy, testing proceeds from genes to gene-SNP pairs, followed by tests
+for shared and context-specific genetic effects, and finally
+individual context-specific effects. \pkg{FastGxC} also supports separate hierarchies for shared and
+context-specific eQTLs, implemented using \pkg{TreeQTL} \citep{Peterson:2016} (Figure~\ref{sfig:hierarchical_testing}B).
+For shared effects, a two-level hierarchy tests genes followed
+by gene-SNP pairs. For context-specific effects, a three-level
+hierarchy tests genes, gene-SNP pairs, and individual contexts.
+Thus, the four-level approach jointly considers shared and
+context-specific effects, whereas the separate hierarchies
+evaluate them independently.
+
+\begin{figure}[!p]
     \centering
 
     {\Large \textbf{A}}\\[0.5em]
@@ -228,20 +239,189 @@ illustrates the hypothesis structures used by \pkg{FastGxC}.
     \caption{Hierarchical hypothesis structures used by \pkg{FastGxC}.
     (A) Four-level hierarchical structure used by \pkg{FastGxC} to
     adjust for multiple testing across genes (eGenes), gene-SNP pairs (eQTLs),
-    gene-SNP-component triplets, and gene-SNP-component-context quadruplets.
+    gene-SNP-component triplets, and tests of individual context-specific effects.
     (B) Two-level (top) and three-level (bottom) hierarchical
     structures used to adjust for multiple testing for the shared (top) and
     specific (bottom) eGenes/eQTLs in the real-data analysis.}
     \label{sfig:hierarchical_testing}
 \end{figure}
 
-Users may alternatively apply \pkg{TreeBH} \citep{Bogomolov:2020} to the output of Step 2, which
-implements a four-level hierarchy (genes $\to$ SNPs $\to$ shared/specific
-$\to$ contexts) that jointly adjusts for both shared and context-specific
-effects simultaneously. This approach is more conservative and computationally
-intensive, and is recommended only for datasets with a small number of tests.
-Users may also apply \pkg{qvalue} \citep{Storey:2003} to construct custom
-multiple-testing pipelines.
+The four-level \pkg{TreeBH} approach is more conservative and
+computationally intensive than the separate hierarchies and is
+recommended only for datasets with a small number of tests.
+Users may also apply \pkg{qvalue} \citep{Storey:2003}
+to construct custom multiple-testing pipelines.
+
+
+\subsection{Relationship between FastGxC and context-by-context estimates}
+
+We first establish the relationship between FastGxC and
+context-by-context (CxC) effect-size estimates, following
+\citet{Krockenberger:2026}.
+
+For a fixed gene, assume that expression across contexts
+follows the linear model
+\begin{equation}
+E_i^0 = G_i\beta^0 + \epsilon_i,
+\qquad \epsilon_i \in \mathbb{R}^C,
+\end{equation}
+where $E^0 \in \mathbb{R}^{N \times C}$ represents gene
+expression across $N$ individuals and $C$ contexts,
+$G \in \mathbb{R}^{N \times S}$ is the covariate matrix
+containing $S$ genetic variants, and
+$\beta^0 \in \mathbb{R}^{S \times C}$ contains their
+context-level genetic effects. The residual errors
+$\epsilon_i$ are independent across individuals, with
+cross-context covariance matrix $\Sigma$.
+
+Define the context-centered expression as
+\begin{equation}
+E_i = E_i^0 - \bar{E}_i \mathbf{1}_C^T,
+\qquad
+E_{ic} = E_{ic}^0 - \bar{E}_i,
+\end{equation}
+where $\mathbf{1}_C \in \mathbb{R}^C$ is a vector of ones
+and $\bar{E}_i$ denotes individual $i$'s mean expression
+across contexts.
+
+For any row vector $X \in \mathbb{R}^{1 \times N}$,
+\begin{equation}
+XE = XE^0 - X\bar{E}\mathbf{1}_C^T.
+\end{equation}
+
+In particular, consider the regression operator
+\[
+X = \frac{G_j^T}{\|G_j\|^2}
+\]
+for a centered genotype vector $G_j$ corresponding
+to SNP $j$. Let
+\[
+XE = \hat{\beta}, \qquad
+XE^0 = \hat{\beta}^0, \qquad
+X\bar{E} = \bar{\beta},
+\]
+denote the FastGxC context-specific estimates,
+the CxC estimates, and the FastGxC shared estimate,
+respectively.
+
+It follows that
+\begin{equation}
+\boxed{
+\hat{\beta}_c
+=
+\hat{\beta}_c^0 - \bar{\beta}
+}
+\end{equation}
+for every context $c$. Equivalently,
+\begin{equation}
+\hat{\beta}_c^0
+=
+\bar{\beta} + \hat{\beta}_c.
+\end{equation}
+
+Thus, the total genetic effect reconstructed from
+the shared and context-specific FastGxC components
+is exactly equal to the corresponding CxC estimate
+under the stated linear-model assumptions.
+
+This relationship also extends to regression models
+with covariate adjustment, simultaneous estimation
+of multiple SNP effects, and certain ridge regression
+or kinship-based mixed models when the same
+regularization is applied across contexts.
+
+
+\subsection{Relationship between FastGxC and CxC standard errors}
+
+Although the total effect-size estimates from FastGxC and CxC
+are identical under the assumptions above, their standard errors
+for detecting context-specific effects can differ. In particular,
+FastGxC removes variation shared across contexts, which can
+improve precision and statistical power \citep{Krockenberger:2026}.
+
+From the preceding derivation,
+$\hat{\beta}_c = \hat{\beta}_c^0 - \bar{\beta}$.
+Therefore,
+\begin{equation}
+\begin{aligned}
+\operatorname{Var}(\hat{\beta}_c)
+&= \operatorname{Var}(\hat{\beta}_c^0 - \bar{\beta}) \\
+&= \operatorname{Var}(\hat{\beta}_c^0)
+ + \operatorname{Var}(\bar{\beta})
+ - 2\operatorname{Cov}(\hat{\beta}_c^0,\bar{\beta}) \\
+&\approx \operatorname{Var}(\hat{\beta}_c^0)
+ - \operatorname{Var}(\bar{\beta}).
+\end{aligned}
+\end{equation}
+
+
+For example, suppose the residual errors have an
+exchangeable covariance structure,
+\begin{equation}
+\Sigma = \sigma^2 I_C + sJ_C,
+\end{equation}
+where $I_C$ is the $C \times C$ identity matrix,
+$J_C$ is the $C \times C$ matrix of ones,
+$\sigma^2$ represents context-specific residual
+variation, and $s$ represents shared residual variation.
+
+Under this structure, the variance relationship
+above is exact:
+
+\begin{equation}
+\begin{aligned}
+\operatorname{Var}(\hat{\beta}_c)
+&= \frac{1}{\|G_j\|_2^2}
+\left[
+(\sigma^2+s)
+-\left(\frac{\sigma^2}{C}+s\right)
+\right] \\
+&\approx \frac{\sigma^2}{\|G_j\|_2^2}.
+\end{aligned}
+\end{equation}
+
+Thus, the shared residual variation $s$ cancels
+when estimating context-specific genetic effects.
+As the number of contexts increases, the variance
+approaches $\|X\|_2^2 \sigma^2$, rather than
+$\|X\|_2^2(\sigma^2+s)$ for CxC estimation.
+
+The approximation assumes that contexts are approximately
+exchangeable, such that the covariance between a given
+context's effect estimate and the shared estimate is
+approximately equal to the variance of the shared estimate.
+
+Under this assumption, removing shared variation reduces
+the variance of the context-specific effect estimate relative
+to the corresponding CxC estimate. Consequently, FastGxC
+can obtain smaller standard errors and greater power to
+identify context-specific genetic effects.
+
+This improvement concerns the estimation of context-specific
+deviations, not the reconstructed total effect, which remains
+equivalent to the CxC estimate.
+
+
+\subsection{Comparison with linear mixed models}
+
+Linear mixed models with genotype-by-context interactions
+(LMM-GxC) explicitly account for within-individual
+correlation when testing for context-specific genetic
+effects with a random intercept per individual. 
+FastGxC achieves statistical power comparable to
+LMM-GxC in the simulation settings considered by
+\citet{Krockenberger:2026}, while avoiding the
+computational cost of repeatedly fitting mixed models.
+
+Unlike LMM-GxC, FastGxC does not require fitting a
+computationally expensive mixed model for each
+gene-SNP pair. Instead, it performs independent
+linear regressions on the decomposed components,
+enabling substantially faster genome-wide analysis.
+
+\clearpage
+
+%% I think here we should add a section similar to the supplementary note in FastGxC - basically the math of how the effect sizes are equivalent to LMM
 
 \section{Usage}
 \subsection{Installation and dependencies}
@@ -280,6 +460,9 @@ To check your \proglang{Python} setup, run the following command in your termina
 which python3
 @
 \end{CodeChunk}
+
+Replace \code{/your/python/path/here} with the path to your
+Python executable, as returned by \code{which python3}.
 
 To install the required \proglang{Python} packages, please paste the following command into your terminal:
 \begin{CodeChunk}
@@ -353,7 +536,7 @@ snp5    chr1   1        1         1           1
 
 \end{verbatim}
 
-\code{expression.txt} --- Expression matrix (design $\times$ genes)
+\code{expression.txt} --- Expression matrix (design $\times$ genes).
 Each row corresponds to an individual–context pairing in the design column, followed by one column per gene.
 
 \begin{verbatim}
@@ -367,7 +550,7 @@ ind1 - context4   0.8347    -0.9876    NA       ...  -0.3833
 
 \end{verbatim}
 
-\code{geneloc.txt} --- Gene annotations and context mask
+\code{geneloc.txt} --- Gene annotations and context mask.
 Contains geneid, chromosome, start (s1) and end (s2) positions of the gene, followed by one column per context. Context columns use 1/0 to indicate whether the gene is tested in that context.
 
 \begin{verbatim}
@@ -383,9 +566,9 @@ gene6   chr1  500000001   500001001       1         1         1         1
 \end{verbatim}
 
 \subsection{Decomposition step}
-The \code{decomposition\_step()} function decomposes the input gene expression data across $C$ contexts (e.g., tissues, cell types, or experimental conditions) into one shared component and $C$ context-specific components. By removing variation that is common across contexts, this step increases the power to detect context-specific eQTLs.
+The \code{decomposition\_step()} function implements the expression decomposition described in Section~3, producing one shared component and $C$ context-specific components.
 \begin{CodeChunk}
-<<echo=FALSE, eval=FALSE>>=
+<<echo=TRUE, eval=FALSE>>=
 
 data_dir_decomp <- "simulated_example/"
 exp_mat_filename <- paste0(data_dir_decomp, "expression.txt")
@@ -434,7 +617,7 @@ gene5  0.4587      0.5632      0.9983      1.2345      0.8231
 \end{verbatim}
 
 \subsection{eQTL mapping}
-\pkg{FastGxC} estimates genetic effects on the context-shared component and each context-specific component using ultra-fast linear regression models. It uses the \pkg{MatrixEQTL} \proglang{R} package to perform cis-eQTL mapping using the \code{eQTL\_mapping\_step()} function. This function takes input genotypes, expression, and gene/SNP location files (see the Simulate data and Decomposition step subsections for input file formats), and produces summary statistics in \pkg{MatrixEQTL} format. Below is an example code demonstration of how to run eQTL mapping on the shared and $C$ context-specific expression components from the simulated data:
+The \code{eQTL\_mapping\_step()} function performs cis-eQTL mapping on the decomposed expression components using \pkg{MatrixEQTL}. It takes genotype, expression, and gene/SNP location files as inputs and produces summary statistics in \pkg{MatrixEQTL} format. The following example demonstrates the mapping workflow:
 \begin{CodeChunk}
 <<eval=FALSE>>=
 input_dir <- "simulated_example/"
@@ -475,7 +658,15 @@ for (i in seq_along(all_contexts)) {
 @
 \end{CodeChunk}
 
-\pkg{FastGxC} also supports GPU-accelerated cis-eQTL mapping using \pkg{tensorqtl}, integrated via the \pkg{reticulate} \proglang{R} package. To enable this, simply pass \code{method = "tensorqtl"} to the \code{eQTL\_mapping\_step()} function. The inputs remain unchanged. This method is particularly useful for large datasets and provides substantial speedups. Please note that \pkg{tensorqtl} requires \proglang{Python} $\geq$ 3.7 and appropriate libraries (\pkg{numpy}, \pkg{pandas}, \pkg{pyarrow}, and \pkg{torch}). Ensure your environment is properly configured.
+\pkg{FastGxC} also supports GPU-accelerated cis-eQTL mapping using
+\pkg{tensorqtl}, integrated via the \pkg{reticulate} \proglang{R}
+package. The \code{eQTL\_mapping\_step()} function enables this
+option through \code{method = "tensorqtl"}, without requiring
+changes to the inputs. GPU acceleration can provide substantial
+speedups for large datasets. Note that \pkg{tensorqtl} requires
+\proglang{Python} $\geq$ 3.7 and appropriate libraries
+(\pkg{numpy}, \pkg{pandas}, \pkg{pyarrow}, and \pkg{torch}).
+Ensure your environment is properly configured.
 
 \pkg{FastGxC} will save $C + 1$ summary statistics files in \code{.txt} format (see the output file example below) for compatibility with downstream \pkg{FastGxC} multiple testing adjustment steps:
 
@@ -490,13 +681,12 @@ snp86064  gene87  -0.3715   3.10e-05   0.5505
 
 \end{verbatim}
 
-\pkg{FastGxC} decomposes eQTL effects into a shared component and context-specific
-deviations. By construction, specific effects represent deviations from the
-mean effect across contexts. Positive values indicate stronger-than-average
-effects; negative values indicate weaker-than-average effects. The full eQTL
-effect size in each context $\beta_{c}$ can always be recovered by adding the
-shared $\beta^{sh}$ and specific effects $\beta^{sp}_{c}$, i.e., $\beta_{c} =
-\beta^{sh} + \beta^{sp}_{c}$.
+The total eQTL effect in each context can be recovered by summing the
+shared and context-specific effects, as described in Section~3:
+\[
+\beta_c = \beta^{\mathrm{sh}} + \beta_c^{\mathrm{sp}}.
+\]
+The following example demonstrates this calculation using the mapping outputs.
 
 \begin{CodeChunk}
 <<eval=FALSE>>=
@@ -523,15 +713,19 @@ head(total_effects)
 \end{CodeChunk}
 
 \subsection{Multiple testing correction}
-\pkg{FastGxC} accounts for multiple hypothesis testing across genes, SNPs, and biological contexts using a hierarchical false discovery rate (FDR)-controlling procedure. This procedure controls the FDR across the structured levels of hypothesis testing.
+The \code{treeQTL\_step()} function performs hierarchical multiple testing
+correction using \pkg{TreeQTL}, identifying shared and context-specific
+eGenes and eAssociations.
 
-\pkg{FastGxC} leverages the \pkg{TreeQTL} \proglang{R} package to perform hierarchical multiple testing correction. The \code{treeQTL\_step()} function identifies both context-specific and shared eGenes and eAssociations by controlling FDR across a structured hypothesis space.
+Input files must follow \pkg{MatrixEQTL} output conventions, with
+$p$~values sorted in ascending order. Files generated by alternative
+software, such as \pkg{FastQTL}, should be reformatted accordingly.
+File names must also follow the conventions used by \pkg{FastGxC}'s
+eQTL mapping function.
 
-\pkg{TreeQTL} requires input files formatted according to \pkg{MatrixEQTL} output conventions with $p$~values in increasing order (from smallest to largest). If you used alternative software like \pkg{FastQTL}, ensure the outputs are formatted correctly.
+The output can additionally be integrated with methods such as
+\pkg{mashr} to improve eQTL mapping power.
 
-The output can also be integrated with methods such as \pkg{mashr} to improve power for eQTL mapping.
-
-Please note that this function expects files to be named in the same way as the output files from \pkg{FastGxC}'s eQTL mapping function.
 \begin{CodeChunk}
 <<eval=FALSE>>=
 data_dir <- "simulated_example/"
@@ -646,10 +840,45 @@ gene5           snp5       context4
 
 
 \section{Reproducibility and dependencies}
-All examples in this paper can be reproduced using the scripts provided in the package's GitHub Wiki at \url{https://github.com/BalliuLab/FastGxC/wiki}. The analyses were performed under \proglang{R} version 4.3.2 with \pkg{FastGxC} version 1.0.0. The package depends on \pkg{MatrixEQTL} version 2.3 \citep{Shabalin:2012} (with \pkg{tensorqtl} version 1.0.8 \citep{TaylorWeiner:2019} as an alternative GPU-accelerated option) for eQTL mapping, and \pkg{TreeQTL} version 2.0 \citep{Peterson:2016} (with \pkg{TreeBH} as an alternative option) for hierarchical multiple testing correction. Additional dependencies include \pkg{qvalue} version 2.34.0 \citep{Storey:2003}, \pkg{devtools} version 2.4.5, and standard tidyverse packages (\pkg{dplyr} $\geq$ 1.1.0, \pkg{tidyr} $\geq$ 1.3.0, \pkg{data.table} $\geq$ 1.14.0). Note that \pkg{qvalue} and \pkg{TreeQTL} require manual installation as described in the Installation and dependencies subsection under the Usage section. All remaining dependencies are automatically installed and loaded upon installation of the \pkg{FastGxC} package. Optional \proglang{Python} integration via \pkg{tensorqtl} requires \proglang{Python} $\geq$ 3.7 with \pkg{numpy}, \pkg{pandas}, \pkg{pyarrow}, \pkg{rpy2}, and \pkg{torch}. The package passes all standard \code{R CMD check} tests without errors or warnings.
 
-\section{Implementation and future work}
-Several extensions could increase the power and applicability of \pkg{FastGxC}. The current implementation assumes a single shared component across all contexts, which may not capture finer subgroup structures such as brain tissues in GTEx \citep{GTEx:2020}. Incorporating hierarchical decompositions could improve estimates of both context-group-specific and context-specific eQTL effects. Additionally, the current decomposition defines context-specificity as a deviation from the average effect across all contexts; adjusting the method for baseline-context comparisons would expand its applicability to time-course and environmental perturbation experiments. Further improvements could include extending \pkg{FastGxC} to handle non-normal phenotypes using generalized linear models or integrating fine-mapping approaches such as SuSiE \citep{Wang:2020} to refine candidate causal variants at significant loci. Finally, integration with single-cell-aware context-specific eQTL methods such as CellRegMap \citep{CuomoCellRegMap:2022} and SAIGE-QTL \citep{Zhou:2022} would enable direct benchmarking and hybrid workflows on large-scale single-cell RNA-seq datasets.
+All examples in this paper can be reproduced using scripts available in the
+package's GitHub Wiki at
+\url{https://github.com/BalliuLab/FastGxC/wiki}.
+The analyses were performed using \proglang{R} version 4.3.2 and
+\pkg{FastGxC} version 1.0.0.
+
+The software environment included \pkg{MatrixEQTL} (2.3)
+\citep{Shabalin:2012}, \pkg{tensorqtl} (1.0.8)
+\citep{TaylorWeiner:2019}, \pkg{TreeQTL} (2.0)
+\citep{Peterson:2016}, \pkg{qvalue} (2.34.0)
+\citep{Storey:2003}, \pkg{devtools} (2.4.5),
+\pkg{dplyr} ($\geq$ 1.1.0), \pkg{tidyr} ($\geq$ 1.3.0),
+and \pkg{data.table} ($\geq$ 1.14.0).
+Optional \pkg{tensorqtl} integration requires \proglang{Python}
+$\geq$ 3.7 and the \pkg{numpy}, \pkg{pandas}, \pkg{pyarrow},
+\pkg{rpy2}, and \pkg{torch} libraries.
+Installation instructions are provided in Section~4.1.
+
+\pkg{FastGxC} passes standard \code{R CMD check} tests
+without errors or warnings.
+
+\section{Discussion and future directions}
+
+The modular implementation of FastGxC provides opportunities for further
+development and adaptation to different analytical settings.
+
+Potential extensions include hierarchical expression decompositions to capture
+shared genetic effects within groups of related contexts, alternative
+parameterizations for comparisons against a reference context, and support for
+non-normal phenotypes through generalized linear models. Additional opportunities include integration with fine-mapping methods such
+as \pkg{SuSiE} \citep{Wang:2020} and benchmarking against single-cell-specific
+methods such as CellRegMap \citep{CuomoCellRegMap:2022} and SAIGE-QTL
+\citep{Zhou:2022}.
+
+FastGxC is openly available on GitHub at
+\url{https://github.com/BalliuLab/FastGxC}. We welcome contributions from
+researchers and developers interested in extending the package's functionality,
+improving computational performance, or adapting its methods to new applications.
 
 \bibliography{refs}
 

@@ -1,3 +1,16 @@
+#' FastGxC internal imports
+#'
+#' @importFrom data.table fread fwrite data.table setkey
+#' @importFrom dplyr group_by mutate n distinct select
+#' @importFrom magrittr %>%
+#' @importFrom qvalue qvalue
+#' @importFrom TreeQTL get_eGenes get_eSNPs get_eAssociations
+#' @importFrom utils read.table write.table
+#' @importFrom stats pchisq
+#' @importFrom data.table :=
+#' @keywords internal
+"_PACKAGE"
+
 decompose <- function(X, design) {
   X <- as.matrix(X)
   rep.measures <- factor(design)
@@ -37,7 +50,7 @@ get_eGenes_multi_tissue_mod <- function(m_eqtl_out_dir, treeQTL_dir, tissue_name
       distinct()
     colnames(n_SNPs_per_gene_this_tissue) <- c("family", "n_tests")
 
-    gene_simes_cur_tissue <- get_eGenes(n_tests_per_gene = n_SNPs_per_gene_this_tissue, m_eqtl_out = m_eqtl_out, method = "BH", level1 = 1, level2 = 1, silent = TRUE)
+    gene_simes_cur_tissue <- get_eGenes(n_tests_per_gene = n_SNPs_per_gene_this_tissue, m_eqtl_out = m_eqtl_out, method = "BH", level1 = 1, level2 = 1, slice_size = 100001, silent = TRUE)
     gene_simes_cur_tissue <- merge(gene_simes_cur_tissue, n_SNPs_per_gene_this_tissue, by = "family", all = TRUE)
     gene_simes_cur_tissue$fam_p[which(is.na(gene_simes_cur_tissue$fam_p))] <- 1
 
@@ -56,7 +69,7 @@ get_eGenes_multi_tissue_mod <- function(m_eqtl_out_dir, treeQTL_dir, tissue_name
 
   print("Step 0.2: Computing summary statistics across tissues")
   col_ind_pvals <- 2:(n_tissue + 1)
-  eGene_pvals$simes_p <- apply(eGene_pvals[, col_ind_pvals], 1, TreeQTL:::get_simes_p)
+  eGene_pvals$simes_p <- apply(eGene_pvals[, col_ind_pvals], 1, fastgxc_get_simes_p)
 
   if (four_level == TRUE) {
     level4 <- level1
@@ -85,7 +98,7 @@ get_eGenes_multi_tissue_mod <- function(m_eqtl_out_dir, treeQTL_dir, tissue_name
 
     print("Step 0.3: Computing summary statistics across shared and specific components")
     col_ind_pvals_global <- (n_tissue + 2):(n_tissue + 3)
-    eGene_pvals$simes_global_p <- apply(eGene_pvals[, col_ind_pvals_global], 1, TreeQTL:::get_simes_p)
+    eGene_pvals$simes_global_p <- apply(eGene_pvals[, col_ind_pvals_global], 1, fastgxc_get_simes_p)
 
     print("Step 0.4: Selecting global eGenes across contexts and shared and specific components")
     eGene_xT_qvals <- qvalue(eGene_pvals$simes_global_p, lambda = 0)$qvalue
@@ -93,7 +106,7 @@ get_eGenes_multi_tissue_mod <- function(m_eqtl_out_dir, treeQTL_dir, tissue_name
     ind_sel_simes <- which(eGene_xT_qvals <= level1)
     sel_eGenes_simes <- eGene_pvals[ind_sel_simes, ]
     q2_adj <- R_G * level4 / nrow(eGene_pvals)
-    rej_simes <- t(1 * apply(sel_eGenes_simes[, c("simes_global_p"), drop = F], 1, TreeQTL:::qsel_by_fam, q2_adj))
+    rej_simes <- t(1 * apply(sel_eGenes_simes[, c("simes_global_p"), drop = F], 1, fastgxc_qsel_by_fam, q2_adj))
     rej_simes <- t(data.frame(rej_simes))
     print(paste("Number of global eGenes = ", R_G))
     if (R_G == 0) {
@@ -133,7 +146,7 @@ get_eGenes_multi_tissue_mod <- function(m_eqtl_out_dir, treeQTL_dir, tissue_name
   q2_adj <- R_G * level2 / nrow(eGene_pvals)
   ind_sel_simes <- which(eGene_xT_qvals <= level1)
   sel_eGenes_simes <- eGene_pvals[ind_sel_simes, ]
-  rej_simes <- t(1 * apply(sel_eGenes_simes[, c(col_ind_pvals)], 1, TreeQTL:::qsel_by_fam, q2_adj))
+  rej_simes <- t(1 * apply(sel_eGenes_simes[, c(col_ind_pvals)], 1, fastgxc_qsel_by_fam, q2_adj))
 
   print("Step 3: Selecting SNPs associated to each gene in each tissue")
   sel_eGenes_simes$n_sel_tissues <- rowSums(rej_simes)
@@ -149,7 +162,7 @@ get_eGenes_multi_tissue_mod <- function(m_eqtl_out_dir, treeQTL_dir, tissue_name
     sel_gene_info <- merge(sel_gene_info, sel_eGenes_simes[, c("gene", "n_sel_tissues", "n_tested_tissues")],
       by.x = "family", by.y = "gene", all.x = TRUE, all.y = FALSE
     )
-    n_sel_per_gene <- suppressWarnings(TreeQTL:::get_nsel_SNPs_per_gene_tissue_pair(sel_gene_info, cur_tissue_name, m_eqtl_out_file, R_G, nrow(eGene_pvals),
+    n_sel_per_gene <- suppressWarnings(fastgxc_get_nsel_SNPs_per_gene_tissue_pair(sel_gene_info, cur_tissue_name, m_eqtl_out_file, R_G, nrow(eGene_pvals),
       level3 = level3, silent = TRUE
     ))
 
@@ -217,7 +230,7 @@ get_eGenes_multi_tissue_mod <- function(m_eqtl_out_dir, treeQTL_dir, tissue_name
 #
 #  print("Step 0.2: Computing summary statistics across tissues")
 #  col_ind_pvals <- 2:(n_tissue + 1)
-#  eGene_pvals$simes_p <- apply(eGene_pvals[, col_ind_pvals], 1, TreeQTL:::get_simes_p)
+#  eGene_pvals$simes_p <- apply(eGene_pvals[, col_ind_pvals], 1, fastgxc_get_simes_p)
 #
 #  print("Step 1: Selecting eGenes across tissues")
 #  eGene_xT_qvals <- qvalue(eGene_pvals$simes_p, lambda = 0)$qvalue
@@ -228,7 +241,7 @@ get_eGenes_multi_tissue_mod <- function(m_eqtl_out_dir, treeQTL_dir, tissue_name
 #  q2_adj <- R_G * level2/nrow(eGene_pvals)
 #  ind_sel_simes <- which(eGene_xT_qvals <= level1)
 #  sel_eGenes_simes <- eGene_pvals[ind_sel_simes, ]
-#  rej_simes <- t(1 * apply(sel_eGenes_simes[, c(col_ind_pvals)], 1, TreeQTL:::qsel_by_fam, q2_adj))
+#  rej_simes <- t(1 * apply(sel_eGenes_simes[, c(col_ind_pvals)], 1, fastgxc_qsel_by_fam, q2_adj))
 #
 #  print("Step 3: Selecting SNPs associated to each gene in each tissue")
 #  sel_eGenes_simes$n_sel_tissues <- rowSums(rej_simes)
@@ -242,7 +255,7 @@ get_eGenes_multi_tissue_mod <- function(m_eqtl_out_dir, treeQTL_dir, tissue_name
 #    names(sel_gene_info)[2] <- "n_tests"
 #    sel_gene_info <- merge(sel_gene_info, sel_eGenes_simes[, c("gene", "n_sel_tissues", "n_tested_tissues")],
 #                           by.x = "family", by.y = "gene", all.x = TRUE, all.y = FALSE)
-#    n_sel_per_gene <- TreeQTL:::get_nsel_SNPs_per_gene_tissue_pair(sel_gene_info, cur_tissue_name, m_eqtl_outfiles[i], R_G, nrow(eGene_pvals),
+#    n_sel_per_gene <- fastgxc_get_nsel_SNPs_per_gene_tissue_pair(sel_gene_info, cur_tissue_name, m_eqtl_outfiles[i], R_G, nrow(eGene_pvals),
 #                                                                   level3 = level3)
 #
 #    print(paste("Total number of associations for tissue", cur_tissue_name, "=", sum(n_sel_per_gene$n_sel_snp)))
@@ -291,7 +304,7 @@ get_pvals_and_fam_p_mod <- function(genes_by_tissue, snps_by_tissue, m_eqtl_out_
   pvals_all_tissues$n_tests_pair <- rowSums(genes_by_tissue[J(pvals_all_tissues$gene), 2:ncol(genes_by_tissue), with = FALSE] +
     snps_by_tissue[J(pvals_all_tissues$SNP), 2:ncol(snps_by_tissue), with = FALSE] == 2)
   col_ind_ntests <- which(names(pvals_all_tissues) == "n_tests_pair")
-  pvals_all_tissues$fam_p <- apply(pvals_all_tissues[, c(4:(n_tissue + 3), col_ind_ntests), with = FALSE], 1, TreeQTL:::get_simes_p_given_n_tests)
+  pvals_all_tissues$fam_p <- apply(pvals_all_tissues[, c(4:(n_tissue + 3), col_ind_ntests), with = FALSE], 1, fastgxc_get_simes_p_given_n_tests)
   pvals_all_tissues
 }
 
@@ -340,14 +353,194 @@ get_eSNPs_multi_tissue_mod <- function(genes_by_tissue, snps_by_tissue, n_tests_
   col_ind_pvals <- which(sapply(names(sel_families), grep, fixed = TRUE, pattern = "p.value") == 1)
   col_ind_ntests <- which(names(sel_families) == "n_tests_pair")
   col_ind_qadj <- which(names(sel_families) == "q_adj")
-  rej_by_fam_q <- apply(sel_families[, c(col_ind_pvals, col_ind_ntests, col_ind_qadj), with = FALSE], 1, TreeQTL:::bh_by_fam_q_adj)
+  rej_by_fam_q <- apply(sel_families[, c(col_ind_pvals, col_ind_ntests, col_ind_qadj), with = FALSE], 1, fastgxc_bh_by_fam_q_adj)
   sel_pairs <- data.frame(matrix(t(rej_by_fam_q), nrow = ncol(rej_by_fam_q)))
   return_value <- data.frame(family = sel_families$pair_names, fam_p = sel_families$fam_p, as.matrix(sel_families[, col_ind_pvals, with = FALSE]) * sel_pairs)
   names(return_value) <- c("family", "fam_p", tissue_names)
   return_value$family <- as.character(return_value$family)
   return_value[is.na(return_value)] <- 0
-  return_value[, 2] <- as.character(sapply(as.character(return_value$family), TreeQTL:::get_gene_name))
-  return_value[, 1] <- as.character(sapply(as.character(return_value$family), TreeQTL:::get_snp_name))
+  return_value[, 2] <- as.character(sapply(as.character(return_value$family), fastgxc_get_gene_name))
+  return_value[, 1] <- as.character(sapply(as.character(return_value$family), fastgxc_get_snp_name))
   names(return_value)[1:2] <- c("SNP", "gene")
   return_value
 }
+
+
+fastgxc_get_simes_p <- function(pvals) {
+  pvals <- pvals[!is.na(pvals)]
+  
+  if (length(pvals) > 0) {
+    pvals <- sort(as.numeric(pvals))
+    length(pvals) * min(pvals / seq_along(pvals))
+  } else {
+    NA
+  }
+}
+
+
+fastgxc_qsel_by_fam <- function(pvals, q) {
+  is_sel <- rep(NA, length(pvals))
+  is_sel[which(is.na(pvals))] <- FALSE
+  
+  if (sum(!is.na(pvals)) > 1) {
+    is_sel[which(is.na(is_sel))] <- qvalue::qvalue(
+      pvals[which(is.na(is_sel))],
+      lambda = 0,
+      fdr.level = q
+    )$significant
+  } else {
+    is_sel[which(is.na(is_sel))] <-
+      pvals[which(!is.na(pvals))] <= q
+  }
+  
+  is_sel
+}
+
+fastgxc_get_m_eqtl_cols <- function (line1, by_snp, all = FALSE) 
+{
+    if ((all || by_snp) && line1[1] != "SNP") {
+        stop("Matrix eQTL output does not have expected column names: \n\n         First column should be 'SNP'")
+    }
+    if ((all || !by_snp) && line1[2] != "gene" && line1[2] != "trait") {
+        stop("Matrix eQTL output does not have expected column names: \n\n         Second column should be 'gene' or 'trait'")
+    }
+    if (length(line1) == 5) {
+        if (all) {
+            if (line1[4] == "p-value" || line1[4] == "p.value") {
+                cols_to_read <- list(SNP = character(), gene = character(), t.stat = 0, p.value = 0, FDR = 0)
+            }
+            else if (line1[5] == "p-value" || line1[5] == "p.value") {
+                cols_to_read <- list(SNP = character(), gene = character(), beta = 0, t.stat = 0, p.value = 0)
+            }
+            else {
+                stop("Matrix eQTL output does not have expected column names")
+            }
+        }
+        else {
+            if (by_snp) {
+                if (line1[4] == "p-value" || line1[4] == "p.value") {
+                  cols_to_read <- list(family = character(), NULL, NULL, p.value = 0, NULL)
+                }
+                else if (line1[5] == "p-value" || line1[5] == "p.value") {
+                  cols_to_read <- list(family = character(), NULL, NULL, NULL, p.value = 0)
+                }
+                else {
+                  stop("Matrix eQTL output does not have expected column names")
+                }
+            }
+            else {
+                if (line1[4] == "p-value" || line1[4] == "p.value") {
+                  cols_to_read <- list(NULL, family = character(), NULL, p.value = 0, NULL)
+                }
+                else if (line1[5] == "p-value" || line1[5] == "p.value") {
+                  cols_to_read <- list(NULL, family = character(), NULL, NULL, p.value = 0)
+                }
+                else {
+                  stop("Matrix eQTL output does not have expected column names")
+                }
+            }
+        }
+    }
+    else if (length(line1) == 6) {
+        if (all) {
+            cols_to_read <- list(SNP = character(), gene = character(), beta = 0, t.stat = 0, p.value = 0, FDR = 0)
+        }
+        else {
+            if (by_snp) {
+                if (line1[5] == "p-value" || line1[5] == "p.value") {
+                  cols_to_read <- list(family = character(), NULL, NULL, NULL, p.value = 0, NULL)
+                }
+                else {
+                  stop("Matrix eQTL output does not have expected column names")
+                }
+            }
+            else {
+                if (line1[5] == "p-value" || line1[5] == "p.value") {
+                  cols_to_read <- list(NULL, family = character(), NULL, NULL, p.value = 0, NULL)
+                }
+                else {
+                  stop("Matrix eQTL output does not have expected column names")
+                }
+            }
+        }
+    }
+    else {
+        stop("Matrix eQTL output does not have expected number of columns")
+    }
+    cols_to_read
+} 
+fastgxc_get_nsel_SNPs_per_gene_tissue_pair <- function (sel_genes, tissue_name, m_eqtl_out, R_G, M, level3 = 0.05, slice_size = 1e+05, silent = FALSE) 
+{
+    sel_genes <- data.table(sel_genes)
+    setkey(sel_genes, family)
+    sel_genes$q_adj <- R_G * sel_genes$n_sel_tissues * level3/M/sel_genes$n_tested_tissues
+    if (!silent) {
+        print("Computing number of selections for each gene x tissue selection")
+    }
+    sel_genes$n_sel_snp <- 0
+    sel_genes$j_snp <- 0
+    n_lines_done <- 0
+    file_con <- file(m_eqtl_out, open = "r")
+    line1 <- scan(file_con, what = "", nlines = 1, quiet = TRUE)
+    cols_to_read <- fastgxc_get_m_eqtl_cols(line1, by_snp = FALSE)
+    p_max_to_read <- max(sel_genes$q_adj)
+    cur_max_p <- 0
+    more_file <- TRUE
+    while (cur_max_p < p_max_to_read && more_file) {
+        if (!silent & n_lines_done > 0 & n_lines_done%%1e+05 == 0) {
+            print(paste("Lines done ", n_lines_done))
+        }
+        file_slice <- scan(file_con, what = cols_to_read, nmax = slice_size, multi.line = FALSE, quiet = TRUE)
+        n_lines_read <- length(file_slice$family)
+        file_slice <- data.frame(family = file_slice$family, p.value = file_slice$p.value, stringsAsFactors = FALSE)
+        n_lines_done <- n_lines_done + n_lines_read
+        sel_genes[file_slice, `:=`(c("n_sel_snp", "j_snp"), list(ifelse(((n_tests * p.value/(j_snp + 1)) <= q_adj), j_snp + 1, n_sel_snp), j_snp + 1)), by = .EACHI]
+        cur_max_p <- max(file_slice$p.value)
+        if (n_lines_read < slice_size) {
+            more_file <- FALSE
+        }
+    }
+    close(file_con)
+    if (cur_max_p < p_max_to_read && more_file == FALSE) {
+        warning("Matrix eQTL output threshold may be too small for given levels")
+    }
+    as.data.frame(sel_genes[, c("family", "n_tests", "n_sel_snp"), with = FALSE], stringsAsFactors = FALSE)
+} 
+
+fastgxc_get_simes_p_given_n_tests <- function(input) {
+  m <- length(input)
+  n_tests <- input[m]
+  pvals <- input[-m]
+  pvals <- sort(as.numeric(pvals))
+  
+  n_tests * min(pvals / seq_along(pvals))
+}
+
+fastgxc_bh_by_fam_q_adj <- function(input) {
+  m <- length(input)
+  n_tests <- input[m - 1]
+  threshold <- input[m]
+  
+  pvals_orig <- input[-c(m - 1, m)]
+  pvals_orig[which(is.na(pvals_orig))] <- 1
+  
+  pvals <- sort(pvals_orig)
+  inds_q <- which(
+    (as.numeric(pvals) / seq_along(pvals)) <= threshold / n_tests
+  )
+  
+  R_q <- ifelse(length(inds_q) > 0, max(inds_q), 0)
+  p_threshold <- ifelse(R_q > 0, pvals[R_q], 0)
+  
+  as.vector(pvals_orig <= p_threshold) * 1
+}
+
+fastgxc_get_gene_name <- function(str) {
+  strsplit(str, "*", fixed = TRUE)[[1]][2]
+}
+
+fastgxc_get_snp_name <- function(str) {
+  strsplit(str, "*", fixed = TRUE)[[1]][1]
+}
+
+

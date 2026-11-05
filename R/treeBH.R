@@ -206,6 +206,10 @@ to_TreeBH_input <- function(data_dir, shared_file, context_names, out_dir) {
 #'   out_dir = data_dir
 #' )
 #'
+#'@importFrom dplyr filter select
+#' @importFrom magrittr %>%
+#' @importFrom utils write.table
+#' 
 #' @export
 treeBH_step <- function(matrix, fdr_thres, out_dir, method = "original", test = "simes") {
   # Validate method parameter

@@ -53,6 +53,11 @@
 #'   out_dir = data_dir
 #' )
 #'
+#' @importFrom data.table getDTthreads setDTthreads fread
+#' @importFrom magrittr %>%
+#' @importFrom TreeQTL get_n_tests_per_gene get_eGenes get_eAssociations
+#' @importFrom utils read.table write.table
+#' 
 #' @export
 treeQTL_step <- function(data_dir, snps_location_file_name, gene_location_file_name, context_names, out_dir, cisDist = 1e6, fdr_thresh = 0.05, four_level = FALSE, qtl_type = "cis", treeBH_method = "cpp", treeBH_test = "simes") {
   # use a single thread
@@ -148,7 +153,7 @@ treeQTL_step <- function(data_dir, snps_location_file_name, gene_location_file_n
     m_eqtl_out = list.files(data_dir, pattern = pattern, full.names = TRUE),
     method = "BH",
     level1 = level1, level2 = level2,
-    slice_size = 1e+05,
+    slice_size = 100001,
     silent = FALSE
   )
 

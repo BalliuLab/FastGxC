@@ -40,6 +40,14 @@
 #'   output_file_name_tra = file.path(data_dir, "context1_specific.trans_pairs.txt")
 #' )
 #'
+#' @importFrom data.table fread setDTthreads
+#' @importFrom MatrixEQTL modelLINEAR SlicedData Matrix_eQTL_main
+#' @importFrom reticulate py_run_string
+#' @importFrom dplyr select_if
+#' @importFrom magrittr %>%
+#' @importFrom stats p.adjust
+#' @importFrom utils read.table write.table
+#' 
 #' @export
 eQTL_mapping_step <- function(SNP_file_name,
                               snps_location_file_name,

@@ -17,6 +17,9 @@
 #'   data_dir = data_dir
 #' )
 #'
+#' @importFrom data.table fwrite setnames
+#' @importFrom magrittr %>%
+#' 
 #' @export
 decomposition_step <- function(exp_mat_filename, data_dir) {
   if (!dir.exists(data_dir)) dir.create(data_dir)

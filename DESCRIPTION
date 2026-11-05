@@ -20,26 +20,17 @@ Imports:
     matrixcalc,
     reticulate,
     readr,
-    Rcpp
+    Rcpp,
+    qvalue
 LinkingTo:
     Rcpp
 Suggests:
-    qvalue,
     testthat (>= 3.0.0),
     TreeBH,
     knitr,
     rmarkdown
 Depends:
-    R (>= 4.1.0),
-    dplyr,
-    data.table,
-    MatrixEQTL,
-    mvtnorm,
-    reshape2,
-    magrittr,
-    TreeQTL,
-    matrixcalc,
-    reticulate
+    R (>= 4.1.0)
 License: GPL-3 + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
