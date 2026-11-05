@@ -18,16 +18,41 @@ NULL
 #'   - p_value       : numeric p-value
 #'
 #' @examples
-#' \dontrun{
 #' data_dir <- file.path(tempdir(), "")
-#' out_dir <- tempdir()
+#' simulate_data(
+#'   data_dir = data_dir, N = 10, n_genes = 5,
+#'   n_snps_per_gene = 10, n_contexts = 3, seed = 42
+#' )
+#' decomposition_step(
+#'   exp_mat_filename = file.path(data_dir, "expression.txt"),
+#'   data_dir = data_dir
+#' )
+#' for (context in c("context1", "context2", "context3")) {
+#'   eQTL_mapping_step(
+#'     SNP_file_name = file.path(data_dir, "SNPs.txt"),
+#'     snps_location_file_name = file.path(data_dir, "snpsloc.txt"),
+#'     expression_file_name = file.path(
+#'       data_dir, paste0(context, "_specific_expression.txt")
+#'     ),
+#'     gene_location_file_name = file.path(data_dir, "geneloc.txt"),
+#'     context = context,
+#'     out_dir = data_dir
+#'   )
+#' }
+#' eQTL_mapping_step(
+#'   SNP_file_name = file.path(data_dir, "SNPs.txt"),
+#'   snps_location_file_name = file.path(data_dir, "snpsloc.txt"),
+#'   expression_file_name = file.path(data_dir, "context_shared_expression.txt"),
+#'   gene_location_file_name = file.path(data_dir, "geneloc.txt"),
+#'   context = "shared",
+#'   out_dir = data_dir
+#' )
 #' to_TreeBH_input(
 #'   data_dir = data_dir,
-#'   shared_file = file.path(data_dir, "shared_shared.cis_pairs.txt"),
+#'   shared_file = file.path(data_dir, "shared.cis_pairs.txt"),
 #'   context_names = c("context1", "context2", "context3"),
-#'   out_dir = out_dir
+#'   out_dir = data_dir
 #' )
-#' }
 #'
 #' @export
 to_TreeBH_input <- function(data_dir, shared_file, context_names, out_dir) {
@@ -136,14 +161,50 @@ to_TreeBH_input <- function(data_dir, shared_file, context_names, out_dir) {
 #' - treeBH Output Columns   : eGene, eQTL, Component, Context Specific
 #'
 #' @examples
-#' \dontrun{
-#' matrix <- read.table(file.path(tempdir(), "treeBH_input.txt"), header = TRUE)
+#' data_dir <- file.path(tempdir(), "")
+#' simulate_data(
+#'   data_dir = data_dir, N = 10, n_genes = 5,
+#'   n_snps_per_gene = 10, n_contexts = 3, seed = 42
+#' )
+#' decomposition_step(
+#'   exp_mat_filename = file.path(data_dir, "expression.txt"),
+#'   data_dir = data_dir
+#' )
+#' for (context in c("context1", "context2", "context3")) {
+#'   eQTL_mapping_step(
+#'     SNP_file_name = file.path(data_dir, "SNPs.txt"),
+#'     snps_location_file_name = file.path(data_dir, "snpsloc.txt"),
+#'     expression_file_name = file.path(
+#'       data_dir, paste0(context, "_specific_expression.txt")
+#'     ),
+#'     gene_location_file_name = file.path(data_dir, "geneloc.txt"),
+#'     context = context,
+#'     out_dir = data_dir
+#'   )
+#' }
+#' eQTL_mapping_step(
+#'   SNP_file_name = file.path(data_dir, "SNPs.txt"),
+#'   snps_location_file_name = file.path(data_dir, "snpsloc.txt"),
+#'   expression_file_name = file.path(data_dir, "context_shared_expression.txt"),
+#'   gene_location_file_name = file.path(data_dir, "geneloc.txt"),
+#'   context = "shared",
+#'   out_dir = data_dir
+#' )
+#' to_TreeBH_input(
+#'   data_dir = data_dir,
+#'   shared_file = file.path(data_dir, "shared.cis_pairs.txt"),
+#'   context_names = c("context1", "context2", "context3"),
+#'   out_dir = data_dir
+#' )
+#' matrix <- read.table(
+#'   file.path(data_dir, "treeBH_input.txt"),
+#'   header = TRUE
+#' )
 #' treeBH_step(
 #'   matrix = matrix,
 #'   fdr_thres = 0.05,
-#'   out_dir = tempdir()
+#'   out_dir = data_dir
 #' )
-#' }
 #'
 #' @export
 treeBH_step <- function(matrix, fdr_thres, out_dir, method = "original", test = "simes") {

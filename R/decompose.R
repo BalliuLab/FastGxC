@@ -7,7 +7,6 @@
 #' @return outputs one file with the shared component of expression per individual and C files for each specific expression component for each of the C contexts
 #'
 #' @examples
-#' \dontrun{
 #' data_dir <- file.path(tempdir(), "")
 #' simulate_data(
 #'   data_dir = data_dir, N = 10, n_genes = 5,
@@ -17,7 +16,6 @@
 #'   exp_mat_filename = file.path(data_dir, "expression.txt"),
 #'   data_dir = data_dir
 #' )
-#' }
 #'
 #' @export
 decomposition_step <- function(exp_mat_filename, data_dir) {

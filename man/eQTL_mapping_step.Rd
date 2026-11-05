@@ -69,7 +69,6 @@ Writes cis-eQTLs and trans-eQTLs (optional) to file.
 Function to map cis eQTLs - cis window is defined as 1Mb
 }
 \examples{
-\dontrun{
 data_dir <- file.path(tempdir(), "")
 simulate_data(
   data_dir = data_dir, N = 10, n_genes = 5,
@@ -89,6 +88,5 @@ eQTL_mapping_step(
   output_file_name_cis = file.path(data_dir, "context1_specific.cis_pairs.txt"),
   output_file_name_tra = file.path(data_dir, "context1_specific.trans_pairs.txt")
 )
-}
 
 }

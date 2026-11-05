@@ -16,15 +16,42 @@
 #' @return outputs one file of specific eGenes across all contexts and one file of shared eGenes. Outputs an eAssociation file for each context and one for shared eQTLs with snp-gene pairs and FDR adjusted p-values.
 #'
 #' @examples
-#' \dontrun{
-#' treeQTL_step(
-#'   data_dir = tempdir(),
-#'   snps_location_file_name = file.path(tempdir(), "snpsloc.txt"),
-#'   gene_location_file_name = file.path(tempdir(), "geneloc.txt"),
-#'   context_names = c("context1", "context2", "context3"),
-#'   out_dir = tempdir()
+#' data_dir <- file.path(tempdir(), "")
+#' simulate_data(
+#'   data_dir = data_dir, N = 10, n_genes = 5,
+#'   n_snps_per_gene = 10, n_contexts = 3, seed = 42
 #' )
+#' decomposition_step(
+#'   exp_mat_filename = file.path(data_dir, "expression.txt"),
+#'   data_dir = data_dir
+#' )
+#' for (context in c("context1", "context2", "context3")) {
+#'   eQTL_mapping_step(
+#'     SNP_file_name = file.path(data_dir, "SNPs.txt"),
+#'     snps_location_file_name = file.path(data_dir, "snpsloc.txt"),
+#'     expression_file_name = file.path(
+#'       data_dir, paste0(context, "_specific_expression.txt")
+#'     ),
+#'     gene_location_file_name = file.path(data_dir, "geneloc.txt"),
+#'     context = context,
+#'     out_dir = data_dir
+#'   )
 #' }
+#' eQTL_mapping_step(
+#'   SNP_file_name = file.path(data_dir, "SNPs.txt"),
+#'   snps_location_file_name = file.path(data_dir, "snpsloc.txt"),
+#'   expression_file_name = file.path(data_dir, "context_shared_expression.txt"),
+#'   gene_location_file_name = file.path(data_dir, "geneloc.txt"),
+#'   context = "shared",
+#'   out_dir = data_dir
+#' )
+#' treeQTL_step(
+#'   data_dir = data_dir,
+#'   snps_location_file_name = file.path(data_dir, "snpsloc.txt"),
+#'   gene_location_file_name = file.path(data_dir, "geneloc.txt"),
+#'   context_names = c("context1", "context2", "context3"),
+#'   out_dir = data_dir
+#' )
 #'
 #' @export
 treeQTL_step <- function(data_dir, snps_location_file_name, gene_location_file_name, context_names, out_dir, cisDist = 1e6, fdr_thresh = 0.05, four_level = FALSE, qtl_type = "cis", treeBH_method = "cpp", treeBH_test = "simes") {

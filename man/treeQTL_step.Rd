@@ -70,14 +70,41 @@ outputs one file of specific eGenes across all contexts and one file of shared e
 Function to adjust for hierarchical multiple testing correction using TreeQTL. Runs multiple testing correction for both FastGxC shared and specific eQTLs.
 }
 \examples{
-\dontrun{
-treeQTL_step(
-  data_dir = tempdir(),
-  snps_location_file_name = file.path(tempdir(), "snpsloc.txt"),
-  gene_location_file_name = file.path(tempdir(), "geneloc.txt"),
-  context_names = c("context1", "context2", "context3"),
-  out_dir = tempdir()
+data_dir <- file.path(tempdir(), "")
+simulate_data(
+  data_dir = data_dir, N = 10, n_genes = 5,
+  n_snps_per_gene = 10, n_contexts = 3, seed = 42
 )
+decomposition_step(
+  exp_mat_filename = file.path(data_dir, "expression.txt"),
+  data_dir = data_dir
+)
+for (context in c("context1", "context2", "context3")) {
+  eQTL_mapping_step(
+    SNP_file_name = file.path(data_dir, "SNPs.txt"),
+    snps_location_file_name = file.path(data_dir, "snpsloc.txt"),
+    expression_file_name = file.path(
+      data_dir, paste0(context, "_specific_expression.txt")
+    ),
+    gene_location_file_name = file.path(data_dir, "geneloc.txt"),
+    context = context,
+    out_dir = data_dir
+  )
 }
+eQTL_mapping_step(
+  SNP_file_name = file.path(data_dir, "SNPs.txt"),
+  snps_location_file_name = file.path(data_dir, "snpsloc.txt"),
+  expression_file_name = file.path(data_dir, "context_shared_expression.txt"),
+  gene_location_file_name = file.path(data_dir, "geneloc.txt"),
+  context = "shared",
+  out_dir = data_dir
+)
+treeQTL_step(
+  data_dir = data_dir,
+  snps_location_file_name = file.path(data_dir, "snpsloc.txt"),
+  gene_location_file_name = file.path(data_dir, "geneloc.txt"),
+  context_names = c("context1", "context2", "context3"),
+  out_dir = data_dir
+)
 
 }

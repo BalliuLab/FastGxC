@@ -22,7 +22,6 @@ outputs one file with the shared component of expression per individual and C fi
 Function to decompose expression into one shared component and specific components per context
 }
 \examples{
-\dontrun{
 data_dir <- file.path(tempdir(), "")
 simulate_data(
   data_dir = data_dir, N = 10, n_genes = 5,
@@ -32,6 +31,5 @@ decomposition_step(
   exp_mat_filename = file.path(data_dir, "expression.txt"),
   data_dir = data_dir
 )
-}
 
 }
